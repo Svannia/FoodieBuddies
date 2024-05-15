@@ -9,5 +9,7 @@
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
     <string name="txt_appName">Foodie Buddy</string>
-    <string name="txt_signIn">Sign in with Google</string>
+    <string name="txt_signIn">S\'enregistrer avec Google</string>
+    <string name="desc_goBack">go back</string>
+    <string name="title_createAccount">Création de compte</string>
 </resources>

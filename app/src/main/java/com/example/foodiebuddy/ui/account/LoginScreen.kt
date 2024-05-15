@@ -2,17 +2,12 @@ package com.example.foodiebuddy.ui.account
 
 import android.app.Activity
 import android.content.Context
-import android.content.Intent
 import android.util.Log
-import android.widget.Space
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.ActivityResult
-import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -39,17 +34,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.foodiebuddy.R
-import com.example.foodiebuddy.data.DatabaseConnection
+import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.HandleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.theme.ContrastColor
 import com.example.foodiebuddy.ui.theme.ContrastGrey
+import com.example.foodiebuddy.ui.theme.MyTypography
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
-import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import java.lang.Exception
 
 @Composable
 fun LoginScreen(navigationActions: NavigationActions) {
@@ -75,13 +70,8 @@ fun LoginScreen(navigationActions: NavigationActions) {
         Spacer(Modifier.size(67.dp))
         Text(
             text = stringResource(R.string.txt_appName),
-            style = TextStyle(
-                fontSize = 52.sp,
-                fontWeight = FontWeight(700),
-                textAlign = TextAlign.Center
-            ),
-            modifier = Modifier
-                .fillMaxWidth()
+            style = MyTypography.titleLarge,
+            modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.size(120.dp))
         Button(
@@ -109,10 +99,11 @@ fun LoginScreen(navigationActions: NavigationActions) {
                 contentDescription = stringResource(R.string.desc_googleLogo),
                 modifier = Modifier.width(36.dp)
             )
-            Spacer(Modifier.size(40.dp))
+            Spacer(Modifier.size(16.dp))
             Text(
                 text = stringResource(R.string.txt_signIn),
-                color = Color.White
+                color = ContrastColor,
+                style = MyTypography.bodyLarge
             )
         }
     } }
@@ -127,6 +118,7 @@ private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: 
                 userID,
                 onSuccess = {userExists ->
                     if (userExists) {
+
                         navigationActions.navigateTo(Route.RECIPES_HOME)
                     } else {
                         navigationActions.navigateTo(Route.CREATE_ACCOUNT)

@@ -1,6 +1,5 @@
-package com.example.foodiebuddy.data
+package com.example.foodiebuddy.database
 
-import com.google.firebase.Firebase
 import com.google.firebase.firestore.FirebaseFirestore
 
 class DatabaseConnection {

@@ -21,3 +21,10 @@ get() {
     val darkTheme = isSystemInDarkTheme()
     return if (darkTheme) DarkGrey else LightGrey
 }
+
+val ContrastColor: Color
+@Composable
+get() {
+    val darkTheme = isSystemInDarkTheme()
+    return if (darkTheme) Color.White else Color.Black
+}
