@@ -85,19 +85,6 @@ class MainActivity : ComponentActivity() {
                                 Log.d("Compose", "Successfully composed screen Create Account")
                             }
                         }
-                        composable(
-                            route = "${Route.PROFILE_PICTURE}/{uri}",
-                            arguments = listOf(navArgument("uri") { type = NavType.StringType })) {
-                                backStackEntry ->
-                            Log.d("Debug", "got here")
-                            val uri = Uri.decode(backStackEntry.arguments?.getString("uri"))
-                            val currentUser = remember { auth.currentUser }
-                            if (uri != null && currentUser != null) {
-                                val userViewModel = remember { UserViewModel(currentUser.uid) }
-                                SetProfilePicture(userViewModel, Uri.parse(uri), navigationActions)
-                                Log.d("MyPrint", "Successfully navigated to Settings")
-                            }
-                        }
                         // Composables for recipes-related routes
                         composable(Route.RECIPES_HOME) {
                             val currentUser = remember { auth.currentUser }

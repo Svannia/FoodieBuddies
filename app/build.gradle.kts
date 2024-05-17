@@ -78,4 +78,11 @@ dependencies {
     implementation("com.google.firebase:firebase-firestore-ktx:24.10.3")
     implementation("com.google.firebase:firebase-storage-ktx:20.3.0")
     implementation("com.google.firebase:firebase-database:20.3.1")
+
+    //image manipulation
+    implementation("androidx.compose.ui:ui:1.3.2")
+    implementation("androidx.compose.material3:material3:1.0.0-alpha01")
+    implementation("io.coil-kt:coil-compose:2.1.0")
+    implementation("androidx.navigation:navigation-compose:2.4.0-alpha10")
+    implementation("androidx.activity:activity-compose:1.3.1")
 }
