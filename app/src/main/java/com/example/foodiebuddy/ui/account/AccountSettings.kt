@@ -64,6 +64,7 @@ import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.ScreenStructure
+import com.example.foodiebuddy.ui.theme.SystemColor
 import com.example.foodiebuddy.viewModels.UserViewModel
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -135,13 +136,13 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
     val screenWidth = with(density) { LocalConfiguration.current.screenWidthDp * density.density }
     val screenHeight = with(density) { LocalConfiguration.current.screenHeightDp * density.density }
     val radius = minOf(screenWidth, screenHeight) / 2
-    val minScale = computeMinScale(LocalContext.current, picture, radius, screenWidth, screenHeight)
+    val imageInfo = computeMinScale(LocalContext.current, picture, radius, screenWidth, screenHeight)
 
-    var scale by remember { mutableStateOf(minScale) }
+    var scale by remember { mutableStateOf(imageInfo.minScale) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
-    var imageWidth by remember { mutableStateOf(0f) }
-    var imageHeight by remember { mutableStateOf(0f) }
+    var imageWidth by remember { mutableStateOf(imageInfo.width) }
+    var imageHeight by remember { mutableStateOf(imageInfo.height) }
 
 
 
@@ -155,18 +156,14 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
                 .fillMaxSize()
                 .pointerInput(Unit) {
                     detectTransformGestures { _, pan, zoom, _ ->
-                        scale = (scale * zoom).coerceAtLeast(minScale)
+                        scale = (scale * zoom).coerceAtLeast(imageInfo.minScale)
 
-                        val scaledWidth = imageWidth * scale
-                        val scaledHeight = imageHeight * scale
+                        imageWidth = imageInfo.width * scale
+                        imageHeight = imageInfo.height * scale
 
-                        val maxOffsetX = abs(scaledWidth / 2 - radius)
-                        val maxOffsetY = abs(scaledHeight / 2 - radius)
+                        val maxOffsetX = abs(imageWidth / 2 - radius)
+                        val maxOffsetY = abs(imageHeight / 2 - radius)
 
-                        Log.d(
-                            "Debug",
-                            "scale is: $scale and offset x: $maxOffsetX and offset y: $maxOffsetY"
-                        )
                         offsetX = (offsetX + pan.x).coerceIn(-maxOffsetX, maxOffsetX)
                         offsetY = (offsetY + pan.y).coerceIn(-maxOffsetY, maxOffsetY)
                     }
@@ -183,11 +180,6 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
                         translationX = offsetX,
                         translationY = offsetY
                     )
-                    .onGloballyPositioned { layoutCoordinates ->
-                        val size = layoutCoordinates.size
-                        imageWidth = size.width.toFloat()
-                        imageHeight = size.height.toFloat()
-                    }
                     .fillMaxSize()
             )
             Canvas(
@@ -203,14 +195,14 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
         }
         Box(
             contentAlignment = Alignment.TopCenter,
-            modifier = Modifier.fillMaxWidth().height(24.dp).background(Color.Red)
+            modifier = Modifier.fillMaxWidth().height(24.dp).background(SystemColor)
         ) {
 
         }
     }
 }
 
-private fun computeMinScale(context: Context, picture: Uri, radius: Float, screenWidth: Float, screenHeight: Float): Float {
+private fun computeMinScale(context: Context, picture: Uri, radius: Float, screenWidth: Float, screenHeight: Float): ImageInfo {
     return try {
         context.contentResolver.openInputStream(picture)?.use {inputStream ->
             val options = BitmapFactory.Options().apply {
@@ -226,17 +218,18 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
                 imageHeight *= ratio
             } else if (imageHeight > imageWidth && imageHeight >= screenHeight)  {
                 val ratio = screenHeight / imageHeight
-                imageHeight = diameter
+                imageHeight = screenHeight
                 imageWidth *= ratio
             }
             val widthRatio = diameter / imageWidth
             val heightRatio = diameter / imageHeight
             val minScale = maxOf(widthRatio, heightRatio)
-            minScale
-        } ?: 1.5f
+            ImageInfo(minScale, imageWidth, imageHeight)
+        } ?: ImageInfo(1.5f, 0f, 0f)
     } catch (e: Exception) {
         Log.d("Error", "Failed to calculate initial scale with $e")
-        1.5f
+        ImageInfo(1.5f, 0f, 0f)
     }
-
 }
+
+data class ImageInfo(val minScale: Float, val width: Float, val height: Float)

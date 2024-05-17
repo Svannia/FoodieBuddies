@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -32,11 +33,11 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 @Composable
 fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationActions, picture: Uri ?= null) {
     val context = LocalContext.current
-    val editingPicture = remember { mutableStateOf(false) }
+    val editingPicture = rememberSaveable { mutableStateOf(false) }
 
     // userViewModel
-    val nameState = remember { mutableStateOf("") }
-    val pictureState = remember { mutableStateOf(Uri.parse("")) }
+    val nameState = rememberSaveable { mutableStateOf("") }
+    val pictureState = rememberSaveable { mutableStateOf(Uri.parse("")) }
 
     if (editingPicture.value) {
         SetProfilePicture(pictureState.value, onCancel = { editingPicture.value = false }) {
