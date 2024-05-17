@@ -51,7 +51,7 @@ android {
 }
 
 dependencies {
-    // basic dependencies
+    // random dependencies
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -71,6 +71,7 @@ dependencies {
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
 
+
     //firebase dependencies
     implementation("com.google.firebase:firebase-auth-ktx:22.3.0")
     implementation("com.google.firebase:firebase-database-ktx:20.3.0")
@@ -85,4 +86,6 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.1.0")
     implementation("androidx.navigation:navigation-compose:2.4.0-alpha10")
     implementation("androidx.activity:activity-compose:1.3.1")
+    implementation("androidx.exifinterface:exifinterface:1.3.7")
+    implementation("com.drewnoakes:metadata-extractor:2.18.0")
 }

@@ -3,6 +3,7 @@ package com.example.foodiebuddy.ui.account
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -40,8 +41,18 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
     val pictureState = rememberSaveable { mutableStateOf(Uri.parse("")) }
 
     if (editingPicture.value) {
-        SetProfilePicture(pictureState.value, onCancel = { editingPicture.value = false }) {
-            
+        SetProfilePicture(
+            pictureState.value,
+            onCancel = {
+                editingPicture.value = false
+                pictureState.value = Uri.parse("")
+            }) { uri ->
+            pictureState.value = uri
+            editingPicture.value = false
+        }
+        BackHandler {
+            editingPicture.value = false
+            pictureState.value = Uri.parse("")
         }
     }
     else {

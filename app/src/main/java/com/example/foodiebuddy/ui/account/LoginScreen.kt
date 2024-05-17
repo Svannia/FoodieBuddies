@@ -69,7 +69,7 @@ fun LoginScreen(navigationActions: NavigationActions) {
         )
         Spacer(Modifier.size(67.dp))
         Text(
-            text = stringResource(R.string.txt_appName),
+            text = stringResource(R.string.app_name),
             style = MyTypography.titleLarge,
             modifier = Modifier.fillMaxWidth()
         )

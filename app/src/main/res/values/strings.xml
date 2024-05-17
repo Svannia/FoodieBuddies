@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <resources>
-    <string name="app_name">FoodieBuddy</string>
+    <string name="app_name">Foodie Buddies</string>
 
     <string name="desc_appLogo">app logo</string>
+    <string name="desc_goBack">go back</string>
     <string name="desc_googleLogo">google logo</string>
+    <string name="desc_profilePic">profile picture</string>
+
+    <string name="title_createAccount">Création de compte</string>
 
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
-    <string name="txt_appName">Foodie Buddy</string>
     <string name="txt_signIn">S\'enregistrer avec Google</string>
-    <string name="desc_goBack">go back</string>
-    <string name="title_createAccount">Création de compte</string>
-    <string name="desc_profilePic">profile picture</string>
 </resources>

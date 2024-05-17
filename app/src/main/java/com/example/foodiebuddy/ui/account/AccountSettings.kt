@@ -12,8 +12,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,6 +45,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -56,16 +59,24 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.exifinterface.media.ExifInterface
 import coil.compose.rememberImagePainter
+import com.drew.imaging.ImageMetadataReader
+import com.drew.metadata.exif.ExifIFD0Directory
+import com.drew.metadata.jpeg.JpegDirectory
 import com.example.foodiebuddy.R
+import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.NavigationButton
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.ScreenStructure
+import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.SystemColor
 import com.example.foodiebuddy.viewModels.UserViewModel
+import java.io.File
+import java.io.FileOutputStream
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.cos
@@ -131,6 +142,7 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit) {
+    val context = LocalContext.current
 
     val density = LocalDensity.current
     val screenWidth = with(density) { LocalConfiguration.current.screenWidthDp * density.density }
@@ -138,6 +150,7 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
     val radius = minOf(screenWidth, screenHeight) / 2
     val imageInfo = computeMinScale(LocalContext.current, picture, radius, screenWidth, screenHeight)
 
+    Log.d("Debug", "image info: scale ${imageInfo.minScale} width ${imageInfo.width} height ${imageInfo.height}")
     var scale by remember { mutableStateOf(imageInfo.minScale) }
     var offsetX by remember { mutableStateOf(0f) }
     var offsetY by remember { mutableStateOf(0f) }
@@ -194,38 +207,121 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
             }
         }
         Box(
-            contentAlignment = Alignment.TopCenter,
-            modifier = Modifier.fillMaxWidth().height(24.dp).background(SystemColor)
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .background(SystemColor)
         ) {
-
+            Row(
+                modifier = Modifier.padding(start = 24.dp, end = 24.dp).fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Annuler",
+                    style = MyTypography.bodySmall,
+                    modifier = Modifier.clickable {
+                        onCancel()
+                    }
+                )
+                Text(
+                    text = "Sauvegarder",
+                    style = MyTypography.bodySmall,
+                    modifier = Modifier.clickable {
+                        val croppedBitmap = cropImage(context, picture, scale, offsetX, offsetY, radius*2)
+                        croppedBitmap?.let {
+                            val croppedBitmapUri = saveBitmapToFile(context, it, "cropped_profile_picture.jpg")
+                            croppedBitmapUri?.let { uri ->
+                                onSave(uri)
+                            }
+                        }
+                    }
+                )
+            }
         }
+    }
+}
+
+private fun rotateBitmap(originalBitmap: Bitmap, degrees: Float): Bitmap {
+    val width = originalBitmap.width
+    val height = originalBitmap.height
+
+    val rotatedBitmap = Bitmap.createBitmap(height, width, originalBitmap.config)
+
+    for (x in 0 until width) {
+        for (y in 0 until height) {
+            val newX = height - 1 - y
+            val newY = x
+            rotatedBitmap.setPixel(newX, newY, originalBitmap.getPixel(x, y))
+        }
+    }
+
+    return rotatedBitmap
+}
+private fun getCorrectedBitmap(context: Context, picture: Uri): Bitmap? {
+    val inputStream = context.contentResolver.openInputStream(picture) ?: return null
+    val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+    val exif = ExifInterface(context.contentResolver.openInputStream(picture)!!)
+    val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL)
+
+    return when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90 -> rotateBitmap(originalBitmap, 90f)
+        ExifInterface.ORIENTATION_ROTATE_180 -> rotateBitmap(originalBitmap, 180f)
+        ExifInterface.ORIENTATION_ROTATE_270 -> rotateBitmap(originalBitmap, 270f)
+        else -> originalBitmap // No rotation needed
     }
 }
 
 private fun computeMinScale(context: Context, picture: Uri, radius: Float, screenWidth: Float, screenHeight: Float): ImageInfo {
     return try {
-        context.contentResolver.openInputStream(picture)?.use {inputStream ->
-            val options = BitmapFactory.Options().apply {
-                inJustDecodeBounds = true
+        val inputStream = context.contentResolver.openInputStream(picture)
+
+
+            val metadata = ImageMetadataReader.readMetadata(inputStream)
+            val jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory::class.java)
+            var imageHeight = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_HEIGHT)?.toFloat() ?: 0f
+            var imageWidth = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_WIDTH)?.toFloat() ?: 0f
+            Log.d("Debug", "metadata height is $imageHeight")
+        // Iterate through metadata directories and tags
+        for (directory in metadata.directories) {
+            for (tag in directory.tags) {
+                Log.d("Debug", "Metadata Tag: $tag")
             }
-            BitmapFactory.decodeStream(inputStream, null, options)
-            var imageWidth = options.outWidth.toFloat()
-            var imageHeight = options.outHeight.toFloat()
+        }
+        val exifDirectory = metadata.getFirstDirectoryOfType(ExifIFD0Directory::class.java)
+            val orientation = exifDirectory?.getString(ExifIFD0Directory.TAG_ORIENTATION)?.toInt()
+        if (orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270) {
+            val temp = imageHeight
+            imageHeight = imageWidth
+            imageWidth = temp
+        }
+            Log.d("Debug", "orientation: $orientation")
+            Log.d("Debug", "raw width $imageWidth height $imageHeight")
             val diameter = radius * 2
-            if (imageWidth > imageHeight && imageWidth >= screenWidth) {
+
+        while (imageWidth > screenWidth || imageHeight > screenHeight) {
+            Log.d("Debug", "screen height : $screenHeight screen width: $screenWidth")
+            Log.d("Debug", "image height : $imageHeight image width: $imageWidth")
+            if (imageWidth > screenWidth) {
+                Log.d("Debug", "too wide")
                 val ratio = screenWidth / imageWidth
                 imageWidth = screenWidth
                 imageHeight *= ratio
-            } else if (imageHeight > imageWidth && imageHeight >= screenHeight)  {
+            } else  {
+                Log.d("Debug", "too high")
                 val ratio = screenHeight / imageHeight
                 imageHeight = screenHeight
                 imageWidth *= ratio
             }
+        }
+
             val widthRatio = diameter / imageWidth
             val heightRatio = diameter / imageHeight
             val minScale = maxOf(widthRatio, heightRatio)
+            Log.d("Debug", "width $imageWidth height $imageHeight")
+            Log.d("Debug", " ratios width $widthRatio height $heightRatio")
             ImageInfo(minScale, imageWidth, imageHeight)
-        } ?: ImageInfo(1.5f, 0f, 0f)
     } catch (e: Exception) {
         Log.d("Error", "Failed to calculate initial scale with $e")
         ImageInfo(1.5f, 0f, 0f)
@@ -233,3 +329,38 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
 }
 
 data class ImageInfo(val minScale: Float, val width: Float, val height: Float)
+
+private fun cropImage(context: Context, picture: Uri, scale: Float, offsetX: Float, offsetY: Float, diameter: Float): Bitmap? {
+    val inputStream = context.contentResolver.openInputStream(picture)
+    val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
+
+    val centerX = originalBitmap.width / 2 - offsetX
+    val centerY = originalBitmap.height / 2 - offsetY
+    val cropRadius = diameter / 2 / scale
+
+    val cropLeft = (centerX - cropRadius).toInt()
+    val cropTop = (centerY - cropRadius).toInt()
+    val cropRight = (centerX + cropRadius).toInt()
+    val cropBottom = (centerY + cropRadius).toInt()
+
+    val cropWidth = cropRight - cropLeft
+    val cropHeight = cropBottom - cropTop
+    val croppedBitmap = Bitmap.createBitmap(originalBitmap, cropLeft, cropTop, cropWidth, cropHeight)
+    val scaledBitmap = Bitmap.createScaledBitmap(croppedBitmap, diameter.toInt(), diameter.toInt(), true)
+
+    return scaledBitmap
+}
+
+private fun saveBitmapToFile(context: Context, bitmap: Bitmap, fileName: String): Uri? {
+    val file = File(context.cacheDir, fileName)
+    return try {
+        val outputStream = FileOutputStream(file)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+        outputStream.flush()
+        outputStream.close()
+        Uri.fromFile(file)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        null
+    }
+}
