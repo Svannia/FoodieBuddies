@@ -21,4 +21,9 @@
 
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
+    <string name="dst_account">Profil</string>
+    <string name="dst_settings">Paramètres</string>
+    <string name="desc_dstIcon">destination icon</string>
+    <string name="title_recipes">Recettes</string>
+    <string name="desc_burgerMenu">burger menu</string>
 </resources>

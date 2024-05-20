@@ -1,13 +1,11 @@
 package com.example.foodiebuddy.database
 
-import android.graphics.Picture
 import android.net.Uri
 import android.util.Log
-import com.example.foodiebuddy.errors.HandleError
+import com.example.foodiebuddy.data.User
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.tasks.await
-import kotlin.math.PI
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
@@ -47,6 +45,22 @@ class DatabaseConnection {
             addUserPicture(uid, picture)
         } else {
             copyDefaultPicture(uid)
+        }
+    }
+
+    suspend fun fetchUserData(userID: String): User {
+        if (userID.isEmpty()) { return User.empty()}
+
+        val document = userDataCollection.document(userID).get().await()
+        return if (document.exists()) {
+            val username = document.getString(USERNAME) ?: ""
+            val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
+            val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
+            val bio = document.getString(BIO) ?: ""
+            User(userID, username, picture, numberRecipes, bio)
+        } else {
+            Log.d("DB", "Failed to fetch user data for uid $userID")
+            User.empty()
         }
     }
 

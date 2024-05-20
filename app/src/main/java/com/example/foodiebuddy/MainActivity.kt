@@ -1,33 +1,28 @@
 package com.example.foodiebuddy
 
-import android.net.Uri
-import android.os.Build
+
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.currentCompositionErrors
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import com.example.foodiebuddy.ui.account.LoginScreen
 import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.HandleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.account.AccountSettings
 import com.example.foodiebuddy.ui.account.CreateAccount
-import com.example.foodiebuddy.ui.account.SetProfilePicture
 import com.example.foodiebuddy.ui.recipes.RecipesHome
+import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
 import com.example.foodiebuddy.viewModels.RecipeListViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
@@ -50,7 +45,6 @@ class MainActivity : ComponentActivity() {
                     val context = LocalContext.current
                     val navController = rememberNavController()
                     val navigationActions = NavigationActions(navController)
-                    val thisUser = remember { auth.currentUser }
                     val startDestination = Route.START
 
 
@@ -92,13 +86,30 @@ class MainActivity : ComponentActivity() {
                                 Log.d("Compose", "Successfully composed screen Create Account")
                             }
                         }
+                        composable(Route.ACCOUNT_SETTINGS) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userViewModel = remember { UserViewModel(currentUser.uid) }
+                                AccountSettings(userViewModel, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Account Settings")
+                            }
+                        }
                         // Composables for recipes-related routes
                         composable(Route.RECIPES_HOME) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val recipesViewModel = remember { RecipeListViewModel(currentUser.uid) }
-                                RecipesHome(currentUser.uid, recipesViewModel, navigationActions)
+                                val userViewModel = remember { UserViewModel(currentUser.uid) }
+                                RecipesHome(userViewModel, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipes Home")
+                            }
+                        }
+                        // Composables for settings and system
+                        composable(Route.SETTINGS) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userViewModel = remember { UserViewModel(currentUser.uid) }
+                                Settings(userViewModel, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Settings")
                             }
                         }
                     }

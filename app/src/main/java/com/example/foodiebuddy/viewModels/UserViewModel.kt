@@ -1,6 +1,5 @@
 package com.example.foodiebuddy.viewModels
 
-import android.graphics.Picture
 import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -13,7 +12,7 @@ import kotlinx.coroutines.launch
 
 class UserViewModel(private val userID: String ?= null ) : ViewModel() {
     private val db = DatabaseConnection()
-    private val _userData = MutableStateFlow<User>(User.empty())
+    private val _userData = MutableStateFlow(User.empty())
     val userData: StateFlow<User> = _userData
 
     fun createUser(username: String, picture: Uri, bio: String) {
@@ -25,9 +24,13 @@ class UserViewModel(private val userID: String ?= null ) : ViewModel() {
             }
         }
     }
+    fun fetchUserData() {
+        viewModelScope.launch { _userData.value = userID?.let { db.fetchUserData(it) }!! }
+    }
 
     suspend fun getDefaultPicture(): Uri {
         return db.getDefaultPicture()
     }
+
 
 }

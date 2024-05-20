@@ -17,21 +17,21 @@ val MyTypography = Typography(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Normal,
         fontSize = 20.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    ),
+        lineHeight = 20.sp,
+        letterSpacing = 0.5.sp),
+
     bodySmall = TextStyle(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Normal,
         fontSize = 16.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.5.sp
-    ),
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp),
+
     titleLarge = TextStyle(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Bold,
         fontSize = 50.sp,
-        lineHeight = 54.sp,
+        lineHeight = 50.sp,
         letterSpacing = 0.5.sp,
         textAlign = TextAlign.Center
     ),
@@ -49,15 +49,14 @@ val MyTypography = Typography(
         fontStyle = FontStyle(0),
         textDecoration = TextDecoration.Underline,
         fontSize = 16.sp,
-        lineHeight = 20.sp,
-        letterSpacing = 0.5.sp
-    ),
+        lineHeight = 16.sp,
+        letterSpacing = 0.5.sp),
+
     labelSmall = TextStyle(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Normal,
         fontStyle = FontStyle(0),
         fontSize = 14.sp,
-        lineHeight = 18.sp,
-        letterSpacing = 0.5.sp
-    )
+        lineHeight = 14.sp,
+        letterSpacing = 0.5.sp)
 )
