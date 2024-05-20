@@ -51,36 +51,43 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val navigationActions = NavigationActions(navController)
                     val thisUser = remember { auth.currentUser }
-                    val startDestination =
-                        if (thisUser != null) {
-                            db.userExists(
-                                uid = thisUser.uid,
-                                onSuccess = { userExists ->
-                                    if (userExists) {
-                                        Route.RECIPES_HOME
-                                    } else {
-                                        Route.CREATE_ACCOUNT
-                                    }
-                                },
-                                onFailure = { e ->
-                                    HandleError(context, "Failed to check user existence", e)
-                                    Route.LOGIN
-                                }
-                            )
-                            Route.CREATE_ACCOUNT
-                        } else {
-                            Route.LOGIN
-                        }
+                    val startDestination = Route.START
+
 
                     NavHost(navController, startDestination) {
+                        composable(Route.START) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                Log.d("Login", "Logging in with user ${currentUser.uid}")
+                                db.userExists(
+                                    uid = currentUser.uid,
+                                    onSuccess = { userExists ->
+                                        if (userExists) {
+                                            Log.d("Login", "Successfully logged in user ${currentUser.uid}")
+                                            navigationActions.navigateTo(Route.RECIPES_HOME)
+                                        } else {
+                                            Log.d("Login", "Creating account for user ${currentUser.uid}")
+                                            navigationActions.navigateTo(Route.CREATE_ACCOUNT)
+                                        }
+                                    },
+                                    onFailure = { e ->
+                                        HandleError(context, "Failed to check user existence", e)
+                                        navigationActions.navigateTo(Route.LOGIN)
+                                    }
+                                )
+                            } else {
+                                navigationActions.navigateTo(Route.LOGIN)
+                            }
+                        }
                         // Composables for account-related routes
                         composable(Route.LOGIN) {
                             LoginScreen(navigationActions)
                             Log.d("Compose", "Successfully composed screen Login screen")
                         }
                         composable(Route.CREATE_ACCOUNT) {
-                            if (auth.currentUser != null) {
-                                val userViewModel = remember { UserViewModel() }
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userViewModel = remember { UserViewModel(currentUser.uid) }
                                 CreateAccount(userViewModel, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Create Account")
                             }
@@ -91,7 +98,7 @@ class MainActivity : ComponentActivity() {
                             if (currentUser != null) {
                                 val recipesViewModel = remember { RecipeListViewModel(currentUser.uid) }
                                 RecipesHome(currentUser.uid, recipesViewModel, navigationActions)
-                                Log.d("Compose", "Successfully composed screen Create Account")
+                                Log.d("Compose", "Successfully composed screen Recipes Home")
                             }
                         }
                     }

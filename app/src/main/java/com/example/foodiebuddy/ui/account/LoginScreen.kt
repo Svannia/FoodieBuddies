@@ -101,9 +101,9 @@ fun LoginScreen(navigationActions: NavigationActions) {
             )
             Spacer(Modifier.size(16.dp))
             Text(
-                text = stringResource(R.string.txt_signIn),
+                text = stringResource(R.string.button_signIn),
                 color = ContrastColor,
-                style = MyTypography.bodyLarge
+                style = MyTypography.bodyMedium
             )
         }
     } }
@@ -118,10 +118,11 @@ private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: 
                 userID,
                 onSuccess = {userExists ->
                     if (userExists) {
-
                         navigationActions.navigateTo(Route.RECIPES_HOME)
+                        Log.d("Login", "Successfully logged in app for user $userID")
                     } else {
                         navigationActions.navigateTo(Route.CREATE_ACCOUNT)
+                        Log.d("Login", "Successfully started creating account for user $userID")
                     }
                 },
                 onFailure = { e ->

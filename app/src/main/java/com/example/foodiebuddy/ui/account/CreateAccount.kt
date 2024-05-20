@@ -13,9 +13,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,22 +34,34 @@ import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.ScreenStructure
 import com.example.foodiebuddy.viewModels.UserViewModel
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.observeOn
+import kotlinx.coroutines.launch
 
 @Composable
-fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationActions, picture: Uri ?= null) {
+fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationActions) {
+    val coroutineScope = rememberCoroutineScope()
     val context = LocalContext.current
     val editingPicture = rememberSaveable { mutableStateOf(false) }
 
     // userViewModel
+    val userData by userViewModel.userData.collectAsState()
+    val defaultPicture = rememberSaveable { mutableStateOf(Uri.EMPTY) }
     val nameState = rememberSaveable { mutableStateOf("") }
-    val pictureState = rememberSaveable { mutableStateOf(Uri.parse("")) }
+    val pictureState = remember { mutableStateOf(defaultPicture.value) }
+    val bioState = rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(Unit) {
+        defaultPicture.value = userViewModel.getDefaultPicture()
+        pictureState.value = defaultPicture.value
+    }
 
     if (editingPicture.value) {
         SetProfilePicture(
             pictureState.value,
             onCancel = {
                 editingPicture.value = false
-                pictureState.value = Uri.parse("")
+                pictureState.value = defaultPicture.value
             }) { uri ->
             pictureState.value = uri
             editingPicture.value = false
@@ -56,8 +72,11 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
         }
     }
     else {
-        NewAccount(context, userViewModel, navigationActions, pictureState, nameState) {
+        NewAccount(context, userViewModel, navigationActions, nameState, pictureState, bioState) {
             editingPicture.value = true
+        }
+        BackHandler {
+            navigationActions.navigateTo(Route.LOGIN, true)
         }
     }
 

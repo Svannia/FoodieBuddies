@@ -1,23 +1,33 @@
 package com.example.foodiebuddy.viewModels
 
+import android.graphics.Picture
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.database.DatabaseConnection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 class UserViewModel(private val userID: String ?= null ) : ViewModel() {
     private val db = DatabaseConnection()
-    private val _userData = MutableStateFlow<User>(User(""))
+    private val _userData = MutableStateFlow<User>(User.empty())
     val userData: StateFlow<User> = _userData
 
-    init {
-        if (userID != null) {
-            // todo
-        } else {
-            Log.d("VM", "UserViewModel initiated without ID")
+    fun createUser(username: String, picture: Uri, bio: String) {
+        viewModelScope.launch {
+            if (userID != null) {
+                db.createUser(userID, username, picture, bio)
+            } else {
+                Log.d("VM", "Failed to create user: ID is null")
+            }
         }
+    }
+
+    suspend fun getDefaultPicture(): Uri {
+        return db.getDefaultPicture()
     }
 
 }
