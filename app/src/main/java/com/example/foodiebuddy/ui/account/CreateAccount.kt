@@ -18,14 +18,14 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
     val editingPicture = rememberSaveable { mutableStateOf(false) }
 
     // userViewModel
-    val defaultPicture = rememberSaveable { mutableStateOf(Uri.EMPTY) }
+    val currentPicture = rememberSaveable { mutableStateOf(Uri.EMPTY) }
     val nameState = rememberSaveable { mutableStateOf("") }
-    val pictureState = remember { mutableStateOf(defaultPicture.value) }
+    val pictureState = remember { mutableStateOf(currentPicture.value) }
     val bioState = rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
-        defaultPicture.value = userViewModel.getDefaultPicture()
-        pictureState.value = defaultPicture.value
+        currentPicture.value = userViewModel.getDefaultPicture()
+        pictureState.value = currentPicture.value
     }
 
     if (editingPicture.value) {
@@ -33,19 +33,32 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             pictureState.value,
             onCancel = {
                 editingPicture.value = false
-                pictureState.value = defaultPicture.value
+                pictureState.value = currentPicture.value
             }) { uri ->
             pictureState.value = uri
+            currentPicture.value = uri
             editingPicture.value = false
         }
         BackHandler {
             editingPicture.value = false
-            pictureState.value = Uri.parse("")
+            pictureState.value = currentPicture.value
         }
     }
     else {
-        NewAccount(context, userViewModel, navigationActions, nameState, pictureState, bioState) {
-            editingPicture.value = true
+        EditAccount(
+            context,
+            navigationActions,
+            navExtraActions = {
+                signOut(context)
+                deleteAuthentication(context)
+            },
+            nameState,
+            pictureState,
+            bioState,
+            onEditPicture = { editingPicture.value = true }
+        ) {
+            userViewModel.createUser(nameState.value, pictureState.value, bioState.value)
+            navigationActions.navigateTo(Route.RECIPES_HOME, true)
         }
         BackHandler {
             navigationActions.navigateTo(Route.LOGIN, true)

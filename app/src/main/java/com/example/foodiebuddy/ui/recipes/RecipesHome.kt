@@ -23,7 +23,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
         navigationActions.navigateTo(Route.RECIPES_HOME, true)
     }
     val userData by userViewModel.userData.collectAsState()
-    userViewModel.fetchUserData()
+    userViewModel.fetchUserData{}
 
     PrimaryScreen(
         navigationActions = navigationActions,

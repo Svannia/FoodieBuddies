@@ -15,6 +15,7 @@ val Pink40 = Color(0xFF7D5260)
 private val DarkGrey = Color(0xFF444444)
 private val LightGrey = Color(0xFFCCCCCC)
 
+val MyPurple = Color(0xFFA36ECC)
 val ContrastGrey: Color
 @Composable
 get() {

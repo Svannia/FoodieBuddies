@@ -3,14 +3,20 @@ package com.example.foodiebuddy.database
 import android.net.Uri
 import android.util.Log
 import com.example.foodiebuddy.data.User
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.tasks.await
+import kotlin.math.PI
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
 private const val BIO = "bio"
 private const val NUMBER_RECIPES = "numberRecipes"
+
+private const val defaultPicturePath = "userData/default.jpg"
 
 class DatabaseConnection {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
@@ -19,6 +25,16 @@ class DatabaseConnection {
     private val userDataCollection = db.collection("userData")
     private val storage = FirebaseStorage.getInstance().reference
 
+    fun getCurrentUserID(): String {
+        val userID = FirebaseAuth.getInstance().currentUser?.uid
+        return if (userID != null) {
+            Log.d("DB", "Successfully identified user $userID")
+            userID
+        } else {
+            Log.d("DB", "Failed to identify user")
+            ""
+        }
+    }
     // user data
     fun userExists(uid: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
         userDataCollection
@@ -29,8 +45,8 @@ class DatabaseConnection {
     }
 
     suspend fun createUser(uid: String, username: String, picture: Uri, bio: String) {
-       val formattedBio = bio.replace("\n", "\\n")
-        val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0)
+        val formattedBio = bio.replace("\n", "\\n")
+        val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
         userDataCollection
             .document(uid)
             .set(user)
@@ -57,19 +73,49 @@ class DatabaseConnection {
             val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
             val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
             val bio = document.getString(BIO) ?: ""
-            User(userID, username, picture, numberRecipes, bio)
+            val formattedBio = bio.replace("\\n", "\n")
+            User(userID, username, picture, numberRecipes, formattedBio)
         } else {
             Log.d("DB", "Failed to fetch user data for uid $userID")
             User.empty()
         }
     }
+    fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, callBack: () -> Unit) {
+        val formattedBio = bio.replace("\n", "\\n")
+        val task = hashMapOf(USERNAME to username, BIO to formattedBio)
+        userDataCollection
+            .document(userID)
+            .update(task as Map<String, Any>)
+            .addOnSuccessListener {
+                if (updatePicture) { updateUserPicture(userID, picture, callBack) }
+                else { callBack() }
+                Log.d("DB", "Successfully update user data")
+            }
+            .addOnFailureListener { e ->
+                Log.d("DB", "Failed to update user data with error $e")
+            }
+    }
+    fun deleteUser(userID: String, callBack: () -> Unit) {
+        Log.d("Debug", "deleting user")
+        userDataCollection
+            .document(userID)
+            .delete()
+            .addOnSuccessListener {
+                deleteProfilePicture(userID, callBack)
+                Log.d("DB", "Successfully deleted user $userID")
+            }
+            .addOnFailureListener { e ->
+                Log.d("DB", "Failed to delete user $userID with error $e")
+            }
+    }
+
 
     // storage pictures
     suspend fun getDefaultPicture(): Uri {
-        return storage.child("userData/default.jpg").downloadUrl.await()
+        return storage.child(defaultPicturePath).downloadUrl.await()
     }
     private fun addUserPicture(uid: String, picture: Uri) {
-        val pictureRef = storage.child("userData/$uid/profilePicture.jpg")
+        val pictureRef = storage.child(userPicturePath(uid))
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {
@@ -84,8 +130,8 @@ class DatabaseConnection {
 
     }
     private fun copyDefaultPicture(uid: String) {
-        val defaultRef = storage.child("userData/default.jpg")
-        val pictureRef = storage.child("userData/$uid/profilePicture.jpg")
+        val defaultRef = storage.child(defaultPicturePath)
+        val pictureRef = storage.child(userPicturePath(uid))
 
         defaultRef
             .getBytes(Long.MAX_VALUE)
@@ -103,6 +149,46 @@ class DatabaseConnection {
                     }
             }
     }
+    private fun updateUserPicture(userID: String, picture: Uri, callBack: () -> Unit) {
+        val pictureRef = storage.child(userPicturePath(userID))
+        pictureRef
+            .putFile(picture)
+            .addOnSuccessListener {
+                pictureRef.downloadUrl.addOnSuccessListener { uri ->
+                    userDataCollection.document(userID).update(PICTURE, uri.toString())
+                        .addOnSuccessListener { callBack() }
+                }
+                Log.d("DB", "Successfully updated user profile picture")
+            }
+            .addOnFailureListener { e ->
+                val errorCode = (e as? StorageException)?.errorCode
+                val httpErrorCode = (e as? StorageException)?.httpResultCode
+                Log.d("DB", "Failed to update user profile picture with error $e\n" +
+                        "errorCode is $errorCode\n" +
+                        "and http status is $httpErrorCode")
+            }
+    }
+    private fun userPicturePath(uid: String) = "userData/$uid/profilePicture.jpg"
+    private fun userPath(uid: String) = "userData/$uid"
+    private fun deleteProfilePicture(userID: String, callBack: () -> Unit) {
+        val folderRef = storage.child(userPath(userID))
+        folderRef.listAll().addOnSuccessListener { result ->
+            var deletedCount = 0
+            val totalCount = result.items.size
+            result.items.forEach { item ->
+                item.delete().addOnSuccessListener {
+                    deletedCount++
+                    Log.d("DB", "Successfully deleted stored files from user $userID")
+                    if (deletedCount == totalCount) { callBack() }
+                }.addOnFailureListener { e ->
+                    Log.d("DB", "Failed to delete stored files from user $userID with error $e")
+                }
+            }
+        }.addOnFailureListener { e ->
+            Log.d("DB", "Failed to list stored files from user $userID")
+        }
+    }
+
 
     // db tests
     fun addExamplePictureToStorage(picture: Uri) {
@@ -115,5 +201,4 @@ class DatabaseConnection {
                 Log.d("Debug", "failed to add image to storage")
             }
     }
-
 }

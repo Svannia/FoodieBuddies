@@ -1,29 +1,41 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <resources>
+    <string name="alert_deleteAccount">Es-tu sûr.e de vouloir supprimer ton compte?\nCette action n\'est pas réversible.</string>
+
     <string name="app_name">Foodie Buddies</string>
 
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
     <string name="button_cancel">Annuler</string>
+    <string name="button_delete">Supprimer</string>
+    <string name="button_deleteAccount">Supprimer le compte</string>
+    <string name="button_edit">Modifier</string>
+    <string name="button_modifyProfilePicture">Modifier la photo de profil</string>
     <string name="button_save">Sauvegarder</string>
     <string name="button_signIn">S\'enregistrer</string>
+    <string name="button_signOut">Se déconnecter</string>
 
     <string name="desc_appLogo">app logo</string>
+    <string name="desc_burgerMenu">burger menu</string>
+    <string name="desc_dstIcon">destination icon</string>
     <string name="desc_goBack">go back</string>
     <string name="desc_googleLogo">google logo</string>
+    <string name="desc_loading">loadingIcon</string>
     <string name="desc_profilePic">profile picture</string>
     <string name="desc_textFieldIcon">text field icon</string>
+
+    <string name="dst_account">Profil</string>
+    <string name="dst_settings">Paramètres</string>
 
     <string name="field_bio">Bio</string>
     <string name="field_maxChar">max. %1$s caractères</string>
     <string name="field_username">Nom d\'utilisateur</string>
 
-    <string name="title_createAccount">Création de compte</string>
+    <string name="title_account">Compte</string>
+    <string name="title_recipes">Recettes</string>
+    <string name="title_settings">Paramètres</string>
 
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
-    <string name="dst_account">Profil</string>
-    <string name="dst_settings">Paramètres</string>
-    <string name="desc_dstIcon">destination icon</string>
-    <string name="title_recipes">Recettes</string>
-    <string name="desc_burgerMenu">burger menu</string>
+
+    <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
 </resources>

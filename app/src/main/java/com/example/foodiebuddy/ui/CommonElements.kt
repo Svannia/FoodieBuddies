@@ -1,7 +1,15 @@
 package com.example.foodiebuddy.ui
 
 
+import android.graphics.Picture
+import android.net.Uri
 import android.util.Log
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -10,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -19,6 +28,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
@@ -30,12 +40,14 @@ import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,17 +57,29 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import coil.compose.AsyncImagePainter
 import coil.compose.rememberAsyncImagePainter
+import coil.compose.rememberImagePainter
+import coil.request.CachePolicy
+import coil.request.ImageRequest
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.navigation.BURGER_DESTINATIONS
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.ui.theme.ContrastGrey
+import com.example.foodiebuddy.ui.theme.MyPurple
 import com.example.foodiebuddy.ui.theme.MyTypography
+import com.example.foodiebuddy.ui.theme.Purple40
 import com.example.foodiebuddy.viewModels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -63,8 +87,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecondaryScreen(
-    navigationActions: NavigationActions,
     title: String,
+    navigationActions: NavigationActions,
     navExtraActions : () -> Unit,
     topBarIcons: @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
@@ -74,15 +98,22 @@ fun SecondaryScreen(
         topBar = {
             Box {
                 CenterAlignedTopAppBar(
-                    title = { Text(text = title, style = MyTypography.titleMedium) },
+                    title = { Text(text = title, style = MyTypography.titleMedium)},
                     navigationIcon = {
                         GoBackButton(navigationActions, navExtraActions)
                     },
-                    actions = { topBarIcons() }
-                )
-                Divider(color = ContrastGrey, thickness = 3.dp, modifier = Modifier.align(Alignment.BottomStart))
-            }
-
+                    actions = {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxHeight()
+                                .padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            topBarIcons()
+                        }
+                    }
+                )}
         },
         content = { content(it) }
     )
@@ -122,19 +153,7 @@ fun PrimaryScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Spacer(modifier = Modifier.size(16.dp))
-                    Box(
-                        modifier = Modifier
-                            .size(64.dp)
-                            .clip(CircleShape)
-                            .background(Color.Transparent)
-                    ) {
-                        Image(
-                            modifier = Modifier.fillMaxSize(),
-                            painter = rememberAsyncImagePainter(pictureState.value),
-                            contentDescription = stringResource(R.string.desc_profilePic),
-                            contentScale = ContentScale.FillBounds
-                        )
-                    }
+                    RoundImage(64.dp, pictureState.value, stringResource(R.string.desc_profilePic))
                     Text(text = nameState.value, style = MyTypography.bodyMedium)
                     Divider(color = ContrastGrey, thickness = 3.dp)
                 }
@@ -180,7 +199,48 @@ fun PrimaryScreen(
     }
 
 }
+@Composable
+fun LoadingPage() {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val infiniteTransition = rememberInfiniteTransition(label = stringResource(R.string.desc_loading))
+        val angle by infiniteTransition.animateFloat(
+            initialValue = 0f,
+            targetValue = 360f,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 1000, easing = LinearEasing)
+            ), label = stringResource(R.string.desc_loading)
+        )
 
+        Canvas(modifier = Modifier.size((100f).dp)) {
+            drawArc(
+                color = MyPurple,
+                startAngle = angle,
+                sweepAngle = 270f,
+                useCenter = false,
+                style = Stroke(width = 10f, cap = StrokeCap.Round)
+            )
+        }
+    }
+}
+@Composable
+fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(CircleShape)
+            .background(Color.Transparent)
+    ) {
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = rememberAsyncImagePainter(picture),
+            contentDescription = contentDescription,
+            contentScale = ContentScale.FillBounds
+        )
+    }
+}
 @Composable
 fun CustomTextField(
     value: String,

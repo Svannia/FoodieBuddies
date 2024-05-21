@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -61,7 +63,9 @@ import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomTextField
+import com.example.foodiebuddy.ui.RoundImage
 import com.example.foodiebuddy.ui.SecondaryScreen
+import com.example.foodiebuddy.ui.theme.MyPurple
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.SystemColor
 import com.example.foodiebuddy.viewModels.UserViewModel
@@ -72,9 +76,18 @@ import java.io.FileOutputStream
 import kotlin.math.abs
 
 @Composable
-fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions: NavigationActions, name: MutableState<String>, picture: MutableState<Uri>, bio: MutableState<String>, onEditPicture: () -> Unit) {
+fun EditAccount(
+    context: Context,
+    navigationActions: NavigationActions,
+    navExtraActions: () -> Unit,
+    name: MutableState<String>,
+    picture: MutableState<Uri>,
+    bio: MutableState<String>,
+    dataEdited: MutableState<Boolean> ?= null,
+    onEditPicture: () -> Unit,
+    onSave: () -> Unit
+) {
     // getting image and image permissions
-    Log.d("Debug", "picture is: ${picture.value}")
     val imageInput = "image/*"
     val getPicture = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         uri?.let {pictureUri ->
@@ -91,12 +104,9 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
         }
 
     SecondaryScreen(
+        title = "",
         navigationActions = navigationActions,
-        title = stringResource(R.string.title_createAccount),
-        navExtraActions = {
-            signOut(context)
-            deleteAuthentication(context)
-        },
+        navExtraActions = { navExtraActions() },
         topBarIcons = {},
         content = { paddingValue ->
             LazyColumn(
@@ -107,21 +117,7 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                item {
-                    Box(
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(CircleShape)
-                            .background(Color.Transparent)
-                    ) {
-                        Image(
-                            modifier = Modifier.fillMaxSize(),
-                            painter = rememberAsyncImagePainter(picture.value),
-                            contentDescription = stringResource(R.string.desc_profilePic),
-                            contentScale = ContentScale.FillBounds
-                        )
-                    }
-                }
+                item { RoundImage(100.dp, picture.value, stringResource(R.string.desc_profilePic)) }
                 item {
                     Text(
                         modifier = Modifier.clickable {
@@ -129,7 +125,7 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
                                 getPicture.launch(imageInput)
                             }
                         },
-                        text = stringResource(R.string.button_addProfilePicture),
+                        text = if (dataEdited != null) stringResource(R.string.button_modifyProfilePicture) else {stringResource(R.string.button_addProfilePicture)},
                         style = MyTypography.labelMedium
                     )
                     Spacer(modifier = Modifier.size(16.dp))
@@ -137,7 +133,10 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
                 item {
                     CustomTextField(
                         value = name.value,
-                        onValueChange = { name.value = it },
+                        onValueChange = {
+                            if (dataEdited != null) { dataEdited.value = true }
+                            name.value = it
+                        },
                         icon = R.drawable.user,
                         placeHolder = stringResource(R.string.field_username),
                         singleLine = true,
@@ -147,7 +146,10 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
                 item {
                     CustomTextField(
                         value = bio.value,
-                        onValueChange = { bio.value = it},
+                        onValueChange = {
+                            if (dataEdited != null) { dataEdited.value = true }
+                            bio.value = it
+                        },
                         icon = R.drawable.pencil,
                         placeHolder = stringResource(R.string.field_bio),
                         singleLine = false,
@@ -156,16 +158,8 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
                     Spacer(modifier = Modifier.size(16.dp))
                 }
                 item {
-                    Button(
-                        onClick = {
-                            navigationActions.navigateTo(Route.RECIPES_HOME, true)
-                            userViewModel.createUser(name.value, picture.value, bio.value)
-                        },
-                        modifier = Modifier.width(300.dp),
-                        enabled = name.value.isNotEmpty()
-                    ) {
-                        Text(stringResource(R.string.button_save), style = MyTypography.bodyMedium)
-                    }
+                    val isEnabled = dataEdited?.value ?: true
+                    SaveButton(name.value.isNotEmpty() && isEnabled) { onSave() }
                 }
             }
 
@@ -173,7 +167,19 @@ fun NewAccount(context: Context, userViewModel: UserViewModel, navigationActions
     )
 }
 
-private fun deleteAuthentication(context: Context) {
+@Composable
+private fun SaveButton(isEnabled: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = { onClick() },
+        modifier = Modifier.width(300.dp),
+        enabled = isEnabled,
+        colors = ButtonDefaults.buttonColors(containerColor = MyPurple)
+    ) {
+        Text(stringResource(R.string.button_save), style = MyTypography.bodyMedium)
+    }
+}
+
+fun deleteAuthentication(context: Context) {
     val user = FirebaseAuth.getInstance().currentUser
     user?.delete()
         ?.addOnCompleteListener {
@@ -185,7 +191,7 @@ private fun deleteAuthentication(context: Context) {
         }
 }
 
-private fun signOut(context: Context) {
+fun signOut(context: Context) {
     AuthUI.getInstance().signOut(context).addOnCompleteListener{
         if (it.isSuccessful) {
             Log.d("Login", "Successfully signed out")
@@ -205,7 +211,6 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
     val radius = minOf(screenWidth, screenHeight) / 2
     val imageInfo = computeMinScale(LocalContext.current, picture, radius, screenWidth, screenHeight)
 
-    Log.d("Debug", "image info: scale ${imageInfo.minScale} width ${imageInfo.width} height ${imageInfo.height}")
     var scale by remember { mutableFloatStateOf(imageInfo.minScale) }
     var offsetX by remember { mutableFloatStateOf(0f) }
     var offsetY by remember { mutableFloatStateOf(0f) }
@@ -309,11 +314,9 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
             val jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory::class.java)
             var imageHeight = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_HEIGHT)?.toFloat() ?: 0f
             var imageWidth = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_WIDTH)?.toFloat() ?: 0f
-            Log.d("Debug", "metadata height is $imageHeight")
         // Iterate through metadata directories and tags
         for (directory in metadata.directories) {
             for (tag in directory.tags) {
-                Log.d("Debug", "Metadata Tag: $tag")
             }
         }
         val exifDirectory = metadata.getFirstDirectoryOfType(ExifIFD0Directory::class.java)
@@ -323,20 +326,14 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
             imageHeight = imageWidth
             imageWidth = temp
         }
-            Log.d("Debug", "orientation: $orientation")
-            Log.d("Debug", "raw width $imageWidth height $imageHeight")
             val diameter = radius * 2
 
         while (imageWidth > screenWidth || imageHeight > screenHeight) {
-            Log.d("Debug", "screen height : $screenHeight screen width: $screenWidth")
-            Log.d("Debug", "image height : $imageHeight image width: $imageWidth")
             if (imageWidth > screenWidth) {
-                Log.d("Debug", "too wide")
                 val ratio = screenWidth / imageWidth
                 imageWidth = screenWidth
                 imageHeight *= ratio
             } else  {
-                Log.d("Debug", "too high")
                 val ratio = screenHeight / imageHeight
                 imageHeight = screenHeight
                 imageWidth *= ratio
@@ -346,8 +343,6 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
             val widthRatio = diameter / imageWidth
             val heightRatio = diameter / imageHeight
             val minScale = maxOf(widthRatio, heightRatio)
-            Log.d("Debug", "width $imageWidth height $imageHeight")
-            Log.d("Debug", " ratios width $widthRatio height $heightRatio")
             ImageInfo(minScale, imageWidth, imageHeight, orientation)
     } catch (e: Exception) {
         Log.d("Error", "Failed to calculate initial scale with $e")
@@ -361,14 +356,11 @@ private fun cropImage(context: Context, picture: Uri, imageWidth: Float, imageHe
     val inputStream = context.contentResolver.openInputStream(picture)
     val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
 
-    Log.d("Debug", "Cropping image with width $imageWidth and height $imageHeight and radius $radius")
     val correctedBitmap = if (orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270) {
         val matrix = Matrix()
         if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
-            Log.d("Debug", "90 orientation")
             matrix.setRotate(90f)
         } else {
-            Log.d("Debug", "270 orientation")
             matrix.setRotate(270f)
         }
         val orientedBitmap = Bitmap.createBitmap(originalBitmap, 0, 0, originalBitmap.width, originalBitmap.height, matrix, true)
@@ -376,8 +368,6 @@ private fun cropImage(context: Context, picture: Uri, imageWidth: Float, imageHe
     } else {
         Bitmap.createScaledBitmap(originalBitmap, (imageWidth).toInt(), (imageHeight).toInt(), true)
     }
-    Log.d("Debug", "corrected bitmap with width ${correctedBitmap.width} and height ${correctedBitmap.height}")
-    Log.d("Debug", "offsetX $offsetX and offsetY $offsetY")
     val centerX = correctedBitmap.width / 2 - offsetX
     val centerY = correctedBitmap.height / 2 - offsetY
 
@@ -385,15 +375,9 @@ private fun cropImage(context: Context, picture: Uri, imageWidth: Float, imageHe
     val cropTop = (centerY - radius).toInt()
     val cropRight = (centerX + radius).toInt()
     val cropBottom = (centerY + radius).toInt()
-    Log.d("Debug", "cropLeft: $cropLeft")
-    Log.d("Debug", "cropRight: $cropRight")
-    Log.d("Debug", "cropTop: $cropTop")
-    Log.d("Debug", "cropBottom: $cropBottom")
 
     val cropWidth = cropRight - cropLeft
     val cropHeight = cropBottom - cropTop
-    Log.d("Debug", "cropWidth: $cropWidth")
-    Log.d("Debug", "cropHeight: $cropHeight")
     val diameter = radius * 2
 
     val croppedBitmap = Bitmap.createBitmap(correctedBitmap, cropLeft, cropTop, cropWidth, cropHeight)

@@ -17,7 +17,7 @@ val MyTypography = Typography(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Normal,
         fontSize = 20.sp,
-        lineHeight = 20.sp,
+        lineHeight = 24.sp,
         letterSpacing = 0.5.sp),
 
     bodySmall = TextStyle(
@@ -40,6 +40,14 @@ val MyTypography = Typography(
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
         lineHeight = 28.sp,
+        letterSpacing = 0.5.sp,
+        textAlign = TextAlign.Center
+    ),
+    titleSmall = TextStyle(
+        fontFamily = FontFamily(Font(R.font.sf_pro_display)),
+        fontWeight = FontWeight.Bold,
+        fontSize = 24.sp,
+        lineHeight = 24.sp,
         letterSpacing = 0.5.sp,
         textAlign = TextAlign.Center
     ),

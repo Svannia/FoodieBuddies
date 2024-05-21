@@ -21,6 +21,7 @@ import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.account.AccountSettings
 import com.example.foodiebuddy.ui.account.CreateAccount
+import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
@@ -43,6 +44,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     val context = LocalContext.current
+
                     val navController = rememberNavController()
                     val navigationActions = NavigationActions(navController)
                     val startDestination = Route.START
@@ -86,12 +88,20 @@ class MainActivity : ComponentActivity() {
                                 Log.d("Compose", "Successfully composed screen Create Account")
                             }
                         }
+                        composable(Route.PROFILE) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userViewModel = remember { UserViewModel(currentUser.uid) }
+                                Profile(userViewModel, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Account Settings")
+                            }
+                        }
                         composable(Route.ACCOUNT_SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 val userViewModel = remember { UserViewModel(currentUser.uid) }
                                 AccountSettings(userViewModel, navigationActions)
-                                Log.d("Compose", "Successfully composed screen Account Settings")
+                                Log.d("Compose", "Successfully composed screen Profile")
                             }
                         }
                         // Composables for recipes-related routes
