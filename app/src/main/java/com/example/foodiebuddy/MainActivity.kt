@@ -16,7 +16,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.foodiebuddy.ui.account.LoginScreen
 import com.example.foodiebuddy.database.DatabaseConnection
-import com.example.foodiebuddy.errors.HandleError
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.account.AccountSettings
@@ -25,7 +25,6 @@ import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
-import com.example.foodiebuddy.viewModels.RecipeListViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -67,7 +66,7 @@ class MainActivity : ComponentActivity() {
                                         }
                                     },
                                     onFailure = { e ->
-                                        HandleError(context, "Failed to check user existence", e)
+                                        handleError(context, "Failed to check user existence", e)
                                         navigationActions.navigateTo(Route.LOGIN)
                                     }
                                 )

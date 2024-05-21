@@ -3,13 +3,11 @@ package com.example.foodiebuddy.database
 import android.net.Uri
 import android.util.Log
 import com.example.foodiebuddy.data.User
-import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.tasks.await
-import kotlin.math.PI
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
@@ -96,7 +94,6 @@ class DatabaseConnection {
             }
     }
     fun deleteUser(userID: String, callBack: () -> Unit) {
-        Log.d("Debug", "deleting user")
         userDataCollection
             .document(userID)
             .delete()
@@ -185,7 +182,7 @@ class DatabaseConnection {
                 }
             }
         }.addOnFailureListener { e ->
-            Log.d("DB", "Failed to list stored files from user $userID")
+            Log.d("DB", "Failed to list stored files from user $userID with error $e")
         }
     }
 
@@ -195,10 +192,8 @@ class DatabaseConnection {
         val ref = storage.child("tests/test.jpg")
         ref.putFile(picture)
             .addOnSuccessListener{
-                Log.d("Debug", "image added to storage")
             }
             .addOnFailureListener{
-                Log.d("Debug", "failed to add image to storage")
             }
     }
 }

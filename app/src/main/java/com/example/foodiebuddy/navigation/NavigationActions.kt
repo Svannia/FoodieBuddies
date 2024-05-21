@@ -21,7 +21,6 @@ open class NavigationActions(private val navController: NavHostController) {
     open fun goBack() {
         val currentRoute = navController.currentBackStackEntry?.destination?.route
         val previousRoute = navController.previousBackStackEntry?.destination?.route
-        Log.d("Debug", "previous route: $previousRoute")
         if (previousRoute == null) {
             if (currentRoute == Route.LOGIN || currentRoute == Route.CREATE_ACCOUNT) {
                 navController.navigate(Route.LOGIN) {

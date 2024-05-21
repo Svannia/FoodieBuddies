@@ -4,7 +4,6 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -54,7 +53,6 @@ val MyTypography = Typography(
     labelMedium = TextStyle(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Normal,
-        fontStyle = FontStyle(0),
         textDecoration = TextDecoration.Underline,
         fontSize = 16.sp,
         lineHeight = 16.sp,
@@ -63,7 +61,6 @@ val MyTypography = Typography(
     labelSmall = TextStyle(
         fontFamily = FontFamily(Font(R.font.sf_pro_display)),
         fontWeight = FontWeight.Normal,
-        fontStyle = FontStyle(0),
         fontSize = 14.sp,
         lineHeight = 14.sp,
         letterSpacing = 0.5.sp)

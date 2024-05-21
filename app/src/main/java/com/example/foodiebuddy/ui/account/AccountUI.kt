@@ -24,9 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,7 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
@@ -57,9 +54,8 @@ import com.drew.imaging.ImageMetadataReader
 import com.drew.metadata.exif.ExifIFD0Directory
 import com.drew.metadata.jpeg.JpegDirectory
 import com.example.foodiebuddy.R
-import com.example.foodiebuddy.errors.HandleError
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
-import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomTextField
@@ -68,7 +64,6 @@ import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.theme.MyPurple
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.SystemColor
-import com.example.foodiebuddy.viewModels.UserViewModel
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
@@ -186,7 +181,7 @@ fun deleteAuthentication(context: Context) {
             if (it.isSuccessful) {
                 Log.d("Login", "Successfully deleted authenticated user")
             } else {
-                HandleError(context, "Could not delete authenticated user")
+                handleError(context, "Could not delete authenticated user")
             }
         }
 }
@@ -196,7 +191,7 @@ fun signOut(context: Context) {
         if (it.isSuccessful) {
             Log.d("Login", "Successfully signed out")
         } else {
-            HandleError(context, "Could not delete sign out user")
+            handleError(context, "Could not delete sign out user")
         }
     }
 }
@@ -309,16 +304,11 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
     return try {
         val inputStream = context.contentResolver.openInputStream(picture)
 
+        val metadata = ImageMetadataReader.readMetadata(inputStream)
+        val jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory::class.java)
+        var imageHeight = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_HEIGHT)?.toFloat() ?: 0f
+        var imageWidth = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_WIDTH)?.toFloat() ?: 0f
 
-            val metadata = ImageMetadataReader.readMetadata(inputStream)
-            val jpegDirectory = metadata.getFirstDirectoryOfType(JpegDirectory::class.java)
-            var imageHeight = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_HEIGHT)?.toFloat() ?: 0f
-            var imageWidth = jpegDirectory?.getString(JpegDirectory.TAG_IMAGE_WIDTH)?.toFloat() ?: 0f
-        // Iterate through metadata directories and tags
-        for (directory in metadata.directories) {
-            for (tag in directory.tags) {
-            }
-        }
         val exifDirectory = metadata.getFirstDirectoryOfType(ExifIFD0Directory::class.java)
             val orientation = exifDirectory?.getString(ExifIFD0Directory.TAG_ORIENTATION)?.toInt()
         if (orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270) {

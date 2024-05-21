@@ -64,7 +64,6 @@ class UserViewModel(private val userID: String ?= null ) : ViewModel() {
     fun deleteUser(callBack: () -> Unit) {
         if (userID != null) {
             db.deleteUser(userID, callBack)
-            Log.d("Debug", "deleting user in VM")
         } else {
             Log.d("VM", "Failed to delete user: ID is null")
         }

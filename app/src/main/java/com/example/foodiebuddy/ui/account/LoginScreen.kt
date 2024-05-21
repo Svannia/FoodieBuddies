@@ -28,14 +28,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.database.DatabaseConnection
-import com.example.foodiebuddy.errors.HandleError
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.theme.ContrastColor
@@ -126,13 +122,13 @@ private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: 
                     }
                 },
                 onFailure = { e ->
-                    HandleError(context,"Failed to check user existence", e)
+                    handleError(context,"Failed to check user existence", e)
                 }
             )
         } else {
-            HandleError(context, "Failed to get user ID")
+            handleError(context, "Failed to get user ID")
         }
     } else {
-        HandleError(context, "Sign in failed")
+        handleError(context, "Sign in failed")
     }
 }
