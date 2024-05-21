@@ -267,6 +267,8 @@ fun CustomTextField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
+            cursorColor = MyPurple,
+            focusedIndicatorColor = MyPurple
         )
     )
 }
