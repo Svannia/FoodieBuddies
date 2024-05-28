@@ -13,6 +13,7 @@ firebaseAuthKtx = "23.0.0"
 navigationCompose = "2.7.7"
 firebaseFirestoreKtx = "25.0.0"
 lifecycleRuntimeComposeAndroid = "2.8.0"
+appcompat = "1.6.1"
 
 [libraries]
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
@@ -34,6 +35,7 @@ firebase-auth-ktx = { group = "com.google.firebase", name = "firebase-auth-ktx",
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 androidx-lifecycle-runtime-compose-android = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose-android", version.ref = "lifecycleRuntimeComposeAndroid" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -64,6 +64,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose.android)
+    implementation(libs.androidx.appcompat)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -89,4 +90,8 @@ dependencies {
     implementation("androidx.activity:activity-compose:1.3.1")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("com.drewnoakes:metadata-extractor:2.18.0")
+
+    // DataStore dependencies
+    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-core:1.0.0")
 }

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -61,9 +62,7 @@ import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.RoundImage
 import com.example.foodiebuddy.ui.SecondaryScreen
-import com.example.foodiebuddy.ui.theme.MyPurple
 import com.example.foodiebuddy.ui.theme.MyTypography
-import com.example.foodiebuddy.ui.theme.SystemColor
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
@@ -168,7 +167,7 @@ private fun SaveButton(isEnabled: Boolean, onClick: () -> Unit) {
         onClick = { onClick() },
         modifier = Modifier.width(300.dp),
         enabled = isEnabled,
-        colors = ButtonDefaults.buttonColors(containerColor = MyPurple)
+        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
     ) {
         Text(stringResource(R.string.button_save), style = MyTypography.bodyMedium)
     }
@@ -266,7 +265,7 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
             modifier = Modifier
                 .fillMaxWidth()
                 .height(50.dp)
-                .background(SystemColor)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             Row(
                 modifier = Modifier

@@ -2,6 +2,7 @@ package com.example.foodiebuddy.ui
 
 
 import android.net.Uri
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
@@ -32,6 +33,7 @@ import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
@@ -40,6 +42,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -63,8 +66,6 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.navigation.BURGER_DESTINATIONS
 import com.example.foodiebuddy.navigation.NavigationActions
-import com.example.foodiebuddy.ui.theme.ContrastGrey
-import com.example.foodiebuddy.ui.theme.MyPurple
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -98,7 +99,8 @@ fun SecondaryScreen(
                         ) {
                             topBarIcons()
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, scrolledContainerColor = MaterialTheme.colorScheme.background)
                 )}
         },
         content = { content(it) }
@@ -141,7 +143,7 @@ fun PrimaryScreen(
                     Spacer(modifier = Modifier.size(16.dp))
                     RoundImage(64.dp, pictureState.value, stringResource(R.string.desc_profilePic))
                     Text(text = nameState.value, style = MyTypography.bodyMedium)
-                    Divider(color = ContrastGrey, thickness = 3.dp)
+                    Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                 }
                 BURGER_DESTINATIONS.forEach { item ->
                     NavigationDrawerItem(
@@ -173,7 +175,7 @@ fun PrimaryScreen(
                         navigationIcon = { BurgerMenu(scope, drawerState) },
                         actions = { topBarIcons() }
                     )
-                    Divider(color = ContrastGrey, thickness = 3.dp, modifier = Modifier.align(Alignment.BottomStart))
+                    Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp, modifier = Modifier.align(Alignment.BottomStart))
                 }
 
             },
@@ -187,6 +189,7 @@ fun PrimaryScreen(
 }
 @Composable
 fun LoadingPage() {
+    BackHandler {}
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -200,9 +203,10 @@ fun LoadingPage() {
             ), label = stringResource(R.string.desc_loading)
         )
 
+        val primaryColour = MaterialTheme.colorScheme.primary
         Canvas(modifier = Modifier.size((100f).dp)) {
             drawArc(
-                color = MyPurple,
+                color = primaryColour,
                 startAngle = angle,
                 sweepAngle = 270f,
                 useCenter = false,
@@ -267,8 +271,8 @@ fun CustomTextField(
         colors = TextFieldDefaults.colors(
             focusedContainerColor = Color.Transparent,
             unfocusedContainerColor = Color.Transparent,
-            cursorColor = MyPurple,
-            focusedIndicatorColor = MyPurple
+            cursorColor = MaterialTheme.colorScheme.primary,
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary
         )
     )
 }

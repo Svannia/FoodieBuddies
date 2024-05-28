@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -34,8 +35,6 @@ import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
-import com.example.foodiebuddy.ui.theme.ContrastColor
-import com.example.foodiebuddy.ui.theme.ContrastGrey
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
@@ -84,7 +83,7 @@ fun LoginScreen(navigationActions: NavigationActions) {
                 containerColor = Color.Transparent
             ),
             modifier = Modifier
-                .border(width = 2.dp, color = ContrastGrey, shape = RoundedCornerShape(50))
+                .border(width = 2.dp, color = MaterialTheme.colorScheme.outline, shape = RoundedCornerShape(50))
                 .background(color = Color.Transparent, shape = RoundedCornerShape(50))
                 .width(302.dp)
                 .height(76.dp),
@@ -98,7 +97,7 @@ fun LoginScreen(navigationActions: NavigationActions) {
             Spacer(Modifier.size(16.dp))
             Text(
                 text = stringResource(R.string.button_signIn),
-                color = ContrastColor,
+                color = MaterialTheme.colorScheme.inversePrimary,
                 style = MyTypography.bodyMedium
             )
         }
