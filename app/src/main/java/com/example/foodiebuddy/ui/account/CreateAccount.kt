@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.viewModels.UserViewModel
@@ -57,7 +58,9 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             bioState,
             onEditPicture = { editingPicture.value = true }
         ) {
-            userViewModel.createUser(nameState.value, pictureState.value, bioState.value)
+            userViewModel.createUser(nameState.value, pictureState.value, bioState.value) {
+                if (it) { handleError(context, "Could not create user") }
+            }
             navigationActions.navigateTo(Route.RECIPES_HOME, true)
         }
         BackHandler {

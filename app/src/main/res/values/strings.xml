@@ -34,9 +34,13 @@
     <string name="notifChannel_newRecipe">Nouvelle recette ajoutée</string>
     <string name="notifChannel_newUser">Nouvel utilisateur</string>
 
+    <string name="notifContent_newUser">Foodie %1$s nous a rejoint, viens voir son profil !</string>
+
     <string name="notifDesc_newFavourite">Notifies you when a user has added your recipe to their favourites.</string>
     <string name="notifDesc_newRecipe">Notifies you when a user has added a new recipe.</string>
     <string name="notifDesc_newUser">Notifies you when a new user joins the app.</string>
+
+    <string name="notifTitle_newUser">Nouveau Foodie Buddy!</string>
 
     <string name="title_account">Compte</string>
     <string name="title_language">Langue</string>

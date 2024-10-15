@@ -52,4 +52,6 @@
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
+    <string name="notifTitle_newUser">New foodie buddy</string>
+    <string name="notifContent_newUser">Foodie %1$s joined us, come take a look at their profile!</string>
 </resources>

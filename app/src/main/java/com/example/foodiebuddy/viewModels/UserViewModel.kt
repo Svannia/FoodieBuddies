@@ -9,22 +9,28 @@ import com.example.foodiebuddy.database.DatabaseConnection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class UserViewModel(private val userID: String ?= null ) : ViewModel() {
+class UserViewModel
+@Inject
+constructor(private val userID: String ?= null) : ViewModel() {
     private val db = DatabaseConnection()
     private val _userData = MutableStateFlow(User.empty())
     val userData: StateFlow<User> = _userData
 
-    fun createUser(username: String, picture: Uri, bio: String) {
+    fun createUser(username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
-                db.createUser(userID, username, picture, bio)
+                db.createUser(userID, username, picture, bio) {
+                    isError(it)
+                }
             } else {
+                isError(true)
                 Log.d("VM", "Failed to create user: ID is null")
             }
         }
     }
-    fun fetchUserData(callBack: () -> Unit) {
+    fun fetchUserData(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.userExists(
                 uid = userID,
@@ -32,8 +38,12 @@ class UserViewModel(private val userID: String ?= null ) : ViewModel() {
                     if (userExists) {
                         viewModelScope.launch {
                             val newUser = db.fetchUserData(userID)
-                            _userData.value = newUser
-                            callBack()
+                            if (newUser.isEmpty()) { isError(true) }
+                            else {
+                                isError(false)
+                                _userData.value = newUser
+                                callBack()
+                            }
                         }
                     }
                 },
@@ -47,10 +57,10 @@ class UserViewModel(private val userID: String ?= null ) : ViewModel() {
     suspend fun getDefaultPicture(): Uri {
         return db.getDefaultPicture()
     }
-    fun updateUser(username: String, picture: Uri, bio: String, updatePicture: Boolean, callBack: () -> Unit) {
+    fun updateUser(username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
-            db.updateUser(userID, username, picture, bio, updatePicture) {
-                fetchUserData {callBack()}
+            db.updateUser(userID, username, picture, bio, updatePicture, { isError(it) }) {
+                fetchUserData({ isError(it) }) {callBack()}
             }
         }  else {
             Log.d("VM", "Failed to update user: ID is null")
@@ -61,9 +71,9 @@ class UserViewModel(private val userID: String ?= null ) : ViewModel() {
         return db.getCurrentUserID()
     }
 
-    fun deleteUser(callBack: () -> Unit) {
+    fun deleteUser(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
-            db.deleteUser(userID, callBack)
+            db.deleteUser(userID, { isError(it) }, callBack)
         } else {
             Log.d("VM", "Failed to delete user: ID is null")
         }

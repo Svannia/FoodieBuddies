@@ -1,7 +1,5 @@
 package com.example.foodiebuddy
 
-
-import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -9,7 +7,6 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -20,9 +17,7 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.findNavController
 import androidx.navigation.navArgument
-import androidx.navigation.navDeepLink
 import com.example.foodiebuddy.ui.account.LoginScreen
 import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.handleError
@@ -34,9 +29,8 @@ import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
-import com.example.foodiebuddy.viewModels.PreferencesViewModel
+import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
-import com.firebase.ui.auth.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
@@ -48,11 +42,9 @@ class MainActivity : ComponentActivity() {
         auth = FirebaseAuth.getInstance()
         val db = DatabaseConnection()
 
-        handleIntent(intent)
-
         setContent {
-            val prefViewModel: PreferencesViewModel = viewModel()
-            val currentTheme by prefViewModel.currentTheme.collectAsState()
+            val offlinePrefViewModel: OfflinePreferencesViewModel = viewModel()
+            val currentTheme by offlinePrefViewModel.currentTheme.collectAsState()
 
             FoodieBuddyTheme(themeChoice = currentTheme) {
                 Surface(
@@ -63,8 +55,6 @@ class MainActivity : ComponentActivity() {
 
                     val navController = rememberNavController()
                     val navigationActions = NavigationActions(navController)
-
-
 
                     NavHost(navController, startDestination) {
                         composable(Route.START) {
@@ -99,16 +89,20 @@ class MainActivity : ComponentActivity() {
                         composable(Route.CREATE_ACCOUNT) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userViewModel = remember { UserViewModel(currentUser.uid) }
-                                CreateAccount(userViewModel, navigationActions)
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                CreateAccount(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Create Account")
                             }
                         }
                         composable(Route.PROFILE) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userViewModel = remember { UserViewModel(currentUser.uid) }
-                                Profile(userViewModel, navigationActions)
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                Profile(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Profile")
                             }
                         }
@@ -116,21 +110,26 @@ class MainActivity : ComponentActivity() {
                             route = "${Route.PROFILE}/{userID}",
                             arguments = listOf(navArgument("userID") { type = NavType.StringType })) {
                                 backStackEntry ->
-                            Log.d("Debug", "backstack has arg ${backStackEntry.arguments}")
-                            val userID = backStackEntry.arguments?.getString("userID")
+                            Log.d("Debug", "backstack has userID ${backStackEntry.arguments?.getString("userID")}")
+                            val userID =
+                                backStackEntry.arguments?.getString("userID")// ?: notificationData
                             Log.d("Debug", "For now userID is $userID")
                             if (userID != null) {
                                 Log.d("Debug", "userID is oke $userID")
-                                val userViewModel = remember { UserViewModel(userID) }
-                                Profile(userViewModel, navigationActions)
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(userID)
+                                }
+                                Profile(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Profile of user $userID")
                             }
                         }
                         composable(Route.ACCOUNT_SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userViewModel = remember { UserViewModel(currentUser.uid) }
-                                AccountSettings(userViewModel, navigationActions)
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                AccountSettings(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Account Settings")
                             }
                         }
@@ -138,8 +137,10 @@ class MainActivity : ComponentActivity() {
                         composable(Route.RECIPES_HOME) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userViewModel = remember { UserViewModel(currentUser.uid) }
-                                RecipesHome(userViewModel, navigationActions)
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                RecipesHome(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipes Home")
                             }
                         }
@@ -147,8 +148,10 @@ class MainActivity : ComponentActivity() {
                         composable(Route.SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userViewModel = remember { UserViewModel(currentUser.uid) }
-                                Settings(userViewModel, prefViewModel, navigationActions)
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                Settings(userVM, offlinePrefViewModel,  navigationActions)
                                 Log.d("Compose", "Successfully composed screen Settings")
                             }
                         }
@@ -156,28 +159,5 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-    private fun handleIntent(intent: Intent) {
-        val intentExtras = intent.extras
-        val isNotificationIntent = intentExtras?.getBoolean("notification_intent", false)
-        if (intentExtras != null && isNotificationIntent == true) {
-            val channelID = intentExtras.getInt("notification_channel", -1)
-            val intentData = intentExtras.getString("notification_data", "")
-            Log.d("Debug", "other extras are $channelID and $intentData")
-            if (channelID == 0) {
-                startDestination = "${Route.SETTINGS}"
-                Log.d("Debug", "destination changed to $startDestination")
-            }
-            Log.d("Debug", "new intent!!")
-        } else {
-            Log.d("Debug", "nope for $isNotificationIntent and intent $intent with extras ${intent.extras}")
-        }
-    }
-    @Override
-    override fun onNewIntent(intent: Intent) {
-        Log.d("Debug", "New intent")
-        super.onNewIntent(intent)
-        handleIntent(intent)
-
     }
 }

@@ -18,9 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.RoundImage
@@ -31,6 +33,7 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 @Composable
 fun Profile(userViewModel: UserViewModel, navigationActions: NavigationActions) {
 
+    val context = LocalContext.current
     val userData by userViewModel.userData.collectAsState()
 
     val nameState = rememberSaveable { mutableStateOf(userData.username) }
@@ -39,7 +42,9 @@ fun Profile(userViewModel: UserViewModel, navigationActions: NavigationActions) 
     val bioState = rememberSaveable { mutableStateOf(userData.bio) }
 
     LaunchedEffect(Unit) {
-        userViewModel.fetchUserData{
+        userViewModel.fetchUserData({
+            if (it) { handleError(context, "Could not fetch user data") }
+        }){
             nameState.value = userData.username
             countState.intValue = userData.numberRecipes
             bioState.value = userData.bio
@@ -58,7 +63,9 @@ fun Profile(userViewModel: UserViewModel, navigationActions: NavigationActions) 
         navigationActions = navigationActions,
         navExtraActions = {},
         topBarIcons = {
-            if (userData.uid == userViewModel.getCurrentUserID()) {
+            if (userViewModel.getCurrentUserID() == "") {
+                handleError(LocalContext.current, "Could not fetch current user ID")
+            } else if (userData.uid == userViewModel.getCurrentUserID()) {
                 Text(
                     text = stringResource(R.string.button_edit),
                     style = MyTypography.bodySmall,

@@ -42,23 +42,25 @@ class DatabaseConnection {
             .addOnFailureListener { e -> onFailure(e) }
     }
 
-    suspend fun createUser(uid: String, username: String, picture: Uri, bio: String) {
+    suspend fun createUser(uid: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
         val formattedBio = bio.replace("\n", "\\n")
         val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
         userDataCollection
             .document(uid)
             .set(user)
             .addOnSuccessListener {
+                isError(false)
                 Log.d("DB", "Successfully created user")
             }
             .addOnFailureListener {e ->
+                isError(true)
                 Log.d("DB", "Failed to create user with error $e")
                 return@addOnFailureListener
             }
         if (picture != getDefaultPicture()) {
-            addUserPicture(uid, picture)
+            addUserPicture(uid, picture) { isError(it) }
         } else {
-            copyDefaultPicture(uid)
+            copyDefaultPicture(uid) { isError(it) }
         }
     }
 
@@ -78,30 +80,34 @@ class DatabaseConnection {
             User.empty()
         }
     }
-    fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, callBack: () -> Unit) {
+    fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val formattedBio = bio.replace("\n", "\\n")
         val task = hashMapOf(USERNAME to username, BIO to formattedBio)
         userDataCollection
             .document(userID)
             .update(task as Map<String, Any>)
             .addOnSuccessListener {
-                if (updatePicture) { updateUserPicture(userID, picture, callBack) }
+                if (updatePicture) { updateUserPicture(userID, picture, { isError(it) }, callBack) }
                 else { callBack() }
+                isError(false)
                 Log.d("DB", "Successfully update user data")
             }
             .addOnFailureListener { e ->
+                isError(true)
                 Log.d("DB", "Failed to update user data with error $e")
             }
     }
-    fun deleteUser(userID: String, callBack: () -> Unit) {
+    fun deleteUser(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         userDataCollection
             .document(userID)
             .delete()
             .addOnSuccessListener {
-                deleteProfilePicture(userID, callBack)
+                deleteProfilePicture(userID, { isError(it) }, callBack)
+                isError(false)
                 Log.d("DB", "Successfully deleted user $userID")
             }
             .addOnFailureListener { e ->
+                isError(true)
                 Log.d("DB", "Failed to delete user $userID with error $e")
             }
     }
@@ -111,22 +117,24 @@ class DatabaseConnection {
     suspend fun getDefaultPicture(): Uri {
         return storage.child(defaultPicturePath).downloadUrl.await()
     }
-    private fun addUserPicture(uid: String, picture: Uri) {
+    private fun addUserPicture(uid: String, picture: Uri, isError: (Boolean) -> Unit) {
         val pictureRef = storage.child(userPicturePath(uid))
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {
                 pictureRef.downloadUrl.addOnSuccessListener { uri ->
                     userDataCollection.document(uid).update(PICTURE, uri.toString())
+                    isError(false)
                     Log.d("DB", "Successfully added user profile picture")
                 }
             }
             .addOnFailureListener { e ->
+                isError(true)
                 Log.d("DB", "Failed to add user profile picture with error: $e")
             }
 
     }
-    private fun copyDefaultPicture(uid: String) {
+    private fun copyDefaultPicture(uid: String, isError: (Boolean) -> Unit) {
         val defaultRef = storage.child(defaultPicturePath)
         val pictureRef = storage.child(userPicturePath(uid))
 
@@ -138,28 +146,34 @@ class DatabaseConnection {
                     .addOnSuccessListener {
                         pictureRef.downloadUrl.addOnSuccessListener { uri ->
                             userDataCollection.document(uid).update(PICTURE, uri.toString())
+                            isError(false)
                             Log.d("DB", "Successfully added user profile picture")
                         }
                     }
                     .addOnFailureListener { e ->
+                        isError(true)
                         Log.d("DB", "Failed to add user profile picture with error: $e")
                     }
             }
     }
-    private fun updateUserPicture(userID: String, picture: Uri, callBack: () -> Unit) {
+    private fun updateUserPicture(userID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val pictureRef = storage.child(userPicturePath(userID))
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {
                 pictureRef.downloadUrl.addOnSuccessListener { uri ->
                     userDataCollection.document(userID).update(PICTURE, uri.toString())
-                        .addOnSuccessListener { callBack() }
+                        .addOnSuccessListener {
+                            isError(false)
+                            callBack()
+                        }
                 }
                 Log.d("DB", "Successfully updated user profile picture")
             }
             .addOnFailureListener { e ->
                 val errorCode = (e as? StorageException)?.errorCode
                 val httpErrorCode = (e as? StorageException)?.httpResultCode
+                isError(true)
                 Log.d("DB", "Failed to update user profile picture with error $e\n" +
                         "errorCode is $errorCode\n" +
                         "and http status is $httpErrorCode")
@@ -167,7 +181,7 @@ class DatabaseConnection {
     }
     private fun userPicturePath(uid: String) = "userData/$uid/profilePicture.jpg"
     private fun userPath(uid: String) = "userData/$uid"
-    private fun deleteProfilePicture(userID: String, callBack: () -> Unit) {
+    private fun deleteProfilePicture(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val folderRef = storage.child(userPath(userID))
         folderRef.listAll().addOnSuccessListener { result ->
             var deletedCount = 0
@@ -175,13 +189,16 @@ class DatabaseConnection {
             result.items.forEach { item ->
                 item.delete().addOnSuccessListener {
                     deletedCount++
+                    isError(false)
                     Log.d("DB", "Successfully deleted stored files from user $userID")
                     if (deletedCount == totalCount) { callBack() }
                 }.addOnFailureListener { e ->
+                    isError(true)
                     Log.d("DB", "Failed to delete stored files from user $userID with error $e")
                 }
             }
         }.addOnFailureListener { e ->
+            isError(true)
             Log.d("DB", "Failed to list stored files from user $userID with error $e")
         }
     }

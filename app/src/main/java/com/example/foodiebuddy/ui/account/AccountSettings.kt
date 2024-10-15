@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.platform.LocalContext
 import com.example.foodiebuddy.data.User
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.LoadingPage
@@ -32,7 +33,9 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
     val pictureEdited = rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        userViewModel.fetchUserData{
+        userViewModel.fetchUserData({
+            if (it) { handleError(context, "Could not fetch user data") }
+        }){
             if (userData != User.empty()) {
                 nameState.value = userData.username
                 pictureState.value = userData.picture
@@ -83,7 +86,9 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                 onEditPicture = { editingPicture.value = true }
             ) {
                 loadingData.value = true
-                userViewModel.updateUser(nameState.value, pictureState.value, bioState.value, pictureEdited.value) {
+                userViewModel.updateUser(nameState.value, pictureState.value, bioState.value, pictureEdited.value, {
+                    if (it) { handleError(context, "Could not update user data") }
+                }) {
                     navigationActions.goBack()
                     loadingData.value = false
                 }

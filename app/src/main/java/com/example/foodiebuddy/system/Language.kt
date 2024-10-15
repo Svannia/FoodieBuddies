@@ -4,8 +4,6 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
-import android.util.Log
-import java.util.Locale
 
 fun getCurrentLocale(context: Context) : String {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {

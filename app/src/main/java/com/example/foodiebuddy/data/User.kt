@@ -8,4 +8,7 @@ data class User(val uid: String, val username: String, val picture: Uri, val num
             return User("", "", Uri.EMPTY, 0, "")
         }
     }
+    fun isEmpty(): Boolean {
+        return this == User.empty()
+    }
 }
