@@ -20,9 +20,21 @@ class DatabaseConnection {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     // db collections
+
+    /**
+     * Contains fields username, picture, bio and numberRecipes
+     */
     private val userDataCollection = db.collection("userData")
+    /**
+     * Contains userData/ path for profile pictures and tests/ path for testing picture-adding
+     */
     private val storage = FirebaseStorage.getInstance().reference
 
+    /**
+     * Fetches the unique ID of the currently logged-in user.
+     *
+     * @return UID
+     */
     fun getCurrentUserID(): String {
         val userID = FirebaseAuth.getInstance().currentUser?.uid
         return if (userID != null) {
@@ -34,19 +46,36 @@ class DatabaseConnection {
         }
     }
     // user data
-    fun userExists(uid: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+    /**
+     * Checks if a user exists in the DB.
+     * 
+     * @param userID ID of the user whose existence to check
+     * @param onSuccess block that runs if the check succeeds (whether or not the user exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun userExists(userID: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
         userDataCollection
-            .document(uid)
+            .document(userID)
             .get()
             .addOnSuccessListener { document -> onSuccess(document.exists()) }
             .addOnFailureListener { e -> onFailure(e) }
     }
 
-    suspend fun createUser(uid: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
+    /**
+     * Creates a new user profile given all the input information.
+     * The userID and username are mandatory, bio can be empty and the default profile picture is used if no picture was input.
+     *
+     * @param userID ID of the user to create
+     * @param username of the new user
+     * @param picture Uri of the new user's picture or default picture
+     * @param bio of the new user
+     * @param isError block that runs if there is an error executing the function
+     */
+    suspend fun createUser(userID: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
         val formattedBio = bio.replace("\n", "\\n")
         val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
         userDataCollection
-            .document(uid)
+            .document(userID)
             .set(user)
             .addOnSuccessListener {
                 isError(false)
@@ -58,12 +87,18 @@ class DatabaseConnection {
                 return@addOnFailureListener
             }
         if (picture != getDefaultPicture()) {
-            addUserPicture(uid, picture) { isError(it) }
+            addUserPicture(userID, picture) { isError(it) }
         } else {
-            copyDefaultPicture(uid) { isError(it) }
+            copyDefaultPicture(userID) { isError(it) }
         }
     }
 
+    /**
+     * Fetches all of a user's profile data.
+     *
+     * @param userID ID of the user whose data to retrieve
+     * @return User data structure with all profile data
+     */
     suspend fun fetchUserData(userID: String): User {
         if (userID.isEmpty()) { return User.empty()}
 
@@ -76,10 +111,22 @@ class DatabaseConnection {
             val formattedBio = bio.replace("\\n", "\n")
             User(userID, username, picture, numberRecipes, formattedBio)
         } else {
-            Log.d("DB", "Failed to fetch user data for uid $userID")
+            Log.d("DB", "Failed to fetch user data for userID $userID")
             User.empty()
         }
     }
+
+    /**
+     * Modifies a given user with the new input profile data.
+     *
+     * @param userID ID of the user to edit
+     * @param username new input by existing user
+     * @param picture of the new input profile picture
+     * @param bio new input by existing user
+     * @param updatePicture inner function to change profile picture in storage will only be called if new picture was input
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val formattedBio = bio.replace("\n", "\\n")
         val task = hashMapOf(USERNAME to username, BIO to formattedBio)
@@ -97,6 +144,14 @@ class DatabaseConnection {
                 Log.d("DB", "Failed to update user data with error $e")
             }
     }
+
+    /**
+     * Deletes a user and all their related info from the DB.
+     *
+     * @param userID ID of the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun deleteUser(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         userDataCollection
             .document(userID)
@@ -114,16 +169,29 @@ class DatabaseConnection {
 
 
     // storage pictures
+    /**
+     * Retrieves the default (empty) profile picture from the storage.
+     *
+     * @return Uri of the default profile picture
+     */
     suspend fun getDefaultPicture(): Uri {
         return storage.child(defaultPicturePath).downloadUrl.await()
     }
-    private fun addUserPicture(uid: String, picture: Uri, isError: (Boolean) -> Unit) {
-        val pictureRef = storage.child(userPicturePath(uid))
+
+    /**
+     * Adds the user-input profile picture to storage (creates the user's data path in storage).
+     *
+     * @param userID ID of the user
+     * @param picture Uri of the user-input profile picture
+     * @param isError block that runs if there is an error executing the function
+     */
+    private fun addUserPicture(userID: String, picture: Uri, isError: (Boolean) -> Unit) {
+        val pictureRef = storage.child(userPicturePath(userID))
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {
                 pictureRef.downloadUrl.addOnSuccessListener { uri ->
-                    userDataCollection.document(uid).update(PICTURE, uri.toString())
+                    userDataCollection.document(userID).update(PICTURE, uri.toString())
                     isError(false)
                     Log.d("DB", "Successfully added user profile picture")
                 }
@@ -134,9 +202,16 @@ class DatabaseConnection {
             }
 
     }
-    private fun copyDefaultPicture(uid: String, isError: (Boolean) -> Unit) {
+
+    /**
+     * Copies the stores default profile picture into the user's profile picture data in Storage.
+     *
+     * @param userID ID of the user
+     * @param isError block that runs if there is an error executing the function
+     */
+    private fun copyDefaultPicture(userID: String, isError: (Boolean) -> Unit) {
         val defaultRef = storage.child(defaultPicturePath)
-        val pictureRef = storage.child(userPicturePath(uid))
+        val pictureRef = storage.child(userPicturePath(userID))
 
         defaultRef
             .getBytes(Long.MAX_VALUE)
@@ -145,7 +220,7 @@ class DatabaseConnection {
                     .putBytes(defaultData)
                     .addOnSuccessListener {
                         pictureRef.downloadUrl.addOnSuccessListener { uri ->
-                            userDataCollection.document(uid).update(PICTURE, uri.toString())
+                            userDataCollection.document(userID).update(PICTURE, uri.toString())
                             isError(false)
                             Log.d("DB", "Successfully added user profile picture")
                         }
@@ -156,6 +231,15 @@ class DatabaseConnection {
                     }
             }
     }
+
+    /**
+     * Accesses the existing user data path in Storage to update new picture.
+     *
+     * @param userID ID of the user
+     * @param picture new picture to be updated in Storage
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun updateUserPicture(userID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val pictureRef = storage.child(userPicturePath(userID))
         pictureRef
@@ -179,8 +263,31 @@ class DatabaseConnection {
                         "and http status is $httpErrorCode")
             }
     }
-    private fun userPicturePath(uid: String) = "userData/$uid/profilePicture.jpg"
-    private fun userPath(uid: String) = "userData/$uid"
+
+    /**
+     * Retrieves the data path in Storage to access a user's profile picture.
+     *
+     * @param userID ID of the user
+     * @return path in Storage
+     */
+    private fun userPicturePath(userID: String) = "userData/$userID/profilePicture.jpg"
+
+    /**
+     * Retrieves the data path in Storage to access a user's data.
+     *
+     * @param userID ID of the user
+     * @return path in Storage
+     */
+    private fun userPath(userID: String) = "userData/$userID"
+
+    /**
+     * Deletes a user's profile picture from the Storage.
+     * This is only meant to be used when the user deletes their account: the corresponding path in Storage is also deleted.
+     *
+     * @param userID ID of the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun deleteProfilePicture(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val folderRef = storage.child(userPath(userID))
         folderRef.listAll().addOnSuccessListener { result ->
@@ -205,6 +312,11 @@ class DatabaseConnection {
 
 
     // db tests
+    /**
+     * For testing purposed, adds picture in a specific path in Storage meant for testing.
+     *
+     * @param picture that is added in Storage for tests
+     */
     fun addExamplePictureToStorage(picture: Uri) {
         val ref = storage.child("tests/test.jpg")
         ref.putFile(picture)

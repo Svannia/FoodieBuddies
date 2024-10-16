@@ -362,7 +362,7 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
             val minScale = maxOf(widthRatio, heightRatio)
             ImageInfo(minScale, imageWidth, imageHeight, orientation)
     } catch (e: Exception) {
-        Log.d("Error", "Failed to calculate initial scale with $e")
+        handleError(context, "Failed to calculate initial scale", e)
         ImageInfo(1.5f, 0f, 0f, ExifInterface.ORIENTATION_NORMAL)
     }
 }

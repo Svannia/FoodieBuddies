@@ -12,6 +12,12 @@ private const val THEME = "theme_choice"
 
 private val Context.dataStore by preferencesDataStore(name = SETTINGS)
 
+/**
+ * The DataStore contains locally-stored information.
+ * Here it contains user preferences for the theme, stored in the DataStore under SETTINGS
+ *
+ * @property context used to access the DataStore
+ */
 class DataStoreManager(private val context: Context) {
     private val themeKey = stringPreferencesKey(THEME)
 
@@ -20,6 +26,11 @@ class DataStoreManager(private val context: Context) {
             preferences[themeKey] ?: ThemeChoice.SYSTEM_DEFAULT.name
         }
 
+    /**
+     * Updates the DataStore with the user's preferred theme.
+     *
+     * @param themeChoice SYSTEM_DEFAULT, LIGHT or DARK
+     */
     suspend fun setThemeChoice(themeChoice: ThemeChoice) {
         context.dataStore.edit { preferences ->
             preferences[themeKey] = themeChoice.name

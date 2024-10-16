@@ -33,7 +33,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun fetchUserData(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.userExists(
-                uid = userID,
+                userID = userID,
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
@@ -48,7 +48,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                     }
                 },
                 onFailure = { e ->
-                    Log.d("Error", "Failed to check user existence when fetching in VM with error $e")
+                    Log.d("VM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         }

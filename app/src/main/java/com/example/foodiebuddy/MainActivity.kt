@@ -59,28 +59,37 @@ class MainActivity : ComponentActivity() {
                     NavHost(navController, startDestination) {
                         composable(Route.START) {
                             val currentUser = remember { auth.currentUser }
+                            // if there currently exists an authenticated user ->
                             if (currentUser != null) {
                                 Log.d("Login", "Logging in with user ${currentUser.uid}")
+                                // check if the user profile exists ->
                                 db.userExists(
-                                    uid = currentUser.uid,
+                                    userID = currentUser.uid,
                                     onSuccess = { userExists ->
+                                        // if the user exists -> start app on the home page
                                         if (userExists) {
                                             Log.d("Login", "Successfully logged in user ${currentUser.uid}")
                                             navigationActions.navigateTo(Route.RECIPES_HOME)
+                                        // if the user does not exist (it means they have already auth with Google but haven't finished creating an account
+                                        // -> start app on the create account page
                                         } else {
                                             Log.d("Login", "Creating account for user ${currentUser.uid}")
                                             navigationActions.navigateTo(Route.CREATE_ACCOUNT)
                                         }
                                     },
+                                    // if checking for user existence failed -> start app on login page
                                     onFailure = { e ->
                                         handleError(context, "Failed to check user existence", e)
                                         navigationActions.navigateTo(Route.LOGIN)
                                     }
                                 )
+                            // if there is no currently authenticated user -> start app on login page
                             } else {
                                 navigationActions.navigateTo(Route.LOGIN)
                             }
                         }
+
+
                         // Composables for account-related routes
                         composable(Route.LOGIN) {
                             LoginScreen(navigationActions)
@@ -110,12 +119,9 @@ class MainActivity : ComponentActivity() {
                             route = "${Route.PROFILE}/{userID}",
                             arguments = listOf(navArgument("userID") { type = NavType.StringType })) {
                                 backStackEntry ->
-                            Log.d("Debug", "backstack has userID ${backStackEntry.arguments?.getString("userID")}")
                             val userID =
-                                backStackEntry.arguments?.getString("userID")// ?: notificationData
-                            Log.d("Debug", "For now userID is $userID")
+                                backStackEntry.arguments?.getString("userID")
                             if (userID != null) {
-                                Log.d("Debug", "userID is oke $userID")
                                 val userVM: UserViewModel = viewModel {
                                     UserViewModel(userID)
                                 }
@@ -133,6 +139,8 @@ class MainActivity : ComponentActivity() {
                                 Log.d("Compose", "Successfully composed screen Account Settings")
                             }
                         }
+
+
                         // Composables for recipes-related routes
                         composable(Route.RECIPES_HOME) {
                             val currentUser = remember { auth.currentUser }
@@ -144,6 +152,8 @@ class MainActivity : ComponentActivity() {
                                 Log.d("Compose", "Successfully composed screen Recipes Home")
                             }
                         }
+
+
                         // Composables for settings and system
                         composable(Route.SETTINGS) {
                             val currentUser = remember { auth.currentUser }
