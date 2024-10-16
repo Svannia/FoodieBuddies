@@ -9,6 +9,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/**
+ * ViewModel for data that can be accessed offline because it is stored locally.
+ *
+ * @property application to access the DataStoreManager
+ */
 class OfflinePreferencesViewModel(application: Application) : AndroidViewModel(application) {
     private val dataStoreManager = DataStoreManager(application)
 
@@ -19,6 +24,11 @@ class OfflinePreferencesViewModel(application: Application) : AndroidViewModel(a
         loadTheme()
     }
 
+    /**
+     * Sets a specific theme on the entire app (dark or light) and updates that choice in local data.
+     *
+     * @param themeChoice theme be be set
+     */
     fun setTheme(themeChoice: ThemeChoice) {
         viewModelScope.launch {
             _currentTheme.value = themeChoice
@@ -26,6 +36,9 @@ class OfflinePreferencesViewModel(application: Application) : AndroidViewModel(a
         }
     }
 
+    /**
+     * Fetches the user-chosen theme from local data.
+     */
     private fun loadTheme() {
         viewModelScope.launch {
             dataStoreManager.themeChoice.collect { themeName ->

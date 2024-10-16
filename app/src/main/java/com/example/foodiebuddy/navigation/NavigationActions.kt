@@ -22,7 +22,7 @@ open class NavigationActions(private val navController: NavHostController) {
                     popUpTo(0)
                 }
             }
-            Log.d("Nav","Navigated to route $route")
+            Log.d("NavAction","Navigated to route $route")
         }
     }
 
@@ -35,21 +35,25 @@ open class NavigationActions(private val navController: NavHostController) {
         val previousRoute = navController.previousBackStackEntry?.destination?.route
         // in case there is no previous screen recorded ->
         if (previousRoute == null) {
-            // being
+            // already in Login screen or in Create Account screen -> stay/go to Login screen
             if (currentRoute == Route.LOGIN || currentRoute == Route.CREATE_ACCOUNT) {
                 navController.navigate(Route.LOGIN) {
                     launchSingleTop = true
                     restoreState = true
                 }
+                Log.d("NavAction","Navigated back to Login because of empty backStack")
+                // else -> go to Home page
             } else {
                 navController.navigate(Route.RECIPES_HOME) {
                     launchSingleTop = true
                     restoreState = true
                 }
+                Log.d("NavAction","Navigated back to RecipesHome because of empty backStack")
             }
-            Log.d("Nav","Navigated back to Login because of empty backStack")
+        // base case (there is a previous route) -> pop it from the backstack
         } else if (previousRoute != currentRoute) {
             navController.popBackStack()
+            Log.d("NavAction","Popped backstack")
         }
     }
 }

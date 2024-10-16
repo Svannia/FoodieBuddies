@@ -7,7 +7,7 @@ import android.net.NetworkCapabilities
 /**
  * Checks whether the app currently has network connection.
  *
- * @param context to check for system connection
+ * @param context to access system service
  * @return true if there currently is a network connection
  */
 fun isNetworkAvailable(context: Context): Boolean {
