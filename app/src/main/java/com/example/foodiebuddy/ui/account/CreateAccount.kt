@@ -56,7 +56,8 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             nameState,
             pictureState,
             bioState,
-            onEditPicture = { editingPicture.value = true }
+            onEditPicture = { editingPicture.value = true },
+            acceptTerms = true
         ) {
             userViewModel.createUser(nameState.value, pictureState.value, bioState.value) {
                 if (it) { handleError(context, "Could not create user") }

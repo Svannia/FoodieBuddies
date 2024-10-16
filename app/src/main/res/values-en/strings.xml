@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
     <string name="alert_deleteAccount">Are you sure you want to delete your account?\nThis cannot be undone.</string>
+    <string name="alert_termsConditions">
+        This app is strictly for private use: only install it if you received it from Alice.\n
+        \nDo not share the installation file without Alice\'s approval. If she finds an unauthorized account, she will delete it immediately.\n
+        \nDo not write bullshit. Alice can see all app data and will delete anything she considers inappropriate or off-topic.\n
+        \nBy accepting these conditions, you agree to offer your soul to the devil (Alice).</string>
 
     <string name="app_name">Foodie Buddies</string>
 
+    <string name="button_accept">Accept</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_delete">Delete</string>
@@ -13,6 +19,7 @@
     <string name="button_save">Save</string>
     <string name="button_signIn">Log in</string>
     <string name="button_signOut">Log out</string>
+    <string name="button_termsConditions">Tap to accept Terms and Conditions (mandatory)</string>
 
     <string name="desc_appLogo">app logo</string>
     <string name="desc_burgerMenu">burger menu</string>
@@ -30,15 +37,8 @@
     <string name="field_maxChar">max. %1$s characters</string>
     <string name="field_username">Username</string>
 
-    <string name="notifChannel_newFavourite">New favourite on your recipe</string>
-    <string name="notifChannel_newRecipe">New recipe added</string>
-    <string name="notifChannel_newUser">New user</string>
-
-    <string name="notifDesc_newFavourite">Notifies you when a user has added your recipe to their favourites.</string>
-    <string name="notifDesc_newRecipe">Notifies you when a user has added a new recipe</string>
-    <string name="notifDesc_newUser">Notifies you when a new user joins the app</string>
-
     <string name="title_account">Account</string>
+    <string name="title_about">About</string>
     <string name="title_language">Language</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_recipes">Recipes</string>
@@ -52,6 +52,5 @@
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
-    <string name="notifTitle_newUser">New foodie buddy</string>
-    <string name="notifContent_newUser">Foodie %1$s joined us, come take a look at their profile!</string>
+    <string name="button_terms">Terms and Conditions</string>
 </resources>

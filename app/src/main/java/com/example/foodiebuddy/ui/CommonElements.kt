@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +27,9 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
@@ -40,12 +44,14 @@ import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,8 +70,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.foodiebuddy.R
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.BURGER_DESTINATIONS
 import com.example.foodiebuddy.navigation.NavigationActions
+import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.account.deleteAuthentication
+import com.example.foodiebuddy.ui.account.signOut
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -274,6 +284,75 @@ fun CustomTextField(
             cursorColor = MaterialTheme.colorScheme.primary,
             focusedIndicatorColor = MaterialTheme.colorScheme.primary
         )
+    )
+}
+
+@Composable
+fun DialogWindow(
+    visible: MutableState<Boolean>,
+    content: String,
+    confirmText: String,
+    confirmColour: Color,
+    onConfirm: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { visible.value = false },
+        text = {
+            Text(
+                text = content,
+                style = MyTypography.bodyMedium
+            )
+        },
+        confirmButton = {
+            TextButton(
+                modifier = Modifier
+                    .border(
+                        width = 2.dp,
+                        color = confirmColour,
+                        shape = RoundedCornerShape(50)
+                    )
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(50)
+                    ),
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(
+                    text = confirmText,
+                    style = MyTypography.bodyMedium,
+                    color = confirmColour
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                modifier = Modifier
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.inversePrimary,
+                        shape = RoundedCornerShape(50)
+                    )
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(50)
+                    ),
+                onClick = { visible.value = false },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(
+                    text = stringResource(R.string.button_cancel),
+                    style = MyTypography.bodyMedium,
+                    color = MaterialTheme.colorScheme.inversePrimary
+                )
+            }
+        }
     )
 }
 

@@ -48,11 +48,13 @@ import com.example.foodiebuddy.system.convertTagToName
 import com.example.foodiebuddy.system.getCurrentLocale
 import com.example.foodiebuddy.system.getSupportedLanguages
 import com.example.foodiebuddy.system.setLanguage
+import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.account.deleteAuthentication
 import com.example.foodiebuddy.ui.account.signOut
 import com.example.foodiebuddy.ui.theme.MyTypography
+import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 
@@ -65,6 +67,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
     val context = LocalContext.current
     //val permissionLauncher = getNotificationPermissionLauncher(context)
 
+    val dialogVisible = remember { mutableStateOf(false) }
     val alertVisible = remember { mutableStateOf(false) }
     val loading = remember { mutableStateOf(false) }
 
@@ -134,78 +137,47 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                         ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_deleteAccount), style = MyTypography.bodyMedium, color = Color.Red) }
                     }
                 }
+                item{
+                    SettingCategory(stringResource(R.string.title_about)) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(HEIGHT.dp)
+                                .clickable { dialogVisible.value = true },
+                            contentAlignment = Alignment.CenterStart
+                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_terms), style = MyTypography.bodyMedium) }
+                    }
+                }
             }
             if (alertVisible.value) {
-                AlertDialog(
-                    onDismissRequest = { alertVisible.value = false },
-                    text = {
-                        Text(
-                            text = stringResource(R.string.alert_deleteAccount),
-                            style = MyTypography.bodyMedium
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            modifier = Modifier
-                                .border(
-                                    width = 2.dp,
-                                    color = Color.Red,
-                                    shape = RoundedCornerShape(50)
-                                )
-                                .background(
-                                    color = Color.Transparent,
-                                    shape = RoundedCornerShape(50)
-                                ),
-                            onClick = {
-                                loading.value = true
-                                userViewModel.deleteUser({
-                                    if (it) { handleError(context, "Could not delete user data") }
-                                }) {
-                                    signOut(context)
-                                    deleteAuthentication(context)
-                                    alertVisible.value = false
-                                    loading.value = false
-                                    navigationActions.navigateTo(Route.LOGIN, true)
-                                }
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent
-                            ),
-                            shape = RoundedCornerShape(50)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.button_delete),
-                                style = MyTypography.bodyMedium,
-                                color = Color.Red
-                            )
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(
-                            modifier = Modifier
-                                .border(
-                                    width = 2.dp,
-                                    color = MaterialTheme.colorScheme.inversePrimary,
-                                    shape = RoundedCornerShape(50)
-                                )
-                                .background(
-                                    color = Color.Transparent,
-                                    shape = RoundedCornerShape(50)
-                                ),
-                            onClick = { alertVisible.value = false },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent
-                            ),
-                            shape = RoundedCornerShape(50)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.button_cancel),
-                                style = MyTypography.bodyMedium,
-                                color = MaterialTheme.colorScheme.inversePrimary
-                            )
+                DialogWindow(
+                    alertVisible,
+                    stringResource(R.string.alert_deleteAccount),
+                    stringResource(R.string.button_delete),
+                    Color.Red
+                )
+                    {
+                        loading.value = true
+                        userViewModel.deleteUser({
+                            if (it) { handleError(context, "Could not delete user data") }
+                        }) {
+                            signOut(context)
+                            deleteAuthentication(context)
+                            alertVisible.value = false
+                            loading.value = false
+                            navigationActions.navigateTo(Route.LOGIN, true)
                         }
                     }
-                )
+            }
+            if (dialogVisible.value) {
+                DialogWindow(
+                    dialogVisible,
+                    stringResource(R.string.alert_termsConditions),
+                    stringResource(R.string.button_accept) ,
+                    ValidGreen
+                ) {
+                    dialogVisible.value = false
+                }
             }
         }
     }

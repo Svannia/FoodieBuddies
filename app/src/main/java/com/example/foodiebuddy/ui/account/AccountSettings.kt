@@ -83,7 +83,8 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                 pictureState,
                 bioState,
                 dataEdited,
-                onEditPicture = { editingPicture.value = true }
+                onEditPicture = { editingPicture.value = true },
+                acceptTerms = false
             ) {
                 loadingData.value = true
                 userViewModel.updateUser(nameState.value, pictureState.value, bioState.value, pictureEdited.value, {

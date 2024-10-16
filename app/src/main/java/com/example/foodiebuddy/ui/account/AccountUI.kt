@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -48,6 +49,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.exifinterface.media.ExifInterface
 import coil.compose.rememberAsyncImagePainter
@@ -60,9 +62,11 @@ import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomTextField
+import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.RoundImage
 import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.theme.MyTypography
+import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
 import java.io.File
@@ -79,6 +83,7 @@ fun EditAccount(
     bio: MutableState<String>,
     dataEdited: MutableState<Boolean> ?= null,
     onEditPicture: () -> Unit,
+    acceptTerms: Boolean,
     onSave: () -> Unit
 ) {
     // getting image and image permissions
@@ -96,6 +101,8 @@ fun EditAccount(
                 getPicture.launch(imageInput)
             }
         }
+    val termsAccepted = remember { mutableStateOf(false) }
+    val dialogVisible = remember { mutableStateOf(false) }
 
     SecondaryScreen(
         title = "",
@@ -151,12 +158,33 @@ fun EditAccount(
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }
+                if (acceptTerms) {
+                    item {
+                        Text(
+                            modifier = Modifier.clickable { dialogVisible.value = true },
+                            text = stringResource(R.string.button_termsConditions),
+                            textAlign = TextAlign.Center,
+                            style = MyTypography.labelMedium
+                        )
+                        Spacer(modifier = Modifier.size(16.dp))
+                    }
+                }
                 item {
                     val isEnabled = dataEdited?.value ?: true
-                    SaveButton(name.value.isNotEmpty() && isEnabled) { onSave() }
+                    SaveButton(name.value.isNotEmpty() && isEnabled && termsAccepted.value) { onSave() }
                 }
             }
-
+            if (dialogVisible.value) {
+                DialogWindow(
+                    dialogVisible,
+                    stringResource(R.string.alert_termsConditions),
+                    stringResource(R.string.button_accept) ,
+                    ValidGreen
+                ) {
+                    termsAccepted.value = true
+                    dialogVisible.value = false
+                }
+            }
         }
     )
 }

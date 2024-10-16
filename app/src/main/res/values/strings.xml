@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <resources>
     <string name="alert_deleteAccount">Es-tu sûr.e de vouloir supprimer ton compte?\nCette action n\'est pas réversible.</string>
+    <string name="alert_termsConditions">
+        Cette application est à usage strictement privé: installe-la seulement si Alice te l\'a donnée.\n
+        \nNe partage pas le fichier d\'installation sans l\'accord d\'Alice. Si elle trouve un compte non autorisé, elle le supprimera illico presto.\n
+        \nN\'écris pas de la merde. Alice voit toutes les données de l\'app et supprimera ce qu\'elle juge inaproprié ou hors sujet.\n
+        \nEn acceptant ces conditions, tu offres ton âme au diable (Alice).
+    </string>
 
     <string name="app_name">Foodie Buddies</string>
 
+    <string name="button_accept">Accepter</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
     <string name="button_cancel">Annuler</string>
     <string name="button_delete">Supprimer</string>
@@ -13,6 +20,8 @@
     <string name="button_save">Sauvegarder</string>
     <string name="button_signIn">S\'enregistrer</string>
     <string name="button_signOut">Se déconnecter</string>
+    <string name="button_terms">Termes et Conditions</string>
+    <string name="button_termsConditions">Tapez pour accepter les Terms et Conditions (obligatoire)</string>
 
     <string name="desc_appLogo">logo app</string>
     <string name="desc_burgerMenu">menu</string>
@@ -30,19 +39,8 @@
     <string name="field_maxChar">max. %1$s caractères</string>
     <string name="field_username">Nom d\'utilisateur</string>
 
-    <string name="notifChannel_newFavourite">Nouveau "favori" sur ta recette</string>
-    <string name="notifChannel_newRecipe">Nouvelle recette ajoutée</string>
-    <string name="notifChannel_newUser">Nouvel utilisateur</string>
-
-    <string name="notifContent_newUser">Foodie %1$s nous a rejoint, viens voir son profil !</string>
-
-    <string name="notifDesc_newFavourite">Notifies you when a user has added your recipe to their favourites.</string>
-    <string name="notifDesc_newRecipe">Notifies you when a user has added a new recipe.</string>
-    <string name="notifDesc_newUser">Notifies you when a new user joins the app.</string>
-
-    <string name="notifTitle_newUser">Nouveau Foodie Buddy!</string>
-
     <string name="title_account">Compte</string>
+    <string name="title_about">À propos</string>
     <string name="title_language">Langue</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_recipes">Recettes</string>
