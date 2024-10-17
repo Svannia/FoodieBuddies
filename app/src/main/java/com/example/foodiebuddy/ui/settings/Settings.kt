@@ -1,5 +1,6 @@
 package com.example.foodiebuddy.ui.settings
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,6 +78,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
     val languageChoices = getSupportedLanguages().map { convertTagToName(it) }
     val languageChoice = convertTagToName(getCurrentLocale(context))
     val languageChoiceState = remember { mutableStateOf(languageChoice) }
+
 
     // display the loading screen if some values are changing
     if (loading.value) {
@@ -274,7 +276,7 @@ private fun ToggleBox(name: String, isToggled: Boolean, onToggle: () -> Unit) {
 private fun convertThemeToText(theme: ThemeChoice): String {
     return when (theme) {
         ThemeChoice.SYSTEM_DEFAULT -> stringResource(R.string.txt_systemDefault)
-        ThemeChoice.LIGHT -> stringResource(R.string.txt_systemDark)
-        ThemeChoice.DARK -> stringResource(R.string.txt_systemLight)
+        ThemeChoice.DARK -> stringResource(R.string.txt_systemDark)
+        ThemeChoice.LIGHT -> stringResource(R.string.txt_systemLight)
     }
 }

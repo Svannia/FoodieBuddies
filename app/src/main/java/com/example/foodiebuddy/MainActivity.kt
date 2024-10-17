@@ -26,11 +26,14 @@ import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.account.AccountSettings
 import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
+import com.example.foodiebuddy.ui.fridge.FridgeHome
+import com.example.foodiebuddy.ui.groceries.GroceriesHome
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
 import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
+import com.firebase.ui.auth.data.model.User
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : ComponentActivity() {
@@ -150,6 +153,31 @@ class MainActivity : ComponentActivity() {
                                 }
                                 RecipesHome(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipes Home")
+                            }
+                        }
+
+
+                        // Composables for groceries-related routes
+                        composable(Route.GROCERIES) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                GroceriesHome(userVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Groceries Home")
+                            }
+                        }
+
+                        // Composables for fridge-related routes
+                        composable(Route.FRIDGE) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                FridgeHome(userVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Groceries Home")
                             }
                         }
 

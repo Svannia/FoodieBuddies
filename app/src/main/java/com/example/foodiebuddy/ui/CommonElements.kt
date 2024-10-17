@@ -12,6 +12,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +41,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
@@ -54,9 +57,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +76,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.foodiebuddy.R
+import com.example.foodiebuddy.navigation.BOTTOM_DESTINATIONS
 import com.example.foodiebuddy.navigation.BURGER_DESTINATIONS
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.ui.theme.MyTypography
@@ -131,6 +138,7 @@ fun SecondaryScreen(
  *
  * @param navigationActions to handle screen navigation
  * @param title display in the top bar
+ * @param navigationIndex indicates which primary screen is currently selected (for bottom navigation bar)
  * @param topBarIcons composable for icons on the right-side of the top bar
  * @param userViewModel to access user data
  * @param content screen body
@@ -140,6 +148,7 @@ fun SecondaryScreen(
 fun PrimaryScreen(
     navigationActions: NavigationActions,
     title: String,
+    navigationIndex: Int,
     topBarIcons: @Composable () -> Unit,
     userViewModel: UserViewModel,
     content: @Composable (PaddingValues) -> Unit,
@@ -185,6 +194,7 @@ fun PrimaryScreen(
                         },
                         icon = {
                             Icon(
+                                modifier = Modifier.size(22.dp),
                                 painter = painterResource(item.icon),
                                 contentDescription = stringResource(R.string.desc_dstIcon)
                             )
@@ -210,9 +220,7 @@ fun PrimaryScreen(
                 }
 
             },
-            bottomBar = {
-                // TODO
-            },
+            bottomBar = { BottomNavBar(navigationActions, navigationIndex) },
             content = { content(it) }
         )
     }
@@ -448,5 +456,43 @@ private fun BurgerMenu(scope: CoroutineScope, drawerState: DrawerState) {
             contentDescription = stringResource(R.string.desc_burgerMenu),
             modifier = Modifier.size(28.dp)
         )
+    }
+}
+
+@Composable
+private fun BottomNavBar(
+    navigationActions: NavigationActions,
+    navigationIndex: Int
+) {
+    val destinations = BOTTOM_DESTINATIONS
+    var selectedItemIndex by rememberSaveable { mutableIntStateOf(navigationIndex) }
+
+    NavigationBar(
+        modifier = Modifier
+            .height(85.dp)
+            .fillMaxWidth()
+            .padding(0.dp),
+        tonalElevation = 0.dp
+    ) {
+        destinations.forEachIndexed { index, item ->
+            NavigationBarItem(
+                selected = selectedItemIndex == index,
+                onClick = {
+                    navigationActions.navigateTo(item.route)
+                    selectedItemIndex = index
+                },
+                icon = {
+                   Icon(
+                       modifier = Modifier.size(28.dp),
+                       painter = painterResource(item.icon),
+                       contentDescription = stringResource(item.text),
+                   )
+                },
+                label = {
+                    Text(text = stringResource(item.text), style = MyTypography.bodySmall)
+                },
+                alwaysShowLabel = true
+            )
+        }
     }
 }

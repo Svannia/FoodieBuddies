@@ -4,6 +4,7 @@ import android.app.LocaleManager
 import android.content.Context
 import android.os.Build
 import android.os.LocaleList
+import android.util.Log
 
 /**
  * Fetches the language set for the phone's system.

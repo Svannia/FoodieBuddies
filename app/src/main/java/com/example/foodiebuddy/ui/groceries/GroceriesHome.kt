@@ -1,4 +1,4 @@
-package com.example.foodiebuddy.ui.recipes
+package com.example.foodiebuddy.ui.groceries
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,11 +19,10 @@ import com.example.foodiebuddy.ui.PrimaryScreen
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 @Composable
-fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
-
+fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
     // pressing the Android back button on this screen does not change it
     BackHandler {
-        navigationActions.navigateTo(Route.RECIPES_HOME, true)
+        navigationActions.navigateTo(Route.GROCERIES, true)
     }
     val context = LocalContext.current
 
@@ -34,8 +33,8 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
 
     PrimaryScreen(
         navigationActions = navigationActions,
-        title = stringResource(R.string.title_recipes),
-        navigationIndex = 0,
+        title = stringResource(R.string.title_groceries),
+        navigationIndex = 1,
         topBarIcons = {},
         userViewModel = userViewModel,
         content = {paddingValues ->
