@@ -1,7 +1,5 @@
 package com.example.foodiebuddy.ui.settings
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,15 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -67,22 +61,27 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
     val context = LocalContext.current
     //val permissionLauncher = getNotificationPermissionLauncher(context)
 
+    // visibility of elements that can appear / disappear
     val dialogVisible = remember { mutableStateOf(false) }
     val alertVisible = remember { mutableStateOf(false) }
     val loading = remember { mutableStateOf(false) }
 
+    // variables to handle theme settings
     val themeChoice = convertThemeToText(offPrefViewModel.currentTheme.collectAsState().value)
     val themeChoices = ThemeChoice.entries.map { convertThemeToText(it) }
     val themeChoiceState = remember { mutableStateOf(themeChoice) }
-
     val darkTheme = stringResource(R.string.txt_systemDark)
     val lightTheme = stringResource(R.string.txt_systemLight)
+
+    // variables to handle language settings
     val languageChoices = getSupportedLanguages().map { convertTagToName(it) }
     val languageChoice = convertTagToName(getCurrentLocale(context))
     val languageChoiceState = remember { mutableStateOf(languageChoice) }
 
+    // display the loading screen if some values are changing
     if (loading.value) {
         LoadingPage()
+    // else display the settings screen
     } else {
         SecondaryScreen(
             title = stringResource(R.string.title_settings),
@@ -96,6 +95,8 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(0.dp)
             ) {
+                // main screen body
+                // settings category for the theme
                 item {
                     SettingCategory(stringResource(R.string.title_theme)) {
                         ToggleOptions(themeChoices.size, themeChoiceState, themeChoices) { newChoice ->
@@ -108,6 +109,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                         }
                     }
                 }
+                // settings category for the language
                 item {
                     SettingCategory(stringResource(R.string.title_language)) {
                         ToggleOptions(languageChoices.size, languageChoiceState, languageChoices) { newChoice ->
@@ -116,8 +118,10 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                         }
                     }
                 }
+                // settings category for account-related actions
                 item {
                     SettingCategory(stringResource(R.string.title_account)) {
+                        // Log out button
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -128,6 +132,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                                 },
                             contentAlignment = Alignment.CenterStart
                         ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_signOut), style = MyTypography.bodyMedium) }
+                        // Delete account button
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -137,6 +142,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                         ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_deleteAccount), style = MyTypography.bodyMedium, color = Color.Red) }
                     }
                 }
+                // settings category for About information
                 item{
                     SettingCategory(stringResource(R.string.title_about)) {
                         Box(
@@ -149,6 +155,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                     }
                 }
             }
+            // Delete account confirmation dialog window
             if (alertVisible.value) {
                 DialogWindow(
                     alertVisible,
@@ -169,6 +176,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                         }
                     }
             }
+            // terms and conditions dialog window
             if (dialogVisible.value) {
                 DialogWindow(
                     dialogVisible,
@@ -183,7 +191,12 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
     }
 }
 
-
+/**
+ * Creates the layout for a category (family) of settings on the Settings screen.
+ *
+ * @param name name of the settings category
+ * @param content elements of the settings category contained in a column
+ */
 @Composable
 private fun SettingCategory(name: String, content: @Composable ColumnScope.() -> Unit) {
     Column {
@@ -196,6 +209,15 @@ private fun SettingCategory(name: String, content: @Composable ColumnScope.() ->
         Spacer(modifier = Modifier.size(16.dp))
     }
 }
+
+/**
+ * For a specific setting, handles a list of options where exactly one option can and must be selected.
+ *
+ * @param numberChoices number of options in the list
+ * @param currentChoice option that is currently selected
+ * @param choicesNames list of all the options' names
+ * @param onToggle block that runs when a new option is toggled on, with the name of the new option selected
+ */
 @Composable
 private fun ToggleOptions(numberChoices: Int, currentChoice: MutableState<String>, choicesNames: List<String>, onToggle: (String) -> Unit) {
     var toggledIndex by remember { mutableIntStateOf(choicesNames.indexOf(currentChoice.value)) }
@@ -208,6 +230,14 @@ private fun ToggleOptions(numberChoices: Int, currentChoice: MutableState<String
         }
     }
 }
+
+/**
+ * Creates the layout of a single option within a list of options that can be selected / toggled on.
+ *
+ * @param name displayed as the option's name
+ * @param isToggled whether this specific option is toggled on or not
+ * @param onToggle block that runs if this option is toggled on
+ */
 @Composable
 private fun ToggleBox(name: String, isToggled: Boolean, onToggle: () -> Unit) {
     Box(
@@ -234,6 +264,12 @@ private fun ToggleBox(name: String, isToggled: Boolean, onToggle: () -> Unit) {
     }
 }
 
+/**
+ * Converts the themes objects understood by the system as a name that can be displayed to the user.
+ *
+ * @param theme ThemeChoice to be converted
+ * @return name of the ThemeChoice as a string
+ */
 @Composable
 private fun convertThemeToText(theme: ThemeChoice): String {
     return when (theme) {

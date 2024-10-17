@@ -73,6 +73,22 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 
+/**
+ * Screen that allows the user to edit their profile information.
+ * It is used for both account creation and account edition since both screens are almost similar.
+ *
+ * @param context used to check for media access permission
+ * @param navigationActions to handle screen navigation
+ * @param navExtraActions extra actions taken when navigation back
+ * @param name state containing the username
+ * @param picture state containing an Uri for the profile picture
+ * @param bio state containing the bio
+ * @param dataEdited whether or not any data was edited.
+ * This is used by the account edition screen to know if new data needs to saved, so this param can be empty for account creation
+ * @param onEditPicture block that runs if profile picture is being edited
+ * @param acceptTerms whether or not this screen needs to display terms and conditions (only account creation screen does)
+ * @param onSave block that runs if the Save button is pressed
+ */
 @Composable
 fun EditAccount(
     context: Context,
@@ -101,6 +117,7 @@ fun EditAccount(
                 getPicture.launch(imageInput)
             }
         }
+
     val termsAccepted = remember { mutableStateOf(false) }
     val dialogVisible = remember { mutableStateOf(false) }
 
@@ -118,7 +135,10 @@ fun EditAccount(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // main screen body
+                // round profile picture
                 item { RoundImage(100.dp, picture.value, stringResource(R.string.desc_profilePic)) }
+                // text button to modify the profile picture
                 item {
                     Text(
                         modifier = Modifier.clickable {
@@ -126,11 +146,13 @@ fun EditAccount(
                                 getPicture.launch(imageInput)
                             }
                         },
+                        // since dataEdited is null for the account creation screen, it can be used to differentiate between the two screens
                         text = if (dataEdited != null) stringResource(R.string.button_modifyProfilePicture) else {stringResource(R.string.button_addProfilePicture)},
                         style = MyTypography.labelMedium
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }
+                // text field to change the username
                 item {
                     CustomTextField(
                         value = name.value,
@@ -144,6 +166,7 @@ fun EditAccount(
                         maxLength = 15
                     )
                 }
+                // text field to change the bio
                 item {
                     CustomTextField(
                         value = bio.value,
@@ -158,6 +181,7 @@ fun EditAccount(
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }
+                // if it is needed to accept the terms and conditions (account creation) -> show a text button to display those
                 if (acceptTerms) {
                     item {
                         Text(
@@ -169,11 +193,15 @@ fun EditAccount(
                         Spacer(modifier = Modifier.size(16.dp))
                     }
                 }
+                // Save button is only enabled if there is a username and:
+                // if on account creation -> terms and conditions have been accepted
+                // if on account edition -> any data has been modified
                 item {
                     val isEnabled = dataEdited?.value ?: true
                     SaveButton(name.value.isNotEmpty() && isEnabled && termsAccepted.value) { onSave() }
                 }
             }
+            // terms and conditions dialog window
             if (dialogVisible.value) {
                 DialogWindow(
                     dialogVisible,
@@ -189,6 +217,12 @@ fun EditAccount(
     )
 }
 
+/**
+ * Design for the Save button.
+ *
+ * @param isEnabled whether or not the button should be enabled (different design)
+ * @param onClick block that runs when button is pressed
+ */
 @Composable
 private fun SaveButton(isEnabled: Boolean, onClick: () -> Unit) {
     Button(
@@ -201,6 +235,12 @@ private fun SaveButton(isEnabled: Boolean, onClick: () -> Unit) {
     }
 }
 
+/**
+ * Deletes the Google authentication of the current user.
+ * This is used if a new user has logged in with Google but has not finished completing their profile.
+ *
+ * @param context for error handling
+ */
 fun deleteAuthentication(context: Context) {
     val user = FirebaseAuth.getInstance().currentUser
     user?.delete()
@@ -213,6 +253,11 @@ fun deleteAuthentication(context: Context) {
         }
 }
 
+/**
+ * Signs out the current user.
+ *
+ * @param context for error handling and authentication
+ */
 fun signOut(context: Context) {
     AuthUI.getInstance().signOut(context).addOnCompleteListener{
         if (it.isSuccessful) {
@@ -223,6 +268,13 @@ fun signOut(context: Context) {
     }
 }
 
+/**
+ * Screen where the user can modify their profile picture.
+ *
+ * @param picture Uri of the user-input picture
+ * @param onCancel block that runs if the user cancels the picture modification
+ * @param onSave block that runs if the user saves their new picture
+ */
 @Composable
 fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit) {
     val context = LocalContext.current
@@ -250,6 +302,7 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
             modifier = Modifier
                 .fillMaxSize()
                 .pointerInput(Unit) {
+                    // this allows the user to zoom, move and rotate the picture
                     detectTransformGestures { _, pan, zoom, _ ->
                         scale = (scale * zoom).coerceAtLeast(imageInfo.minScale)
 
@@ -269,6 +322,7 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
                 contentDescription = stringResource(R.string.desc_profilePic),
                 contentScale = ContentScale.None,
                 modifier = Modifier
+                    // ensures that the picture correctly fills the screen
                     .graphicsLayer(
                         scaleX = scale,
                         scaleY = scale,
@@ -277,6 +331,7 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
                     )
                     .fillMaxSize()
             )
+            // round opacity mask that indicates to the user how the picture will look when cropped round
             Canvas(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -288,6 +343,7 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
                 }
             }
         }
+        // top bar with Cancel and Save options
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
@@ -327,8 +383,19 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
     }
 }
 
+/**
+ * Computes the minimum scale that the picture has to be automatically zoomed in so that it at least fits the round mask in a way that avoids having any "empty picture" within the mask.
+ *
+ * @param context to access picture metadata
+ * @param picture Uri of the user-input picture
+ * @param radius of the round mask
+ * @param screenWidth needed to compute the mask and picture size
+ * @param screenHeight needed to compute the mask and picture size
+ * @return ImageInfo object that contains the required image scale, size and orientation
+ */
 private fun computeMinScale(context: Context, picture: Uri, radius: Float, screenWidth: Float, screenHeight: Float): ImageInfo {
     return try {
+        // honestly this entire thing works in ways only God knows (I understood when I wrote it but it's way too fucking complicated)
         val inputStream = context.contentResolver.openInputStream(picture)
 
         val metadata = ImageMetadataReader.readMetadata(inputStream)
@@ -369,10 +436,24 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
 
 data class ImageInfo(val minScale: Float, val width: Float, val height: Float, val orientation: Int?)
 
+/**
+ * Crops the user-input picture into a round image that matches with the opacity mask.
+ *
+ * @param context to access picture metadata
+ * @param picture Uri of the picture to be cropped
+ * @param imageWidth to scale the picture
+ * @param imageHeight to scale the picture
+ * @param offsetX how much the user moved the picture on the X-axis (changes the center of the round picture)
+ * @param offsetY how much the user moved the picture on the Y-axis (changes the center of the round picture)
+ * @param radius radius of the round mask
+ * @param orientation of the image (cuz Samsung orientation metadata is messed up)
+ * @return new round image as a bitmap
+ */
 private fun cropImage(context: Context, picture: Uri, imageWidth: Float, imageHeight: Float, offsetX: Float, offsetY: Float, radius: Float, orientation: Int?): Bitmap? {
     val inputStream = context.contentResolver.openInputStream(picture)
     val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
 
+    // basically selling my soul to Satan, don't even start with me
     val correctedBitmap = if (orientation == ExifInterface.ORIENTATION_ROTATE_90 || orientation == ExifInterface.ORIENTATION_ROTATE_270) {
         val matrix = Matrix()
         if (orientation == ExifInterface.ORIENTATION_ROTATE_90) {
@@ -403,6 +484,13 @@ private fun cropImage(context: Context, picture: Uri, imageWidth: Float, imageHe
     return scaledBitmap
 }
 
+/**
+ * Saves a new image bitmap into a file.
+ *
+ * @param context to create the new image file
+ * @param bitmap Bitmap of the new image to be converted to a picture file
+ * @return Uri of the new picture
+ */
 private fun saveBitmapToFile(context: Context, bitmap: Bitmap): Uri? {
     val file = File(context.cacheDir, "cropped_profile_picture.jpg")
     return try {

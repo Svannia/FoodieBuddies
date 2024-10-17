@@ -54,6 +54,7 @@ fun LoginScreen(navigationActions: NavigationActions) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {item {
+        // app logo
         Image(
             painter = painterResource(R.drawable.app_logo),
             contentDescription = stringResource(R.string.desc_appLogo),
@@ -63,12 +64,14 @@ fun LoginScreen(navigationActions: NavigationActions) {
                 .height(189.dp)
         )
         Spacer(Modifier.size(67.dp))
+        // app name
         Text(
             text = stringResource(R.string.app_name),
             style = MyTypography.titleLarge,
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(Modifier.size(120.dp))
+        // sign in button
         Button(
             onClick = {
                 val signInIntent = AuthUI
@@ -104,29 +107,44 @@ fun LoginScreen(navigationActions: NavigationActions) {
     } }
 }
 
+/**
+ * Handles what happens after a user tried to sign in with Google.
+ *
+ * @param result resultCode of the authentication
+ * @param context for error handling
+ * @param navigationActions to handle screen navigation
+ */
 private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: Context, navigationActions: NavigationActions) {
+    // check if authentication was successful
     if (result.resultCode == Activity.RESULT_OK) {
         val userID = FirebaseAuth.getInstance().currentUser?.uid
+        // check that the user UID generated with authentication is not null
         if (userID != null) {
             val db = DatabaseConnection()
+            // check if the user already exists
             db.userExists(
                 userID,
                 onSuccess = {userExists ->
+                    // if the user already exists -> navigate to home page
                     if (userExists) {
                         navigationActions.navigateTo(Route.RECIPES_HOME)
                         Log.d("Login", "Successfully logged in app for user $userID")
+                    // if the user does not exist yet -> navigate to account creation
                     } else {
                         navigationActions.navigateTo(Route.CREATE_ACCOUNT)
                         Log.d("Login", "Successfully started creating account for user $userID")
                     }
                 },
+                // in case checking for user existence failed
                 onFailure = { e ->
                     handleError(context,"Failed to check user existence", e)
                 }
             )
+        // in case the user UID is null
         } else {
             handleError(context, "Failed to get user ID")
         }
+    // in case the Google authentication failed
     } else {
         handleError(context, "Sign in failed")
     }

@@ -20,6 +20,8 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 
 @Composable
 fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
+
+    // pressing the Android back button on this screen does not change it
     BackHandler {
         navigationActions.navigateTo(Route.RECIPES_HOME, true)
     }

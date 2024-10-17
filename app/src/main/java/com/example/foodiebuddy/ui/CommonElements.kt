@@ -70,17 +70,23 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
 import com.example.foodiebuddy.R
-import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.BURGER_DESTINATIONS
 import com.example.foodiebuddy.navigation.NavigationActions
-import com.example.foodiebuddy.navigation.Route
-import com.example.foodiebuddy.ui.account.deleteAuthentication
-import com.example.foodiebuddy.ui.account.signOut
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
+/**
+ * This creates the layout for a "secondary screen".
+ * It mainly contains a body and an invisible top bar with an optional title and a GoBack button.
+ *
+ * @param title display in the top bar (can be empty)
+ * @param navigationActions to handle screen navigation
+ * @param navExtraActions optional extra block to run when navigating back (e.g navigating back from CreateAccount screen also signs out)
+ * @param topBarIcons extra composable on the right-side of the top bar (optional)
+ * @param content screen body
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SecondaryScreen(
@@ -117,6 +123,18 @@ fun SecondaryScreen(
     )
 }
 
+/**
+ * This creates the layout for a "primary screen".
+ * It mainly contains a body and a larger top bar in a different colour.
+ * There is a burger menu in the top bar that opens on the left-side.
+ * There is a navigation bar at the bottom to change between the different primary screens.
+ *
+ * @param navigationActions to handle screen navigation
+ * @param title display in the top bar
+ * @param topBarIcons composable for icons on the right-side of the top bar
+ * @param userViewModel to access user data
+ * @param content screen body
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrimaryScreen(
@@ -138,10 +156,12 @@ fun PrimaryScreen(
         pictureState.value = userData.picture
     }
 
+    // burger menu that opens on the side
     ModalNavigationDrawer(
         modifier = Modifier.fillMaxSize(),
         drawerState = drawerState,
         drawerContent = {
+            // the opened menu contains some of the user's info, a Profile button and a Settings button
             ModalDrawerSheet(
                 modifier = Modifier.requiredWidth(200.dp)
             ) {
@@ -180,6 +200,7 @@ fun PrimaryScreen(
             modifier = Modifier.fillMaxSize(),
             topBar = {
                 Box {
+                    // the top bar contains an icon to open the burger menu described above, the screen title and any additional top bar icons
                     CenterAlignedTopAppBar(
                         title = { Text(text = title, style = MyTypography.titleMedium) },
                         navigationIcon = { BurgerMenu(scope, drawerState) },
@@ -190,15 +211,20 @@ fun PrimaryScreen(
 
             },
             bottomBar = {
-
+                // TODO
             },
             content = { content(it) }
         )
     }
 
 }
+
+/**
+ * A simple plain screen with a rotating loading animation.
+ */
 @Composable
 fun LoadingPage() {
+    // ensures that the user cannot go back while on the loading page.
     BackHandler {}
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -225,6 +251,14 @@ fun LoadingPage() {
         }
     }
 }
+
+/**
+ * Crops an image into a disk (e.g for profile pictures).
+ *
+ * @param size diameter of the round image
+ * @param picture Uri of the picture to be cropped
+ * @param contentDescription image description
+ */
 @Composable
 fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
     Box(
@@ -241,6 +275,17 @@ fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
         )
     }
 }
+
+/**
+ * Rewritten basic TextField composable for constant design throughout the app.
+ * Always use this instead of the normal TextField.
+ *
+ * @param value text passed by the user in the text field
+ * @param onValueChange block that runs with the new input value when it is edited
+ * @param icon display at the beginning of the text field
+ * @param singleLine whether or not the value of the text field can contain line breaks
+ * @param maxLength maximum amount of characters allowed in the text field
+ */
 @Composable
 fun CustomTextField(
     value: String,
@@ -287,6 +332,16 @@ fun CustomTextField(
     )
 }
 
+/**
+ * Creates a dialog window that can pop and be dismissed.
+ * Warning: always call this function after all other composable elements in code, so that it appears on top of the screen.
+ *
+ * @param visible whether or not this window should be visible
+ * @param content text inside the window
+ * @param confirmText text within the confirm button
+ * @param confirmColour colour of the confirm text and button
+ * @param onConfirm block that runs if the confirm button is pressed
+ */
 @Composable
 fun DialogWindow(
     visible: MutableState<Boolean>,
@@ -356,6 +411,12 @@ fun DialogWindow(
     )
 }
 
+/**
+ * A button used to navigate back in the screens navigation history.
+ *
+ * @param navigationActions to handle screen navigation
+ * @param navExtraActions optional extra block to run when navigating back (e.g navigating back from CreateAccount screen also signs out)
+ */
 @Composable
 private fun GoBackButton(navigationActions: NavigationActions, navExtraActions: () -> Unit) {
     IconButton(
@@ -371,6 +432,12 @@ private fun GoBackButton(navigationActions: NavigationActions, navExtraActions: 
     }
 }
 
+/**
+ * Icon that handles the burger menu.
+ *
+ * @param scope needed to launch a coroutine to open the burger menu
+ * @param drawerState value that determines if the burger menu is opened or closed
+ */
 @Composable
 private fun BurgerMenu(scope: CoroutineScope, drawerState: DrawerState) {
     IconButton(

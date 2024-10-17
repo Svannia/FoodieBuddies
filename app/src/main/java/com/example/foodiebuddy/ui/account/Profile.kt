@@ -63,6 +63,7 @@ fun Profile(userViewModel: UserViewModel, navigationActions: NavigationActions) 
         navigationActions = navigationActions,
         navExtraActions = {},
         topBarIcons = {
+            // when viewing a profile, the Edit button only exists if the user is visiting their own profile
             if (userViewModel.getCurrentUserID() == "") {
                 handleError(LocalContext.current, "Could not fetch current user ID")
             } else if (userData.uid == userViewModel.getCurrentUserID()) {

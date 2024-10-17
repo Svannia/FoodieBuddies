@@ -29,6 +29,8 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
         pictureState.value = currentPicture.value
     }
 
+    // the profile and picture editing screens are actually one screen that just displays different elements
+    // this way it's easier to keep user-edited values that haven't been saved on the DB yet
     if (editingPicture.value) {
         SetProfilePicture(
             pictureState.value,
@@ -40,6 +42,7 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             currentPicture.value = uri
             editingPicture.value = false
         }
+        // using the Android back button in the picture editing "screen" just has the same effect as cancelling the picture edition
         BackHandler {
             editingPicture.value = false
             pictureState.value = currentPicture.value

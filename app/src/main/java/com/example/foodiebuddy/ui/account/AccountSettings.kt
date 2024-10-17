@@ -53,6 +53,7 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
         }
     }
 
+    // see CreateAccount for explanation on profile VS picture editing "screens"
     if (loadingData.value) {
         LoadingPage()
     } else {
