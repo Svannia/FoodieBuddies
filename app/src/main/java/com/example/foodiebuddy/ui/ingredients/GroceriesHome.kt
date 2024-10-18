@@ -32,9 +32,14 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
     val context = LocalContext.current
 
     val userPersonal by userViewModel.userPersonal.collectAsState()
-
     val groceries = remember { mutableStateOf(userPersonal.groceryList) }
+
     val newItems = groceries.value.mapValues { mutableListOf<String>() }
+    val removedItems = groceries.value.mapValues { mutableListOf<String>() }
+    val editedCategories = mutableMapOf<String, String>()
+    val removedCategories = mutableListOf<String>()
+
+    val allUpdated = remember { mutableListOf(false) }
 
     val screenState = remember { mutableStateOf(ScreenState.VIEWING) }
     val loading = remember { mutableStateOf(false) }
@@ -50,10 +55,11 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
     }
 
     LaunchedEffect(userPersonal) {
-        groceries.value = userPersonal.groceryList
+        Log.d("Debug", "effect launched")
+        groceries.value = userPersonal.groceryList.toMutableMap()
+        Log.d("Debug", "userPersonal launching with ${userPersonal.groceryList}")
+        Log.d("Debug", "groceries launching with ${groceries.value}")
     }
-
-
 
     if (loading.value) {
         LoadingPage()
@@ -69,6 +75,12 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                 userViewModel.addIngredients(newItems,  {
                     if (it) handleError(context, "Could not update owned ingredients list")
                 }) { loading.value = false }
+                userViewModel.removeIngredients(removedItems, {
+                    if (it) handleError(context, "Could not remove ingredient")
+                }) { loading.value = false }
+                userViewModel.updateCategories(editedCategories, {
+                    if (it) handleError(context, "Could not update category names")
+                }) { loading.value = false }
             }},
             content = {paddingValues ->
                 LazyColumn(
@@ -76,17 +88,33 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                         .fillMaxSize()
                         .padding(paddingValues)
                 ) {
-                    groceries.value.toSortedMap().forEach { (category, ingredients) ->
-                        item {
-                            when (screenState.value) {
-                                ScreenState.VIEWING -> {
+                    when (screenState.value) {
+                        ScreenState.VIEWING -> {
+                            groceries.value.toSortedMap().forEach { (category, ingredients) ->
+                                item {
+                                    newItems.forEach { (_, value) -> value.clear() }
+                                    removedItems.forEach { (_, value) -> value.clear() }
+                                    editedCategories.clear()
                                     IngredientCategoryView(category, ingredients) { ingredient, isTicked ->
                                         userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
                                             if (it) { handleError(context, "Could not update ingredient") }
                                         }) {}
                                     }
                                 }
-                                ScreenState.EDITING -> { IngredientCategoryEdit(category, ingredients, newItems[category] ?: mutableListOf()) }
+                            }
+                        }
+                        ScreenState.EDITING -> {
+                            groceries.value.toSortedMap().forEach { (category, ingredients) ->
+                                item {
+                                    IngredientCategoryEdit(
+                                        category,
+                                        ingredients,
+                                        newItems[category] ?: mutableListOf(),
+                                        removedItems[category] ?: mutableListOf(),
+                                        editedCategories,
+                                        removedCategories
+                                    )
+                                }
                             }
                         }
                     }

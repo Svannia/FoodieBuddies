@@ -164,6 +164,17 @@ constructor(private val userID: String ?= null) : ViewModel() {
         Log.d("VM", "userID is null")
     }
 
+    fun updateCategories(editedCategories: MutableMap<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            editedCategories.forEach { (key, value) ->
+                db.updateCategory(userID, key, value, {isError(it)}) {
+                    callBack()
+                }
+            }
+            fetchUserPersonal( { isError(it) } ) { callBack() }
+        }
+    }
+
     fun addIngredients(newItems: Map<String, MutableList<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
@@ -172,11 +183,11 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         ingredients.forEach { ingredient ->
                             db.createIngredient(
                                 userID, ingredient, ingredient, category, false, {isError(it) }) {
-                                fetchUserPersonal( {isError(it) } ) { callBack() }
                             }
                         }
                     }
                 }
+                fetchUserPersonal( {isError(it) } ) { callBack() }
             } else {
                 isError(true)
                 Log.d("VM", "Failed to add ingredients: ID is null")
@@ -187,11 +198,29 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun updateIngredientTick(uid: String, ticked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.updateIngredientTick(uid, ticked, { isError(it) }) {
-                fetchUserData({ isError(it) }) {callBack()}
+                Log.d("Debug", "After updated to $ticked")
+                fetchUserPersonal({ isError(it) }) {
+                    Log.d("Debug", "new userPersonal is ${userPersonal.value}")
+                    callBack()}
             }
         }  else {
             Log.d("VM", "Failed to update user: ID is null")
         }
     }
 
+    fun removeIngredients(removedItems: Map<String, List<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            removedItems.forEach { (category, ingredients) ->
+                if (ingredients.isNotEmpty()) {
+                    ingredients.forEach { ingredient ->
+                        db.deleteIngredient(ingredient, userID, category, {isError(it)})
+                        { callBack() }
+                    }
+                }
+            }
+            fetchUserPersonal( {isError(it) } ) { callBack() }
+        } else {
+            Log.d("VM", "Failed to delete user: ID is null")
+        }
+    }
 }

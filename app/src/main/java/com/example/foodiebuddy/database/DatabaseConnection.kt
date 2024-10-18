@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 private const val USERNAME = "username"
@@ -270,6 +271,50 @@ class DatabaseConnection {
             }
     }
 
+    fun updateCategory(userID: String, old: String, new: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val userRef = userPersonalCollection.document(userID)
+
+        userRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val groceriesMap = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
+                    val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
+                    val groceries = groceriesMap[old] ?: emptyList()
+                    val fridge = fridgeMap[old] ?: emptyList()
+                    val allIngredients = groceries + fridge
+
+                    allIngredients.forEach { ref ->
+                        ref.update(CATEGORY, new)
+                            .addOnSuccessListener {  }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("DB", "Failed to udpate category of ingredient $ref with error $e")
+                            }
+                    }
+
+                    val updatedGroceries = groceriesMap.toMutableMap()
+                    val updatedFridge = fridgeMap.toMutableMap()
+
+                    val newGroceryList = updatedGroceries.remove(old)?.toMutableList() ?: mutableListOf()
+                    updatedGroceries[new] = newGroceryList
+
+                    val newFridgeList = updatedFridge.remove(old)?.toMutableList() ?: mutableListOf()
+                    updatedFridge[new] = newFridgeList
+
+                    userRef.update(mapOf(
+                        GROCERIES to updatedGroceries,
+                        FRIDGE to updatedFridge
+                    )).addOnSuccessListener {
+                        callBack()  // success callback
+                        Log.d("DB", "Successfully updated category in groceryList and fridge")
+                    }.addOnFailureListener { e ->
+                        isError(true)
+                        Log.d("DB", "Failed to update category with error: $e")
+                    }
+                }
+            }
+    }
+
     fun updateFavourites(userID: String, favourite: Recipe, adding: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val recipeRef = recipesCollection.document(favourite.uid)
         val updateOperation =
@@ -343,6 +388,33 @@ class DatabaseConnection {
             .addOnFailureListener { e ->
                 isError(true)
                 Log.d("DB", "Failed to update ingredient with error $e")
+            }
+    }
+
+    fun deleteIngredient(uid: String, owner: String, category: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val ref = ingredientsCollection.document(uid)
+
+        userPersonalCollection
+            .document(owner)
+            .update("$GROCERIES.$category", FieldValue.arrayRemove(ref))
+            .addOnSuccessListener {
+                isError(false)
+                Log.d("DB", "Successfully deleted ingredient ref from user $owner")
+
+                ref.delete()
+                    .addOnSuccessListener {
+                        isError(false)
+                        Log.d("DB", "Sucessfully deleted ingredient $uid")
+                        callBack()
+                    }
+                    .addOnFailureListener { e ->
+                        isError(true)
+                        Log.d("DB", "Failed to delete ingredient $uid with error $e")
+                    }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("DB", "Failed to delete ingredient ref from user with error $e")
             }
     }
 

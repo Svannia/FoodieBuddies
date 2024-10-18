@@ -114,28 +114,72 @@ fun IngredientCategoryEdit(
     name: String,
     ingredients: List<OwnedIngredient>,
     addedItems: MutableList<String>,
+    removedItems: MutableList<String>,
+    editedCategories: MutableMap<String, String>,
+    removedCategories: MutableList<String>
 ) {
+    val isEditingName = remember { mutableStateOf(false) }
+    val editedName = remember { mutableStateOf(name) }
+
     val newItemName = remember { mutableStateOf("") }
     val sortedIngredients = ingredients.sortedBy { it.displayedName }
-    val allIngredients = remember { mutableStateListOf(*sortedIngredients.toTypedArray()) }
+    val allTempIngredients = remember { mutableStateListOf(*sortedIngredients.toTypedArray()) }
 
-    Log.d("Debug", "allIngredients contains: $allIngredients")
+    Log.d("Debug", "allIngredients contains: $allTempIngredients")
 
     Column {
         Spacer(modifier = Modifier.size(16.dp))
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().height(60.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ){
-            Text(text = name, style = MyTypography.titleSmall, modifier = Modifier.padding(start = 16.dp))
-            IconButton(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(40.dp)
-                    .padding(end = 16.dp),
-                onClick = {  }
-            ){
-                Icon(painterResource(R.drawable.pencil), contentDescription = stringResource(R.string.desc_edit))
+            if (isEditingName.value) {
+                Spacer(modifier = Modifier.size(16.dp))
+                CustomTextField(
+                    value = editedName.value,
+                    onValueChange = { editedName.value = it },
+                    icon = -1,
+                    placeHolder = stringResource(R.string.button_addItem),
+                    singleLine = true,
+                    maxLength = 15,
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (editedName.value.isNotBlank()) {
+                                if (editedName.value != name) {
+                                    editedCategories[name] = editedName.value
+                                }
+                                isEditingName.value = false
+                            }
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done
+                    )
+                )
+            } else {
+                Text(text = editedName.value, style = MyTypography.titleSmall, modifier = Modifier.padding(start = 16.dp))
+            }
+            Row(
+                horizontalArrangement = Arrangement.End
+            ) {
+                IconButton(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(40.dp)
+                        .padding(end = 16.dp),
+                    onClick = { isEditingName.value = !isEditingName.value }
+                ){
+                    Icon(painterResource(R.drawable.pencil), contentDescription = stringResource(R.string.desc_edit))
+                }
+                IconButton(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(40.dp)
+                        .padding(end = 16.dp),
+                    onClick = { removedCategories.add(name) }
+                ){
+                    Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
+                }
             }
         }
         Spacer(modifier = Modifier.size(16.dp))
@@ -143,13 +187,16 @@ fun IngredientCategoryEdit(
             horizontalAlignment = Alignment.Start,
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
-            allIngredients.forEach { ingredient ->
-                IngredientItemEdit(ingredient)
+            allTempIngredients.forEach { ingredient ->
+                IngredientItemEdit(ingredient) {
+                    allTempIngredients.remove(ingredient)
+                    removedItems.add(ingredient.uid)
+                }
             }
             AddIngredient(newItemName) { displayName ->
-                allIngredients.add(OwnedIngredient("", displayName, "", name, false))
+                allTempIngredients.add(OwnedIngredient("", displayName, "", name, false))
                 addedItems.add(displayName)
-                Log.d("Debug", "allIngredients contains after adding item: $allIngredients")
+                Log.d("Debug", "allIngredients contains after adding item: $allTempIngredients")
             }
         }
         Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
@@ -204,6 +251,7 @@ private fun IngredientItemView(
 @Composable
 private fun IngredientItemEdit(
     ingredient: OwnedIngredient,
+    onDelete: () -> Unit
 ) {
     val isTicked = remember { mutableStateOf(ingredient.isTicked) }
     Box(
@@ -241,7 +289,7 @@ private fun IngredientItemEdit(
                     .height(24.dp)
                     .width(40.dp)
                     .padding(end = 16.dp),
-                onClick = {  }
+                onClick = { onDelete() }
             ){
                 Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
             }
@@ -290,8 +338,4 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (String) -> 
             )
         }
     }
-}
-
-private fun expandAddBox() {
-
 }
