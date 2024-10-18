@@ -19,16 +19,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -151,6 +156,7 @@ fun PrimaryScreen(
     navigationIndex: Int,
     topBarIcons: @Composable () -> Unit,
     userViewModel: UserViewModel,
+    floatingButton:  @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
     val drawerState = rememberDrawerState(DrawerValue.Closed)
@@ -221,6 +227,7 @@ fun PrimaryScreen(
 
             },
             bottomBar = { BottomNavBar(navigationActions, navigationIndex) },
+            floatingActionButton = floatingButton,
             content = { content(it) }
         )
     }
@@ -290,7 +297,8 @@ fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
  *
  * @param value text passed by the user in the text field
  * @param onValueChange block that runs with the new input value when it is edited
- * @param icon display at the beginning of the text field
+ * @param icon display at the beginning of the text field (use a negative int for no icon)
+ * @param placeHolder text displayed in the empty text field
  * @param singleLine whether or not the value of the text field can contain line breaks
  * @param maxLength maximum amount of characters allowed in the text field
  */
@@ -298,9 +306,12 @@ fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
 fun CustomTextField(
     value: String,
     onValueChange: (String) -> Unit,
-    icon: Int, placeHolder: String,
+    icon: Int,
+    placeHolder: String,
     singleLine: Boolean,
-    maxLength: Int
+    maxLength: Int,
+    keyboardActions: KeyboardActions = KeyboardActions.Default,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     TextField(
         modifier = if (singleLine) {Modifier.width(300.dp)} else {
@@ -315,13 +326,15 @@ fun CustomTextField(
         },
         textStyle = MyTypography.bodyMedium,
         prefix = {
-            Row{
-                Icon(
-                    painter = painterResource(id = icon),
-                    contentDescription = stringResource(R.string.desc_textFieldIcon),
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.size(16.dp))
+            if (icon >= 0) {
+                Row{
+                    Icon(
+                        painter = painterResource(id = icon),
+                        contentDescription = stringResource(R.string.desc_textFieldIcon),
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.size(16.dp))
+                }
             }
         },
         placeholder = {
@@ -336,7 +349,9 @@ fun CustomTextField(
             unfocusedContainerColor = Color.Transparent,
             cursorColor = MaterialTheme.colorScheme.primary,
             focusedIndicatorColor = MaterialTheme.colorScheme.primary
-        )
+        ),
+        keyboardActions = keyboardActions,
+        keyboardOptions = keyboardOptions
     )
 }
 

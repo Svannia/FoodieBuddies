@@ -4,7 +4,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.User
+import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.database.DatabaseConnection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,8 +22,12 @@ class UserViewModel
 @Inject
 constructor(private val userID: String ?= null) : ViewModel() {
     private val db = DatabaseConnection()
+
     private val _userData = MutableStateFlow(User.empty())
     val userData: StateFlow<User> = _userData
+
+    private val _userPersonal = MutableStateFlow(UserPersonal.empty())
+    val userPersonal: StateFlow<UserPersonal> = _userPersonal
 
     /**
      * Creates a new user in DB.
@@ -129,4 +135,63 @@ constructor(private val userID: String ?= null) : ViewModel() {
             Log.d("VM", "Failed to delete user: ID is null")
         }
     }
+
+    fun fetchUserPersonal(isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            // only fetches data if user exists
+            db.userExists(
+                userID = userID,
+                onSuccess = { userExists ->
+                    if (userExists) {
+                        viewModelScope.launch {
+                            val newUserPersonal = db.fetchUserPersonal(userID)
+                            if (newUserPersonal.isEmpty()) { isError(true) }
+                            else {
+                                isError(false)
+                                _userPersonal.value = newUserPersonal
+                                callBack()
+                            }
+                        }
+                    } else {
+                        Log.d("VM", "Failed to retrieve user data: user does not exist.")
+                    }
+                },
+                onFailure = { e ->
+                    Log.d("VM", "Failed to check user existence when fetching in VM with error $e")
+                }
+            )
+        }
+        Log.d("VM", "userID is null")
+    }
+
+    fun addIngredients(newItems: Map<String, MutableList<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        viewModelScope.launch {
+            if (userID != null) {
+                newItems.forEach { (category, ingredients) ->
+                    if (ingredients.isNotEmpty()) {
+                        ingredients.forEach { ingredient ->
+                            db.createIngredient(
+                                userID, ingredient, ingredient, category, false, {isError(it) }) {
+                                fetchUserPersonal( {isError(it) } ) { callBack() }
+                            }
+                        }
+                    }
+                }
+            } else {
+                isError(true)
+                Log.d("VM", "Failed to add ingredients: ID is null")
+            }
+        }
+    }
+
+    fun updateIngredientTick(uid: String, ticked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            db.updateIngredientTick(uid, ticked, { isError(it) }) {
+                fetchUserData({ isError(it) }) {callBack()}
+            }
+        }  else {
+            Log.d("VM", "Failed to update user: ID is null")
+        }
+    }
+
 }

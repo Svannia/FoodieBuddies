@@ -1,4 +1,4 @@
-package com.example.foodiebuddy.ui.fridge
+package com.example.foodiebuddy.ui.ingredients
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
@@ -38,6 +38,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
         navigationIndex = 2,
         topBarIcons = {},
         userViewModel = userViewModel,
+        floatingButton = {},
         content = {paddingValues ->
             LazyColumn(
                 modifier = Modifier

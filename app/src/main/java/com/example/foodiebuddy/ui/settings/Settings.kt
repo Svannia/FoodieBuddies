@@ -1,6 +1,5 @@
 package com.example.foodiebuddy.ui.settings
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -53,8 +52,8 @@ import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 
-const val HEIGHT = 52
-const val OFFSET = 45
+private const val HEIGHT = 52
+private const val OFFSET = 45
 
 @Composable
 fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesViewModel, navigationActions: NavigationActions) {

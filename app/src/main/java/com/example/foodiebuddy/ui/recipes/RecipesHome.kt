@@ -38,6 +38,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
         navigationIndex = 0,
         topBarIcons = {},
         userViewModel = userViewModel,
+        floatingButton = {},
         content = {paddingValues ->
             LazyColumn(
                 modifier = Modifier

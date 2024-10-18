@@ -2,8 +2,13 @@ package com.example.foodiebuddy.database
 
 import android.net.Uri
 import android.util.Log
+import com.example.foodiebuddy.data.OwnedIngredient
+import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.User
+import com.example.foodiebuddy.data.UserPersonal
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.DocumentReference
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
@@ -14,17 +19,38 @@ private const val PICTURE = "picture"
 private const val BIO = "bio"
 private const val NUMBER_RECIPES = "numberRecipes"
 
+private const val FAV_RECIPES = "favouriteRecipes"
+private const val GROCERIES = "groceryList"
+private const val FRIDGE = "fridge"
+
+private const val OWNER = "owner"
+private const val DISPLAY_NAME = "displayName"
+private const val STAND_NAME = "standName"
+private const val CATEGORY = "category"
+private const val IS_TICKED = "isTicked"
+
 private const val defaultPicturePath = "userData/default.jpg"
 
 class DatabaseConnection {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
     // db collections
-
     /**
      * Contains fields username, picture, bio and numberRecipes
      */
     private val userDataCollection = db.collection("userData")
+    /**
+     * Contains fields favouriteRecipes, groceryList and fridge
+     */
+    private val userPersonalCollection = db.collection("userPersonal")
+    /**
+     * Contains fields owner, displayName, standName, category, isTicked
+     */
+    private val ingredientsCollection = db.collection("ingredients")
+    /**
+     * Contains fields owner, picture, recipe, ingredients, origin, diet, tags
+     */
+    private val recipesCollection = db.collection("recipes")
     /**
      * Contains userData/ path for profile pictures and tests/ path for testing picture-adding
      */
@@ -91,6 +117,7 @@ class DatabaseConnection {
         } else {
             copyDefaultPicture(userID) { isError(it) }
         }
+        createPersonal(userID, isError)
     }
 
     /**
@@ -164,6 +191,158 @@ class DatabaseConnection {
             .addOnFailureListener { e ->
                 isError(true)
                 Log.d("DB", "Failed to delete user $userID with error $e")
+            }
+    }
+
+
+    // user personal
+    private suspend fun createPersonal(userID: String, isError: (Boolean) -> Unit) {
+        val user = hashMapOf(FAV_RECIPES to emptyList<String>(), GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap<String, List<String>>())
+        userPersonalCollection
+            .document(userID)
+            .set(user)
+            .addOnSuccessListener {
+                isError(false)
+                Log.d("DB", "Successfully created user personal")
+            }
+            .addOnFailureListener {e ->
+                isError(true)
+                Log.d("DB", "Failed to create user personal with error $e")
+                return@addOnFailureListener
+            }
+    }
+
+    suspend fun fetchUserPersonal(userID: String): UserPersonal {
+        if (userID.isEmpty()) {
+            return UserPersonal.empty()
+        }
+
+        val document = userPersonalCollection.document(userID).get().await()
+        return if (document.exists()) {
+           /* val favouriteRecipesRefs = document.get(FAV_RECIPES) as? List<DocumentReference> ?: emptyList()
+            val favouriteRecipes = favouriteRecipesRefs.mapNotNull { ref ->
+                ref.get().await().toObject(Recipe::class.java)
+            }*/
+            val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
+            val groceryList = groceryListRefs.mapValues { entry ->
+                entry.value.map { ref ->
+                    fetchIngredient(ref)
+                }
+            }
+            /*val fridgeRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
+            val fridge = fridgeRefs.mapValues { entry ->
+                entry.value.mapNotNull { ref ->
+                    ref.get().await().toObject(OwnedIngredient::class.java)
+                }
+            }*/
+            // Create and return the UserPersonal object
+            Log.d("DB", "Successfully fetched user personal")
+            UserPersonal(userID, emptyList(), groceryList, emptyMap())
+        } else {
+            Log.d("DB", "Failed to fetch user personal for userID $userID")
+            UserPersonal.empty()
+        }
+    }
+
+    fun updatePersonalIngredients(userID: String, groceries: Map<String, List<OwnedIngredient>>, fridge: Map<String, List<OwnedIngredient>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val groceriesData = groceries.mapValues { entry ->
+            entry.value.map { ingredient ->
+                ingredientsCollection.document(ingredient.uid)
+            }
+        }
+        val fridgeData = fridge.mapValues { entry ->
+            entry.value.map { ingredient ->
+                ingredientsCollection.document(ingredient.uid)
+            }
+        }
+        val task = hashMapOf(GROCERIES to groceriesData, FRIDGE to fridgeData)
+        userPersonalCollection
+            .document(userID)
+            .update(task as Map<String, Any>)
+            .addOnSuccessListener {
+                isError(false)
+                callBack()
+                Log.d("DB", "Successfully update user ingredients")
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("DB", "Failed to update user ingredients with error $e")
+            }
+    }
+
+    fun updateFavourites(userID: String, favourite: Recipe, adding: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val recipeRef = recipesCollection.document(favourite.uid)
+        val updateOperation =
+            if (adding) { FieldValue.arrayUnion(recipeRef) }
+            else { FieldValue.arrayRemove(recipeRef) }
+        userPersonalCollection.document(userID)
+            .update(FAV_RECIPES, updateOperation)
+            .addOnSuccessListener {
+                isError(false)
+                callBack()
+                Log.d("DB", "Successfully updated favourites")
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("DB", "Failed to update favourites with error $e")
+            }
+    }
+
+
+    // ingredients
+    suspend fun createIngredient(owner: String, displayName: String, standName: String, category: String, isTicked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to displayName, STAND_NAME to standName, CATEGORY to category, IS_TICKED to isTicked)
+        ingredientsCollection
+            .add(ingredient)
+            .addOnSuccessListener {
+                Log.d("DB", "Successfully created user ingredient")
+                userPersonalCollection
+                    .document(owner)
+                    .update("$GROCERIES.$category", FieldValue.arrayUnion(it))
+                    .addOnSuccessListener {
+                        isError(false)
+                        callBack()
+                        Log.d("DB", "Successfully added the ingredient reference")
+                    }
+                    .addOnFailureListener {e ->
+                        isError(true)
+                        Log.d("DB", "Failed to add ingredient reference with error $e")
+                    }
+            }
+            .addOnFailureListener {e ->
+                isError(true)
+                Log.d("DB", "Failed to create ingredient with error $e")
+            }
+    }
+
+    private suspend fun fetchIngredient(ref: DocumentReference): OwnedIngredient {
+        val document = ref.get().await()
+        return if (document.exists()) {
+            val displayName = document.getString(DISPLAY_NAME) ?: ""
+            val standName = document.getString(STAND_NAME) ?: ""
+            val category = document.getString(CATEGORY) ?: ""
+            val isTicked = document.getBoolean(IS_TICKED) ?: false
+            Log.d("DB", "Successfully fetched ingredient")
+            OwnedIngredient(ref.id, displayName, standName, category, isTicked)
+        } else {
+            Log.d("DB", "Failed to fetch ingredient because it does not exist")
+            OwnedIngredient.empty()
+        }
+
+    }
+
+    fun updateIngredientTick(uid: String, isTicked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        ingredientsCollection
+            .document(uid)
+            .update(IS_TICKED, isTicked)
+            .addOnSuccessListener {
+                isError(false)
+                callBack()
+                Log.d("DB", "Successfully updated ingredient")
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("DB", "Failed to update ingredient with error $e")
             }
     }
 

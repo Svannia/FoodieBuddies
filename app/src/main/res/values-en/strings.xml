@@ -10,6 +10,7 @@
     <string name="app_name">Foodie Buddies</string>
 
     <string name="button_accept">Accept</string>
+    <string name="button_addItem">Add an item</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_delete">Delete</string>
@@ -22,9 +23,12 @@
     <string name="button_terms">Terms and Conditions</string>
     <string name="button_termsConditions">Tap to accept Terms and Conditions (mandatory)</string>
 
+    <string name="desc_add">add button</string>
     <string name="desc_appLogo">app logo</string>
     <string name="desc_burgerMenu">burger menu</string>
+    <string name="desc_delete">delete button</string>
     <string name="desc_dstIcon">destination icon</string>
+    <string name="desc_edit">edit button</string>
     <string name="desc_goBack">go back</string>
     <string name="desc_googleLogo">google logo</string>
     <string name="desc_loading">loading</string>

@@ -11,6 +11,7 @@
     <string name="app_name">Foodie Buddies</string>
 
     <string name="button_accept">Accepter</string>
+    <string name="button_addItem">Ajouter un article</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
     <string name="button_cancel">Annuler</string>
     <string name="button_delete">Supprimer</string>
@@ -23,9 +24,12 @@
     <string name="button_terms">Termes et Conditions</string>
     <string name="button_termsConditions">Tapez pour accepter les Terms et Conditions (obligatoire)</string>
 
+    <string name="desc_add">bouton ajouter</string>
     <string name="desc_appLogo">logo app</string>
     <string name="desc_burgerMenu">menu</string>
+    <string name="desc_delete">bouton supprime</string>
     <string name="desc_dstIcon">icone de destination</string>
+    <string name="desc_edit">bouton modification</string>
     <string name="desc_goBack">retour</string>
     <string name="desc_googleLogo">logo google</string>
     <string name="desc_loading">chargement</string>
