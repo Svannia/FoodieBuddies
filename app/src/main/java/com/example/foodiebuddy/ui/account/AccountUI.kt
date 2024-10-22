@@ -163,7 +163,8 @@ fun EditAccount(
                         icon = R.drawable.user,
                         placeHolder = stringResource(R.string.field_username),
                         singleLine = true,
-                        maxLength = 15
+                        maxLength = 15,
+                        width = 300.dp
                     )
                 }
                 // text field to change the bio
@@ -177,7 +178,8 @@ fun EditAccount(
                         icon = R.drawable.pencil,
                         placeHolder = stringResource(R.string.field_bio),
                         singleLine = false,
-                        maxLength = 150
+                        maxLength = 150,
+                        width = 300.dp
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }

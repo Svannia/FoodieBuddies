@@ -271,6 +271,26 @@ class DatabaseConnection {
             }
     }
 
+    fun addCategory(category: String, owner: String, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
+        val newCategory = mapOf(category to emptyList<DocumentReference>())
+
+        userPersonalCollection
+            .document(owner)
+            .update(
+                "$GROCERIES.$category", FieldValue.arrayUnion(),
+                "$FRIDGE.$category", FieldValue.arrayUnion()
+            )
+            .addOnSuccessListener {
+                isError(false)
+                Log.d("DB", "Successfully added a new category")
+                callBack()
+            }
+            .addOnFailureListener { e ->
+                Log.d("DB", "Failed to add a new category named $category with error $e")
+                isError(true)
+            }
+    }
+
     fun updateCategory(userID: String, old: String, new: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val userRef = userPersonalCollection.document(userID)
 
@@ -335,15 +355,15 @@ class DatabaseConnection {
 
 
     // ingredients
-    suspend fun createIngredient(owner: String, displayName: String, standName: String, category: String, isTicked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to displayName, STAND_NAME to standName, CATEGORY to category, IS_TICKED to isTicked)
+    suspend fun createIngredient(owner: String, newItem: OwnedIngredient, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to newItem.displayedName, STAND_NAME to newItem.standName, CATEGORY to newItem.category, IS_TICKED to newItem.isTicked)
         ingredientsCollection
             .add(ingredient)
             .addOnSuccessListener {
                 Log.d("DB", "Successfully created user ingredient")
                 userPersonalCollection
                     .document(owner)
-                    .update("$GROCERIES.$category", FieldValue.arrayUnion(it))
+                    .update("$GROCERIES.${newItem.category}", FieldValue.arrayUnion(it))
                     .addOnSuccessListener {
                         isError(false)
                         callBack()

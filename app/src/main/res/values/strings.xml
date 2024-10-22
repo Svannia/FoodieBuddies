@@ -11,6 +11,7 @@
     <string name="app_name">Foodie Buddies</string>
 
     <string name="button_accept">Accepter</string>
+    <string name="button_addCategory">Ajouter une catégorie</string>
     <string name="button_addItem">Ajouter un article</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
     <string name="button_cancel">Annuler</string>

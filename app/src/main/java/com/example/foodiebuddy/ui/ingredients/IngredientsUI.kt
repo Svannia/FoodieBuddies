@@ -20,6 +20,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -87,6 +88,53 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
 }
 
 @Composable
+fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>) {
+    val categoryName = remember { mutableStateOf("") }
+    Column (
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painterResource(R.drawable.add),
+                modifier = Modifier.size((INLINE_ICON + 6).dp),
+                contentDescription = stringResource(R.string.desc_add)
+            )
+            CustomTextField(
+                value = categoryName.value,
+                onValueChange = { categoryName.value = it },
+                icon = -1,
+                placeHolder = stringResource(R.string.button_addCategory),
+                singleLine = true,
+                maxLength = 50,
+                showMaxChara = false,
+                width = 300.dp,
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        if (categoryName.value.isNotBlank()) {
+                            val mutableNewCategories = newCategories.value.toMutableMap()
+                            mutableNewCategories[categoryName.value] = mutableListOf()
+                            newCategories.value = mutableNewCategories
+                            categoryName.value = ""
+                        }
+                    }
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Done
+                )
+            )
+        }
+        Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
+    }
+}
+
+@Composable
 fun IngredientCategoryView(
     name: String,
     ingredients: List<OwnedIngredient>,
@@ -109,29 +157,36 @@ fun IngredientCategoryView(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngredientCategoryEdit(
     name: String,
     ingredients: List<OwnedIngredient>,
-    addedItems: MutableList<String>,
-    removedItems: MutableList<String>,
+    addedItems: MutableList<OwnedIngredient>,
     editedCategories: MutableMap<String, String>,
-    removedCategories: MutableList<String>
+    onRemoveItem: (String, String) -> Unit,
+    onRemoveCategory: (String) -> Unit,
 ) {
+    Log.d("Debug", "this category is $name")
     val isEditingName = remember { mutableStateOf(false) }
     val editedName = remember { mutableStateOf(name) }
+    Log.d("Debug", "with edited name ${editedName.value}")
 
     val newItemName = remember { mutableStateOf("") }
     val sortedIngredients = ingredients.sortedBy { it.displayedName }
     val allTempIngredients = remember { mutableStateListOf(*sortedIngredients.toTypedArray()) }
 
-    Log.d("Debug", "allIngredients contains: $allTempIngredients")
-
-    Column {
+    Column (
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
         Spacer(modifier = Modifier.size(16.dp))
         Row(
-            modifier = Modifier.fillMaxWidth().height(60.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ){
             if (isEditingName.value) {
                 Spacer(modifier = Modifier.size(16.dp))
@@ -142,6 +197,8 @@ fun IngredientCategoryEdit(
                     placeHolder = stringResource(R.string.button_addItem),
                     singleLine = true,
                     maxLength = 15,
+                    showMaxChara = false,
+                    width = 200.dp,
                     keyboardActions = KeyboardActions(
                         onDone = {
                             if (editedName.value.isNotBlank()) {
@@ -154,8 +211,7 @@ fun IngredientCategoryEdit(
                     ),
                     keyboardOptions = KeyboardOptions.Default.copy(
                         imeAction = ImeAction.Done
-                    )
-                )
+                    ))
             } else {
                 Text(text = editedName.value, style = MyTypography.titleSmall, modifier = Modifier.padding(start = 16.dp))
             }
@@ -176,7 +232,7 @@ fun IngredientCategoryEdit(
                         .height(24.dp)
                         .width(40.dp)
                         .padding(end = 16.dp),
-                    onClick = { removedCategories.add(name) }
+                    onClick = { onRemoveCategory(name) }
                 ){
                     Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
                 }
@@ -190,15 +246,17 @@ fun IngredientCategoryEdit(
             allTempIngredients.forEach { ingredient ->
                 IngredientItemEdit(ingredient) {
                     allTempIngredients.remove(ingredient)
-                    removedItems.add(ingredient.uid)
+                    onRemoveItem(ingredient.uid, ingredient.displayedName)
                 }
             }
-            AddIngredient(newItemName) { displayName ->
-                allTempIngredients.add(OwnedIngredient("", displayName, "", name, false))
-                addedItems.add(displayName)
-                Log.d("Debug", "allIngredients contains after adding item: $allTempIngredients")
-            }
         }
+        AddIngredient(newItemName) { displayName ->
+            allTempIngredients.add(OwnedIngredient("", displayName, "", name, false))
+            val newIngredient = OwnedIngredient("", displayName, displayName, name, false)
+            addedItems.add(newIngredient)
+            Log.d("Debug", "allIngredients contains after adding item: $allTempIngredients")
+        }
+        Spacer(modifier = Modifier.size(16.dp))
         Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
     }
 }
@@ -308,14 +366,14 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (String) -> 
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = (OFFSET - 3).dp, end = 14.dp),
+                .padding(start = (OFFSET - 3).dp, end = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 painterResource(R.drawable.add),
                 modifier = Modifier.size((INLINE_ICON + 6).dp),
-                contentDescription = stringResource(R.string.desc_delete)
+                contentDescription = stringResource(R.string.desc_add)
             )
             CustomTextField(
                 value = displayName.value,
@@ -324,6 +382,8 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (String) -> 
                 placeHolder = stringResource(R.string.button_addItem),
                 singleLine = true,
                 maxLength = 50,
+                showMaxChara = false,
+                width = 300.dp,
                 keyboardActions = KeyboardActions(
                     onDone = {
                         if (displayName.value.isNotBlank()) {

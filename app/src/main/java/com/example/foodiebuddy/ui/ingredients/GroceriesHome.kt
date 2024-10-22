@@ -5,6 +5,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,24 +26,25 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 
 @Composable
 fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
+    val screenState = remember { mutableStateOf(ScreenState.VIEWING) }
+    val loading = remember { mutableStateOf(false) }
     // pressing the Android back button on this screen does not change it
     BackHandler {
         navigationActions.navigateTo(Route.GROCERIES, true)
+        if (screenState.value == ScreenState.EDITING) screenState.value = ScreenState.VIEWING
     }
     val context = LocalContext.current
 
     val userPersonal by userViewModel.userPersonal.collectAsState()
     val groceries = remember { mutableStateOf(userPersonal.groceryList) }
 
-    val newItems = groceries.value.mapValues { mutableListOf<String>() }
+    val newItems = groceries.value.mapValues { mutableListOf<OwnedIngredient>() }
     val removedItems = groceries.value.mapValues { mutableListOf<String>() }
     val editedCategories = mutableMapOf<String, String>()
+    val newCategories = remember { mutableStateOf(mapOf<String, MutableList<OwnedIngredient>>()) }
     val removedCategories = mutableListOf<String>()
 
     val allUpdated = remember { mutableListOf(false) }
-
-    val screenState = remember { mutableStateOf(ScreenState.VIEWING) }
-    val loading = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         Log.d("Debug", "launching effect")
@@ -61,6 +63,10 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
         Log.d("Debug", "groceries launching with ${groceries.value}")
     }
 
+    LaunchedEffect(newCategories.value) {
+        Log.d("Debug", "launching newCategories ${newCategories.value}")
+    }
+
     if (loading.value) {
         LoadingPage()
     } else {
@@ -72,15 +78,15 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
-                userViewModel.addIngredients(newItems,  {
+                userViewModel.addIngredients(newCategories.value + newItems,  {
                     if (it) handleError(context, "Could not update owned ingredients list")
                 }) { loading.value = false }
                 userViewModel.removeIngredients(removedItems, {
                     if (it) handleError(context, "Could not remove ingredient")
                 }) { loading.value = false }
-                userViewModel.updateCategories(editedCategories, {
+                /*userViewModel.updateCategories(newCategories.value, editedCategories, {
                     if (it) handleError(context, "Could not update category names")
-                }) { loading.value = false }
+                }) { loading.value = false }*/
             }},
             content = {paddingValues ->
                 LazyColumn(
@@ -95,6 +101,8 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                     newItems.forEach { (_, value) -> value.clear() }
                                     removedItems.forEach { (_, value) -> value.clear() }
                                     editedCategories.clear()
+                                    val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
+                                    newCategories.value = mutableNewCategories
                                     IngredientCategoryView(category, ingredients) { ingredient, isTicked ->
                                         userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
                                             if (it) { handleError(context, "Could not update ingredient") }
@@ -104,15 +112,38 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                             }
                         }
                         ScreenState.EDITING -> {
+                            item {
+                                AddCategory(newCategories)
+                            }
+                            items(newCategories.value.keys.toList())  { category ->
+                                IngredientCategoryEdit(
+                                    category,
+                                    newCategories.value[category] ?: mutableListOf(),
+                                    newCategories.value[category] ?: mutableListOf(),
+                                    editedCategories,
+                                    onRemoveItem = { _, name ->
+                                        newCategories.value[category]?.removeIf { ingredient ->
+                                            ingredient.displayedName == name
+                                        }
+                                    },
+                                    onRemoveCategory = {
+                                        val mutableNewCategories = newCategories.value.toMutableMap()
+                                        mutableNewCategories.remove(it)
+                                        newCategories.value = mutableNewCategories
+                                    }
+                                )
+                            }
                             groceries.value.toSortedMap().forEach { (category, ingredients) ->
                                 item {
                                     IngredientCategoryEdit(
                                         category,
                                         ingredients,
                                         newItems[category] ?: mutableListOf(),
-                                        removedItems[category] ?: mutableListOf(),
                                         editedCategories,
-                                        removedCategories
+                                        onRemoveItem = { uid, _ ->
+                                            removedItems[category]?.add(uid)
+                                        },
+                                        onRemoveCategory = { removedCategories.add(it) }
                                     )
                                 }
                             }

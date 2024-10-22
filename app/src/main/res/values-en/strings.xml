@@ -62,4 +62,5 @@
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
+    <string name="button_addCategory">Add a category</string>
 </resources>
