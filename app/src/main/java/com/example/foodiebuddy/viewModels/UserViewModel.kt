@@ -165,30 +165,38 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    fun updateCategories(newCategories: Map<String, MutableList<OwnedIngredient>>, editedCategories: MutableMap<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        if (userID != null) {
-            if (newCategories.isNotEmpty()) {
-                Log.d("VM", "Adding new categories")
-                newCategories.forEach { (category, _) ->
-                    db.addCategory(category, userID, {isError(it)}) {
-                        if (editedCategories.isNotEmpty()) {
-                            Log.d("VM", "Editing categories")
-                            editedCategories.forEach { (old, new) ->
-                                db.updateCategory(userID, old, new, {isError(it)})
-                                { fetchUserPersonal( { isError(it) } ) { callBack() } }
-                            }
-                        } else {
-                            fetchUserPersonal( { isError(false) } ) { callBack() }
+    fun updateCategories(newCategories: Map<String, MutableList<OwnedIngredient>>, editedCategories: MutableMap<String, String>, removedCategories: List<String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        Log.d("Debug", "removedCategories : ${removedCategories.toList()}")
+        viewModelScope.launch {
+            if (userID != null) {
+                Log.d("VM", "Updating categories")
+                if (newCategories.isNotEmpty()) {
+                    Log.d("VM", "Adding new categories")
+                    newCategories.forEach { (category, ingredients) ->
+                        db.addCategory(category, ingredients, userID, false, {isError(it)}) {
+                            editCategoryNames(editedCategories, {isError(it)}) { callBack() }
                         }
                     }
+                } else {
+                    editCategoryNames(editedCategories, {isError(it)}) { callBack() }
+                }
+                if (removedCategories.isNotEmpty()) {
+                    Log.d("VM", "Removing categories")
+                    removedCategories.forEach { category ->
+                        db.deleteCategory(userID, category, { isError(it) }) {
+                            fetchUserPersonal( { isError(it) } ) { callBack() }
+                        }
+                    }
+                } else {
+                    callBack()
                 }
             } else {
-                fetchUserPersonal( { isError(false) } ) { callBack() }
+                Log.d("VM", "Could not update categories, userID is null")
             }
         }
     }
 
-    fun addIngredients(newItems: Map<String, MutableList<OwnedIngredient>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    fun addIngredients(newItems: Map<String, MutableList<OwnedIngredient>>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
                 if (newItems.isNotEmpty()) {
@@ -196,7 +204,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         if (ingredients.isNotEmpty()) {
                             ingredients.forEach { ingredient ->
                                 db.createIngredient(
-                                    userID, ingredient, {isError(it) })
+                                    userID, ingredient, isInFridge, {isError(it) })
                                 { fetchUserPersonal( {isError(it) } ) { callBack() } }
                             }
                         } else {
@@ -242,6 +250,20 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             Log.d("VM", "Failed to delete user: ID is null")
+        }
+    }
+
+    private fun editCategoryNames(editedCategories: MutableMap<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            if (editedCategories.isNotEmpty()) {
+                Log.d("VM", "Editing categories")
+                editedCategories.forEach { (old, new) ->
+                    db.updateCategory(userID, old, new, {isError(it)})
+                    { fetchUserPersonal( { isError(it) } ) { callBack() } }
+                }
+            } else {
+                fetchUserPersonal( { isError(it) } ) { callBack() }
+            }
         }
     }
 }

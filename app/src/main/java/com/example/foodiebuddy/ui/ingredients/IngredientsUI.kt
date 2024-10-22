@@ -26,6 +26,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -33,6 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -89,6 +92,10 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
 
 @Composable
 fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val isFocused = remember { mutableStateOf(false) }
+
     val categoryName = remember { mutableStateOf("") }
     Column (
         horizontalAlignment = Alignment.Start,
@@ -101,28 +108,56 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                painterResource(R.drawable.add),
-                modifier = Modifier.size((INLINE_ICON + 6).dp),
-                contentDescription = stringResource(R.string.desc_add)
-            )
+            IconButton(
+                onClick = {
+                    if (isFocused.value) {
+                        categoryName.value = categoryName.value.trimEnd()
+                        if (categoryName.value.isNotBlank()) {
+                            val mutableNewCategories = newCategories.value.toMutableMap()
+                            mutableNewCategories[categoryName.value] = mutableListOf()
+                            newCategories.value = mutableNewCategories
+                            keyboardController?.hide()
+                            focusRequester.freeFocus()
+                            isFocused.value = false
+                        }
+                        categoryName.value = ""
+
+                    } else {
+                        focusRequester.requestFocus()
+                    }
+                }
+            ) {
+                Icon(
+                    painterResource(R.drawable.add),
+                    modifier = Modifier.size((INLINE_ICON + 6).dp),
+                    contentDescription = stringResource(R.string.desc_add)
+                )
+            }
             CustomTextField(
                 value = categoryName.value,
-                onValueChange = { categoryName.value = it },
+                onValueChange = {
+                    categoryName.value = it
+                    isFocused.value = true
+                },
                 icon = -1,
                 placeHolder = stringResource(R.string.button_addCategory),
                 singleLine = true,
                 maxLength = 50,
                 showMaxChara = false,
                 width = 300.dp,
+                focusRequester = focusRequester,
+                onFocusedChanged = { isFocused.value = it.isFocused },
                 keyboardActions = KeyboardActions(
                     onDone = {
+                        categoryName.value = categoryName.value.trimEnd()
                         if (categoryName.value.isNotBlank()) {
                             val mutableNewCategories = newCategories.value.toMutableMap()
                             mutableNewCategories[categoryName.value] = mutableListOf()
                             newCategories.value = mutableNewCategories
-                            categoryName.value = ""
+                            keyboardController?.hide()
+                            isFocused.value = false
                         }
+                        categoryName.value = ""
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(
@@ -223,7 +258,14 @@ fun IngredientCategoryEdit(
                         .height(24.dp)
                         .width(40.dp)
                         .padding(end = 16.dp),
-                    onClick = { isEditingName.value = !isEditingName.value }
+                    onClick = {
+                        isEditingName.value = !isEditingName.value
+                        if (editedName.value.isNotBlank()) {
+                            if (editedName.value != name) {
+                                editedCategories[name] = editedName.value
+                            }
+                        }
+                    }
                 ){
                     Icon(painterResource(R.drawable.pencil), contentDescription = stringResource(R.string.desc_edit))
                 }
@@ -250,11 +292,11 @@ fun IngredientCategoryEdit(
                 }
             }
         }
+        newItemName.value = ""
         AddIngredient(newItemName) { displayName ->
-            allTempIngredients.add(OwnedIngredient("", displayName, "", name, false))
-            val newIngredient = OwnedIngredient("", displayName, displayName, name, false)
+            allTempIngredients.add(OwnedIngredient("", displayName.value, "", name, false))
+            val newIngredient = OwnedIngredient("", displayName.value, displayName.value, name, false)
             addedItems.add(newIngredient)
-            Log.d("Debug", "allIngredients contains after adding item: $allTempIngredients")
         }
         Spacer(modifier = Modifier.size(16.dp))
         Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
@@ -356,7 +398,11 @@ private fun IngredientItemEdit(
 }
 
 @Composable
-private fun AddIngredient(displayName: MutableState<String>, onAdd: (String) -> Unit) {
+private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableState<String>) -> Unit) {
+    val focusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val isFocused = remember { mutableStateOf(false) }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -370,11 +416,29 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (String) -> 
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                painterResource(R.drawable.add),
-                modifier = Modifier.size((INLINE_ICON + 6).dp),
-                contentDescription = stringResource(R.string.desc_add)
-            )
+            IconButton(
+                onClick = {
+                    if (isFocused.value) {
+                        displayName.value = displayName.value.trimEnd()
+                        if (displayName.value.isNotBlank()) {
+                            onAdd(displayName)
+                            keyboardController?.hide()
+                            focusRequester.freeFocus()
+                            isFocused.value = false
+                        }
+                        displayName.value = ""
+
+                    } else {
+                        focusRequester.requestFocus()
+                    }
+                }
+            ) {
+                Icon(
+                    painterResource(R.drawable.add),
+                    modifier = Modifier.size((INLINE_ICON + 6).dp),
+                    contentDescription = stringResource(R.string.desc_add)
+                )
+            }
             CustomTextField(
                 value = displayName.value,
                 onValueChange = { displayName.value = it },
@@ -384,12 +448,18 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (String) -> 
                 maxLength = 50,
                 showMaxChara = false,
                 width = 300.dp,
+                focusRequester = focusRequester,
+                onFocusedChanged = { isFocused.value = it.isFocused },
                 keyboardActions = KeyboardActions(
                     onDone = {
+                        displayName.value = displayName.value.trimEnd()
                         if (displayName.value.isNotBlank()) {
-                            onAdd(displayName.value)
-                            displayName.value = ""
+                            onAdd(displayName)
+                            keyboardController?.hide()
+                            focusRequester.freeFocus()
+                            isFocused.value = false
                         }
+                        displayName.value = ""
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(

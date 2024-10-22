@@ -2,6 +2,8 @@ package com.example.foodiebuddy.database
 
 import android.net.Uri
 import android.util.Log
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.User
@@ -14,6 +16,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.time.chrono.IsoEra
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
@@ -226,6 +229,7 @@ class DatabaseConnection {
             }*/
             val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val groceryList = groceryListRefs.mapValues { entry ->
+                Log.d("Debug", "Trying to fetch entry ${entry.key}")
                 entry.value.map { ref ->
                     fetchIngredient(ref)
                 }
@@ -263,7 +267,7 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("DB", "Successfully update user ingredients")
+                Log.d("DB", "Successfully updated user ingredients")
             }
             .addOnFailureListener { e ->
                 isError(true)
@@ -271,24 +275,35 @@ class DatabaseConnection {
             }
     }
 
-    fun addCategory(category: String, owner: String, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
-        val newCategory = mapOf(category to emptyList<DocumentReference>())
+    suspend fun addCategory(category: String, ingredients: List<OwnedIngredient>, owner: String, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
+        if (ingredients.isEmpty()) {
+            userPersonalCollection
+                .document(owner)
+                .update(
+                    "$GROCERIES.${category}", FieldValue.arrayUnion(),
+                    "$FRIDGE.${category}", FieldValue.arrayUnion()
+                )
+                .addOnSuccessListener {
+                    isError(false)
+                    callBack()
+                    Log.d("DB", "Successfully added the empty category $category")
+                }
+                .addOnFailureListener { e ->
+                    isError(true)
+                    Log.d("DB", "Failed to add empty category $category with error $e")
+                }
+        } else {
+            var remaining = ingredients.size
+            for (ingredient in ingredients) {
+                createIngredient(owner, ingredient, isInFridge, { isError(it) }) {
+                    remaining--
+                    if (remaining <= 0) {
+                        callBack()
+                    }
+                }
+            }
+        }
 
-        userPersonalCollection
-            .document(owner)
-            .update(
-                "$GROCERIES.$category", FieldValue.arrayUnion(),
-                "$FRIDGE.$category", FieldValue.arrayUnion()
-            )
-            .addOnSuccessListener {
-                isError(false)
-                Log.d("DB", "Successfully added a new category")
-                callBack()
-            }
-            .addOnFailureListener { e ->
-                Log.d("DB", "Failed to add a new category named $category with error $e")
-                isError(true)
-            }
     }
 
     fun updateCategory(userID: String, old: String, new: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
@@ -335,6 +350,76 @@ class DatabaseConnection {
             }
     }
 
+    fun deleteCategory(owner: String, category: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val ingredientsToDelete = mutableListOf<DocumentReference>()
+
+        userPersonalCollection
+            .document(owner)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val groceriesMap = document.get(GROCERIES) as? Map<String, List<DocumentReference>>
+                    val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>>
+
+                    groceriesMap?.get(category)?.let { ingredientsToDelete.addAll(it) }
+                    fridgeMap?.get(category)?.let { ingredientsToDelete.addAll(it) }
+
+                    if (ingredientsToDelete.isNotEmpty()) {
+                        var remaining = ingredientsToDelete.size
+                        ingredientsToDelete.forEach { ref ->
+                            ref.delete()
+                                .addOnSuccessListener {
+                                    remaining--
+                                    if (remaining <= 0) {
+                                        userPersonalCollection
+                                            .document(owner)
+                                            .update(
+                                                "$GROCERIES.$category",FieldValue.delete(),
+                                                "$FRIDGE.$category", FieldValue.delete()
+                                            )
+                                            .addOnSuccessListener {
+                                                Log.d("DB", "Successfully deleted category $category")
+                                                isError(false)
+                                                callBack()
+                                            }
+                                            .addOnFailureListener { e ->
+                                                Log.d("DB", "Failed to delete category $category with $e")
+                                                isError(true)
+                                            }
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.d("DB", "Failed to delete ingredient $ref with error $e")
+                                    isError(true)
+                                }
+                        }
+                    } else {
+                        userPersonalCollection
+                            .document(owner)
+                            .update(
+                                "$GROCERIES.$category",FieldValue.delete(),
+                                "$FRIDGE.$category", FieldValue.delete()
+                            )
+                            .addOnSuccessListener {
+                                Log.d("DB", "Successfully deleted category $category")
+                                isError(false)
+                                callBack()
+                            }
+                            .addOnFailureListener { e ->
+                                Log.d("DB", "Failed to delete category $category with $e")
+                                isError(true)
+                            }
+                    }
+                } else {
+                    Log.d("DB", "Failed to delete category $category because it does not exist")
+                    isError(true)
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.d("DB", "Failed to retrieve userPersonal for $owner with error $e")
+                isError(true)
+            }
+    }
     fun updateFavourites(userID: String, favourite: Recipe, adding: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val recipeRef = recipesCollection.document(favourite.uid)
         val updateOperation =
@@ -355,7 +440,9 @@ class DatabaseConnection {
 
 
     // ingredients
-    suspend fun createIngredient(owner: String, newItem: OwnedIngredient, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    suspend fun createIngredient(owner: String, newItem: OwnedIngredient, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val targetField = if (isInFridge) {"$FRIDGE.${newItem.category}"} else {"$GROCERIES.${newItem.category}"}
+        val syncedField = if (isInFridge) {"$GROCERIES.${newItem.category}"} else {"$FRIDGE.${newItem.category}"}
         val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to newItem.displayedName, STAND_NAME to newItem.standName, CATEGORY to newItem.category, IS_TICKED to newItem.isTicked)
         ingredientsCollection
             .add(ingredient)
@@ -363,7 +450,10 @@ class DatabaseConnection {
                 Log.d("DB", "Successfully created user ingredient")
                 userPersonalCollection
                     .document(owner)
-                    .update("$GROCERIES.${newItem.category}", FieldValue.arrayUnion(it))
+                    .update(
+                        targetField, FieldValue.arrayUnion(it),
+                        syncedField, FieldValue.arrayUnion()
+                    )
                     .addOnSuccessListener {
                         isError(false)
                         callBack()
@@ -390,7 +480,7 @@ class DatabaseConnection {
             Log.d("DB", "Successfully fetched ingredient")
             OwnedIngredient(ref.id, displayName, standName, category, isTicked)
         } else {
-            Log.d("DB", "Failed to fetch ingredient because it does not exist")
+            Log.d("Debug", "Failed to fetch ingredient $ref because it does not exist")
             OwnedIngredient.empty()
         }
 

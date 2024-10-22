@@ -67,12 +67,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.FocusState
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -306,17 +311,28 @@ fun CustomTextField(
     placeHolder: String,
     singleLine: Boolean,
     maxLength: Int,
+    focusRequester: FocusRequester = FocusRequester.Default,
+    onFocusedChanged: (FocusState) -> Unit = {},
     showMaxChara: Boolean = true,
     width: Dp,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
     TextField(
-        modifier = if (singleLine) {Modifier.width(width).padding(0.dp)} else {
+        modifier = if (singleLine) {
+            Modifier
+                .width(width)
+                .padding(0.dp)
+                .focusRequester(focusRequester)
+                .onFocusChanged { onFocusedChanged(it) }
+        } else {
             Modifier
                 .width(width)
                 .height(80.dp)
-                .padding(0.dp)},
+                .padding(0.dp)
+                .focusRequester(focusRequester)
+                .onFocusChanged { onFocusedChanged(it) }
+        },
         value = value,
         onValueChange = {
             if (it.length <= maxLength) {
@@ -352,7 +368,9 @@ fun CustomTextField(
             focusedIndicatorColor = MaterialTheme.colorScheme.primary
         ),
         keyboardActions = keyboardActions,
-        keyboardOptions = keyboardOptions
+        keyboardOptions = keyboardOptions.copy(
+            capitalization = KeyboardCapitalization.Sentences
+        )
     )
 }
 
