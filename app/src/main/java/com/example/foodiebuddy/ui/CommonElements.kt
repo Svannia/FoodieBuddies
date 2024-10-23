@@ -246,25 +246,30 @@ fun LoadingPage() {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        val infiniteTransition = rememberInfiniteTransition(label = stringResource(R.string.desc_loading))
-        val angle by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = 360f,
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 1000, easing = LinearEasing)
-            ), label = stringResource(R.string.desc_loading)
-        )
+        LoadingAnimation(100f, 10f)
+    }
+}
 
-        val primaryColour = MaterialTheme.colorScheme.primary
-        Canvas(modifier = Modifier.size((100f).dp)) {
-            drawArc(
-                color = primaryColour,
-                startAngle = angle,
-                sweepAngle = 270f,
-                useCenter = false,
-                style = Stroke(width = 10f, cap = StrokeCap.Round)
-            )
-        }
+@Composable
+fun LoadingAnimation(size: Float, strokeWidth: Float) {
+    val infiniteTransition = rememberInfiniteTransition(label = stringResource(R.string.desc_loading))
+    val angle by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing)
+        ), label = stringResource(R.string.desc_loading)
+    )
+
+    val primaryColour = MaterialTheme.colorScheme.primary
+    Canvas(modifier = Modifier.size((size).dp)) {
+        drawArc(
+            color = primaryColour,
+            startAngle = angle,
+            sweepAngle = 270f,
+            useCenter = false,
+            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+        )
     }
 }
 

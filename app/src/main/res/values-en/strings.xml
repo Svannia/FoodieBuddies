@@ -61,6 +61,7 @@
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
     <string name="toast_unknownError">There was an error, please retry. If it keeps failing, please contact Alice!</string>
 
+    <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>

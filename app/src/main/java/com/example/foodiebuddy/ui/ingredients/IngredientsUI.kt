@@ -51,7 +51,7 @@ private const val HEIGHT = 42
 private const val OFFSET = 45
 private const val INLINE_ICON = 20
 
-enum class ScreenState { VIEWING, EDITING }
+enum class ScreenState { LOADING, VIEWING, EDITING }
 @Composable
 fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
     Row(
@@ -68,6 +68,7 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
             onClick = {
                 // switch the icon displayed on the floating button
                 when (screenState.value) {
+                    ScreenState.LOADING -> {}
                     ScreenState.VIEWING -> { screenState.value = ScreenState.EDITING }
                     ScreenState.EDITING -> {
                         screenState.value = ScreenState.VIEWING
@@ -81,6 +82,7 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
                 modifier = Modifier.size(32.dp),
                 painter = painterResource(
                     when (screenState.value) {
+                        ScreenState.LOADING -> R.drawable.pencil
                         ScreenState.VIEWING -> R.drawable.pencil
                         ScreenState.EDITING -> R.drawable.tick
                     }

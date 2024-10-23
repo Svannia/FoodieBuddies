@@ -24,7 +24,7 @@
     <string name="button_signIn">S\'enregistrer</string>
     <string name="button_signOut">Se déconnecter</string>
     <string name="button_terms">Termes et Conditions</string>
-    <string name="button_termsConditions">Tapez pour accepter les Terms et Conditions (obligatoire)</string>
+    <string name="button_termsConditions">Appuie pour accepter les Terms et Conditions (obligatoire)</string>
 
     <string name="desc_add">bouton ajouter</string>
     <string name="desc_appLogo">logo app</string>
@@ -58,10 +58,11 @@
     <string name="title_settings">Paramètres</string>
     <string name="title_theme">Thème</string>
 
-    <string name="toast_categoryName">This category already exists</string>
+    <string name="toast_categoryName">Cette catégorie existe déjà. Sauvegarde d\'abord tes modifications.</string>
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
+    <string name="txt_emptyGroceries">Ta liste de courses est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>

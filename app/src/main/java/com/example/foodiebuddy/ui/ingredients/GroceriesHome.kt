@@ -2,10 +2,16 @@ package com.example.foodiebuddy.ui.ingredients
 
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -14,11 +20,13 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.OwnedIngredient
@@ -26,8 +34,10 @@ import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.DialogWindow
+import com.example.foodiebuddy.ui.LoadingAnimation
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.PrimaryScreen
+import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 @Composable
@@ -57,16 +67,16 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
 
 
     LaunchedEffect(Unit) {
+        screenState.value = ScreenState.LOADING
+        userViewModel.fetchUserData({
+            if (it) { handleError(context, "Could not fetch user data") }
+        }){}
         userViewModel.fetchUserPersonal({
             if (it) { handleError(context, "Could not fetch user personal") }
         }){
-            groceries.value = userPersonal.groceryList
+            groceries.value = userPersonal.groceryList.toMutableMap()
+            screenState.value = ScreenState.VIEWING
         }
-    }
-
-    LaunchedEffect(userPersonal) {
-        groceries.value = userPersonal.groceryList.toMutableMap()
-
     }
 
     if (loading.value) {
@@ -136,6 +146,19 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             }},
             content = { paddingValues ->
                 when (screenState.value) {
+                    ScreenState.LOADING -> {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues),
+                            verticalArrangement = Arrangement.Top,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Spacer(modifier = Modifier.size(16.dp))
+                            LoadingAnimation(30f, 10f)
+                        }
+                    }
+
                     ScreenState.VIEWING -> {
                         LazyColumn(
                             modifier = Modifier
@@ -152,11 +175,26 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                             unavailableCategoryNames.clear()
                             unavailableCategoryNames.addAll(groceries.value.keys)
 
-                            items(groceries.value.toSortedMap().keys.toList(), key = {it}) { category ->
-                                IngredientCategoryView(category, groceries.value[category] ?: mutableListOf()) { ingredient, isTicked ->
-                                    userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
-                                        if (it) { handleError(context, "Could not update ingredient") }
-                                    }) {}
+                            if (groceries.value.isNotEmpty() || groceries.value.any { it.value.isNotEmpty() }) {
+                                items(groceries.value.toSortedMap().keys.toList(), key = {it}) { category ->
+                                    if (groceries.value[category]?.isNotEmpty() == true) {
+                                        IngredientCategoryView(category, groceries.value[category] ?: mutableListOf()) { ingredient, isTicked ->
+                                            userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
+                                                if (it) { handleError(context, "Could not update ingredient") }
+                                            }) {}
+                                        }
+                                    }
+                                }
+                            } else {
+                                item {
+                                    Text(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(top = 16.dp),
+                                        text = stringResource(R.string.txt_emptyGroceries),
+                                        style = MyTypography.bodyMedium,
+                                        textAlign = TextAlign.Center
+                                    )
                                 }
                             }
                         }
