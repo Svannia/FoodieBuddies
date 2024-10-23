@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <resources>
     <string name="alert_deleteAccount">Es-tu sûr.e de vouloir supprimer ton compte?\nCette action n\'est pas réversible.</string>
+    <string name="alert_deleteCatGroceries">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Mon Frigo\"</string>
     <string name="alert_termsConditions">
         Cette application est à usage strictement privé: installe-la seulement si Alice te l\'a donnée.\n
         \nNe partage pas le fichier d\'installation sans l\'accord d\'Alice. Si elle trouve un compte non autorisé, elle le supprimera illico presto.\n
@@ -57,6 +58,7 @@
     <string name="title_settings">Paramètres</string>
     <string name="title_theme">Thème</string>
 
+    <string name="toast_categoryName">This category already exists</string>
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
@@ -64,5 +66,4 @@
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>
     <string name="txt_systemLight">Clair</string>
-    <string name="toast_categoryName">This category already exists</string>
 </resources>

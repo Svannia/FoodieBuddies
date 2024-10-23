@@ -15,7 +15,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
@@ -23,6 +25,7 @@ import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.PrimaryScreen
 import com.example.foodiebuddy.viewModels.UserViewModel
@@ -47,6 +50,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
     val newCategories = remember { mutableStateOf(mapOf<String, MutableList<OwnedIngredient>>()) }
     val removedCategories = remember { mutableStateListOf<String>() }
     val unavailableCategoryNames = groceries.value.keys.toMutableStateList()
+
+    val showAlert = remember { mutableStateOf(false) }
+    var deletingCategory = ""
 
 
     LaunchedEffect(Unit) {
@@ -127,7 +133,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                     }
                 }
             }},
-            content = {paddingValues ->
+            content = { paddingValues ->
                 when (screenState.value) {
                     ScreenState.VIEWING -> {
                         LazyColumn(
@@ -193,15 +199,29 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                             removedItems[category]?.add(uid)
                                         },
                                         onRemoveCategory = {
-                                            removedCategories.add(it)
-                                            groceries.value = groceries.value.filterKeys { key -> key !in removedCategories }
-                                            unavailableCategoryNames.remove(it)
+                                            deletingCategory = it
+                                            showAlert.value = true
                                         }
                                     )
                                 }
                             }
                         }
 
+                    }
+                }
+                if (showAlert.value) {
+                    DialogWindow(
+                        visible = showAlert,
+                        content = stringResource(R.string.alert_deleteCatGroceries),
+                        confirmText = stringResource(R.string.button_delete),
+                        confirmColour = Color.Red,
+                        additionOnDismiss = { deletingCategory = "" }
+                    ) {
+                        removedCategories.add(deletingCategory)
+                        groceries.value = groceries.value.filterKeys { key -> key !in removedCategories }
+                        unavailableCategoryNames.remove(deletingCategory)
+                        deletingCategory = ""
+                        showAlert.value = false
                     }
                 }
             }

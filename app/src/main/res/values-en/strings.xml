@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
     <string name="alert_deleteAccount">Are you sure you want to delete your account?\nThis cannot be undone.</string>
+    <string name="alert_deleteCatGroceries">Warning: this action will also delete this category and all its elements in \"My Fridge\"</string>
     <string name="alert_termsConditions">
         This app is strictly for private use: only install it if you received it from Alice.\n
         \nDo not share the installation file without Alice\'s approval. If she finds an unauthorized account, she will delete it immediately.\n
@@ -10,6 +11,7 @@
     <string name="app_name">Foodie Buddies</string>
 
     <string name="button_accept">Accept</string>
+    <string name="button_addCategory">Add a category</string>
     <string name="button_addItem">Add an item</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
     <string name="button_cancel">Cancel</string>
@@ -55,6 +57,7 @@
     <string name="title_settings">Settings</string>
     <string name="title_theme">Theme</string>
 
+    <string name="toast_categoryName">This category already exists</string>
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
     <string name="toast_unknownError">There was an error, please retry. If it keeps failing, please contact Alice!</string>
 
@@ -62,6 +65,4 @@
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
-    <string name="button_addCategory">Add a category</string>
-    <string name="toast_categoryName">This category already exists</string>
 </resources>

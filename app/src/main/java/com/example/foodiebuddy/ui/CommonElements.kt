@@ -390,10 +390,14 @@ fun DialogWindow(
     content: String,
     confirmText: String,
     confirmColour: Color,
+    additionOnDismiss: () -> Unit = {},
     onConfirm: () -> Unit
 ) {
     AlertDialog(
-        onDismissRequest = { visible.value = false },
+        onDismissRequest = {
+            visible.value = false
+            additionOnDismiss()
+        },
         text = {
             Text(
                 text = content,
@@ -437,7 +441,10 @@ fun DialogWindow(
                         color = Color.Transparent,
                         shape = RoundedCornerShape(50)
                     ),
-                onClick = { visible.value = false },
+                onClick = {
+                    visible.value = false
+                    additionOnDismiss()
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
                 ),
