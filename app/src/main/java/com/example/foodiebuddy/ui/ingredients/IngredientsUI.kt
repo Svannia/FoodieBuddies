@@ -92,11 +92,11 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
 }
 
 @Composable
-fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>, unavailableCategoryNames: SnapshotStateList<String>, context: Context) {
+fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>, unavailableCategoryNames: SnapshotStateList<String>, context: Context) {
     val focusRequester = remember { FocusRequester() }
     val isFocused = remember { mutableStateOf(false) }
 
-    val categoryName = remember { mutableStateOf("") }
+    Log.d("Debug", "name beginning : ${newCategoryName.value}")
     Column (
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(0.dp)
@@ -111,20 +111,20 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
             IconButton(
                 onClick = {
                     if (isFocused.value) {
-                        categoryName.value = categoryName.value.trimEnd()
-                        if (categoryName.value.isNotBlank()) {
-                            if (unavailableCategoryNames.contains(categoryName.value)) {
+                        newCategoryName.value = newCategoryName.value.trimEnd()
+                        if (newCategoryName.value.isNotBlank()) {
+                            if (unavailableCategoryNames.contains(newCategoryName.value)) {
                                 Toast.makeText(context, context.getString(R.string.toast_categoryName), Toast.LENGTH_SHORT).show()
                             } else {
                                 val mutableNewCategories = newCategories.value.toMutableMap()
-                                mutableNewCategories[categoryName.value] = mutableListOf()
+                                mutableNewCategories[newCategoryName.value] = mutableListOf()
                                 newCategories.value = mutableNewCategories
-                                unavailableCategoryNames.add(categoryName.value)
+                                unavailableCategoryNames.add(newCategoryName.value)
                                 focusRequester.freeFocus()
                                 isFocused.value = false
                             }
                         }
-                        categoryName.value = ""
+                        newCategoryName.value = ""
 
                     } else {
                         focusRequester.requestFocus()
@@ -137,10 +137,11 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
                     contentDescription = stringResource(R.string.desc_add)
                 )
             }
+            Log.d("Debug", "name before text field : ${newCategoryName.value}")
             CustomTextField(
-                value = categoryName.value,
+                value = newCategoryName.value,
                 onValueChange = {
-                    categoryName.value = it
+                    newCategoryName.value = it
                     isFocused.value = true
                 },
                 icon = -1,
@@ -153,20 +154,21 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
                 onFocusedChanged = { isFocused.value = it.isFocused },
                 keyboardActions = KeyboardActions(
                     onDone = {
-                        categoryName.value = categoryName.value.trimEnd()
-                        if (categoryName.value.isNotBlank()) {
-                            if (unavailableCategoryNames.contains(categoryName.value)) {
+                        newCategoryName.value = newCategoryName.value.trimEnd()
+                        if (newCategoryName.value.isNotBlank()) {
+                            if (unavailableCategoryNames.contains(newCategoryName.value)) {
                                 Toast.makeText(context, context.getString(R.string.toast_categoryName), Toast.LENGTH_SHORT).show()
                             } else {
                                 val mutableNewCategories = newCategories.value.toMutableMap()
-                                mutableNewCategories[categoryName.value] = mutableListOf()
+                                mutableNewCategories[newCategoryName.value] = mutableListOf()
                                 newCategories.value = mutableNewCategories
-                                unavailableCategoryNames.add(categoryName.value)
+                                unavailableCategoryNames.add(newCategoryName.value)
                                 focusRequester.freeFocus()
                                 isFocused.value = false
                             }
                         }
-                        categoryName.value = ""
+                        newCategoryName.value = ""
+                        Log.d("Debug", "name after done : ${newCategoryName.value}")
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(
@@ -176,6 +178,7 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
         }
         Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
     }
+    Log.d("Debug", "name at the end is : ${newCategoryName.value}")
 }
 
 @Composable

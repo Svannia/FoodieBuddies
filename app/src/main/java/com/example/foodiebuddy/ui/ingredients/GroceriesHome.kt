@@ -47,6 +47,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
     val newItems = groceries.value.mapValues { mutableListOf<OwnedIngredient>() }
     val removedItems = groceries.value.mapValues { mutableListOf<String>() }
     val editedCategories = mutableMapOf<String, String>()
+    val newCategoryName = remember { mutableStateOf("") }
     val newCategories = remember { mutableStateOf(mapOf<String, MutableList<OwnedIngredient>>()) }
     val removedCategories = remember { mutableStateListOf<String>() }
     val unavailableCategoryNames = groceries.value.keys.toMutableStateList()
@@ -166,8 +167,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                 .fillMaxSize()
                                 .padding(paddingValues)
                         ) {
+                            newCategoryName.value = ""
                             item {
-                                AddCategory(newCategories, unavailableCategoryNames, context)
+                                AddCategory(newCategoryName, newCategories, unavailableCategoryNames, context)
                             }
                             items(newCategories.value.keys.reversed().toList(), key = {it})  { category ->
                                 IngredientCategoryEdit(
