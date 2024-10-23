@@ -229,7 +229,6 @@ class DatabaseConnection {
             }*/
             val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val groceryList = groceryListRefs.mapValues { entry ->
-                Log.d("Debug", "Trying to fetch entry ${entry.key}")
                 entry.value.map { ref ->
                     fetchIngredient(ref)
                 }
@@ -480,7 +479,6 @@ class DatabaseConnection {
             Log.d("DB", "Successfully fetched ingredient")
             OwnedIngredient(ref.id, displayName, standName, category, isTicked)
         } else {
-            Log.d("Debug", "Failed to fetch ingredient $ref because it does not exist")
             OwnedIngredient.empty()
         }
 

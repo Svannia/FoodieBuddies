@@ -13,10 +13,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.errors.handleError
@@ -45,24 +46,20 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
     val editedCategories = mutableMapOf<String, String>()
     val newCategories = remember { mutableStateOf(mapOf<String, MutableList<OwnedIngredient>>()) }
     val removedCategories = remember { mutableStateListOf<String>() }
+    val unavailableCategoryNames = groceries.value.keys.toMutableStateList()
 
-    val allUpdated = remember { mutableListOf(false) }
 
     LaunchedEffect(Unit) {
-        Log.d("Debug", "launching effect")
         userViewModel.fetchUserPersonal({
             if (it) { handleError(context, "Could not fetch user personal") }
         }){
             groceries.value = userPersonal.groceryList
-            Log.d("Debug", "groceryList is now $groceries")
         }
     }
 
     LaunchedEffect(userPersonal) {
-        Log.d("Debug", "effect launched")
         groceries.value = userPersonal.groceryList.toMutableMap()
-        Log.d("Debug", "userPersonal launching with ${userPersonal.groceryList}")
-        Log.d("Debug", "groceries launching with ${groceries.value}")
+
     }
 
     if (loading.value) {
@@ -75,46 +72,96 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             topBarIcons = {},
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
-                Log.d("Debug", "on validate, removed categories are $removedCategories")
                 loading.value = true
+                var remainingUpdates = 4
                 userViewModel.removeIngredients(removedItems, {
                     if (it) handleError(context, "Could not remove ingredient")
-                }) { loading.value = false }
+                }) {
+                    remainingUpdates--
+                    if (remainingUpdates <= 0) {
+                        userViewModel.fetchUserPersonal({
+                            if (it) { handleError(context, "Could not fetch user personal") }
+                        }){
+                            groceries.value = userPersonal.groceryList
+                            loading.value = false
+                        }
+                    }
+                }
                 userViewModel.addIngredients(newItems, false, {
                     if (it) handleError(context, "Could not update owned ingredients list")
-                }) { loading.value = false }
-                userViewModel.updateCategories(newCategories.value, editedCategories, removedCategories, {
+                }) {
+                    remainingUpdates--
+                    if (remainingUpdates <= 0) {
+                        userViewModel.fetchUserPersonal({
+                            if (it) { handleError(context, "Could not fetch user personal") }
+                        }){
+                            groceries.value = userPersonal.groceryList
+                            loading.value = false
+                        }
+                    }
+                }
+                userViewModel.updateCategories(newCategories.value, editedCategories, {
                     if (it) {handleError(context, "Could not update category names")}
-                }) { loading.value = false }
+                }) {
+                    remainingUpdates--
+                    if (remainingUpdates <= 0) {
+                        userViewModel.fetchUserPersonal({
+                            if (it) { handleError(context, "Could not fetch user personal") }
+                        }){
+                            groceries.value = userPersonal.groceryList
+                            loading.value = false
+                        }
+                    }
+                }
+                userViewModel.deleteCategories(removedCategories, {
+                    if (it) {handleError(context, "Could not update category names")}
+                }) {
+                    remainingUpdates--
+                    if (remainingUpdates <= 0) {
+                        userViewModel.fetchUserPersonal({
+                            if (it) { handleError(context, "Could not fetch user personal") }
+                        }){
+                            groceries.value = userPersonal.groceryList
+                            loading.value = false
+                        }
+                    }
+                }
             }},
             content = {paddingValues ->
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                ) {
-                    when (screenState.value) {
-                        ScreenState.VIEWING -> {
+                when (screenState.value) {
+                    ScreenState.VIEWING -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues)
+                        ) {
                             groceries.value = userPersonal.groceryList.toMutableMap()
-                            groceries.value.toSortedMap().forEach { (category, ingredients) ->
-                                item {
-                                    newItems.forEach { (_, value) -> value.clear() }
-                                    removedItems.forEach { (_, value) -> value.clear() }
-                                    editedCategories.clear()
-                                    val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
-                                    newCategories.value = mutableNewCategories
-                                    removedCategories.clear()
-                                    IngredientCategoryView(category, ingredients) { ingredient, isTicked ->
-                                        userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
-                                            if (it) { handleError(context, "Could not update ingredient") }
-                                        }) {}
-                                    }
+                            newItems.forEach { (_, value) -> value.clear() }
+                            removedItems.forEach { (_, value) -> value.clear() }
+                            editedCategories.clear()
+                            val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
+                            newCategories.value = mutableNewCategories
+                            removedCategories.clear()
+                            unavailableCategoryNames.clear()
+                            unavailableCategoryNames.addAll(groceries.value.keys)
+
+                            items(groceries.value.toSortedMap().keys.toList(), key = {it}) { category ->
+                                IngredientCategoryView(category, groceries.value[category] ?: mutableListOf()) { ingredient, isTicked ->
+                                    userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
+                                        if (it) { handleError(context, "Could not update ingredient") }
+                                    }) {}
                                 }
                             }
                         }
-                        ScreenState.EDITING -> {
+                    }
+                    ScreenState.EDITING -> {
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues)
+                        ) {
                             item {
-                                AddCategory(newCategories)
+                                AddCategory(newCategories, unavailableCategoryNames, context)
                             }
                             items(newCategories.value.keys.reversed().toList(), key = {it})  { category ->
                                 IngredientCategoryEdit(
@@ -131,6 +178,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                         val mutableNewCategories = newCategories.value.toMutableMap()
                                         mutableNewCategories.remove(it)
                                         newCategories.value = mutableNewCategories
+                                        unavailableCategoryNames.remove(it)
                                     }
                                 )
                             }
@@ -147,27 +195,13 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                         onRemoveCategory = {
                                             removedCategories.add(it)
                                             groceries.value = groceries.value.filterKeys { key -> key !in removedCategories }
-                                            Log.d("Debug", "removedcat: ${removedCategories.toList()}")
-                                            Log.d("Debug", "all: ${groceries.value}")
+                                            unavailableCategoryNames.remove(it)
                                         }
                                     )
                                 }
                             }
-                            /*groceries.value.toSortedMap().forEach { (category, ingredients) ->
-                                item {
-                                    IngredientCategoryEdit(
-                                        category,
-                                        ingredients,
-                                        newItems[category] ?: mutableListOf(),
-                                        editedCategories,
-                                        onRemoveItem = { uid, _ ->
-                                            removedItems[category]?.add(uid)
-                                        },
-                                        onRemoveCategory = { removedCategories.add(it) }
-                                    )
-                                }
-                            }*/
                         }
+
                     }
                 }
             }

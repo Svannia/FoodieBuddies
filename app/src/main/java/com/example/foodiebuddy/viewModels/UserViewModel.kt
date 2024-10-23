@@ -165,30 +165,22 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    fun updateCategories(newCategories: Map<String, MutableList<OwnedIngredient>>, editedCategories: MutableMap<String, String>, removedCategories: List<String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        Log.d("Debug", "removedCategories : ${removedCategories.toList()}")
+    fun updateCategories(newCategories: Map<String, MutableList<OwnedIngredient>>, editedCategories: MutableMap<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
                 Log.d("VM", "Updating categories")
                 if (newCategories.isNotEmpty()) {
                     Log.d("VM", "Adding new categories")
+                    var remaining = newCategories.size
                     newCategories.forEach { (category, ingredients) ->
                         db.addCategory(category, ingredients, userID, false, {isError(it)}) {
-                            editCategoryNames(editedCategories, {isError(it)}) { callBack() }
+                            remaining--
+                            if (remaining <= 0) { editCategoryNames(editedCategories, {isError(it)}) { callBack() }
+                            }
                         }
                     }
                 } else {
                     editCategoryNames(editedCategories, {isError(it)}) { callBack() }
-                }
-                if (removedCategories.isNotEmpty()) {
-                    Log.d("VM", "Removing categories")
-                    removedCategories.forEach { category ->
-                        db.deleteCategory(userID, category, { isError(it) }) {
-                            fetchUserPersonal( { isError(it) } ) { callBack() }
-                        }
-                    }
-                } else {
-                    callBack()
                 }
             } else {
                 Log.d("VM", "Could not update categories, userID is null")
@@ -196,24 +188,47 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+    fun deleteCategories(removedCategories: List<String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            if (removedCategories.isNotEmpty()) {
+                Log.d("VM", "Removing categories")
+                var remaining = removedCategories.size
+                removedCategories.forEach { category ->
+                    db.deleteCategory(userID, category, { isError(it) }) {
+                        remaining--
+                        if (remaining <= 0) { fetchUserPersonal( { isError(it) } ) { callBack() } }
+                    }
+                }
+            } else {
+                callBack()
+            }
+        } else {
+            Log.d("VM", "Could not delete categories, userID is null")
+        }
+    }
+
     fun addIngredients(newItems: Map<String, MutableList<OwnedIngredient>>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
                 if (newItems.isNotEmpty()) {
-                    newItems.forEach { (category, ingredients) ->
+                    var remainingItems = newItems.size
+                    newItems.forEach { (_, ingredients) ->
                         if (ingredients.isNotEmpty()) {
+                            var remaining = ingredients.size
                             ingredients.forEach { ingredient ->
-                                db.createIngredient(
-                                    userID, ingredient, isInFridge, {isError(it) })
-                                { fetchUserPersonal( {isError(it) } ) { callBack() } }
+                                db.createIngredient(userID, ingredient, isInFridge, {isError(it) }) {
+                                    remaining--
+                                    if (remaining <= 0) {
+                                        remainingItems--
+                                        if (remainingItems <= 0) {
+                                            callBack()
+                                        }
+                                    }
+                                }
                             }
-                        } else {
-                            fetchUserPersonal( {isError(it) } ) { callBack() }
-                        }
+                        } else { callBack() }
                     }
-                } else {
-                    fetchUserPersonal( {isError(it) } ) { callBack() }
-                }
+                } else { callBack() }
             } else {
                 isError(true)
                 Log.d("VM", "Failed to add ingredients: ID is null")
@@ -224,11 +239,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun updateIngredientTick(uid: String, ticked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.updateIngredientTick(uid, ticked, { isError(it) }) {
-                Log.d("Debug", "After updated to $ticked")
-                fetchUserPersonal({ isError(it) }) {
-                    Log.d("Debug", "new userPersonal is ${userPersonal.value}")
-                    callBack()}
-            }
+                fetchUserPersonal({ isError(it) }) { callBack()} }
         }  else {
             Log.d("VM", "Failed to update user: ID is null")
         }
@@ -237,17 +248,24 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun removeIngredients(removedItems: Map<String, List<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             if (removedItems.isNotEmpty()) {
+                var remainingItems = removedItems.size
                 removedItems.forEach { (category, ingredients) ->
                     if (ingredients.isNotEmpty()) {
+                        var remaining = ingredients.size
                         ingredients.forEach { ingredient ->
-                            db.deleteIngredient(ingredient, userID, category, { isError(it) })
-                            { fetchUserPersonal({ isError(it) }) { callBack() } }
+                            db.deleteIngredient(ingredient, userID, category, { isError(it) }){
+                                remaining--
+                                if (remaining <= 0) {
+                                    remainingItems--
+                                    if (remainingItems <= 0) {
+                                        callBack()
+                                    }
+                                }
+                            }
                         }
                     }
                 }
-            } else {
-                fetchUserPersonal({ isError(it) }) { callBack() }
-            }
+            } else { callBack() }
         } else {
             Log.d("VM", "Failed to delete user: ID is null")
         }
@@ -257,13 +275,15 @@ constructor(private val userID: String ?= null) : ViewModel() {
         if (userID != null) {
             if (editedCategories.isNotEmpty()) {
                 Log.d("VM", "Editing categories")
+                var remaining = editedCategories.size
                 editedCategories.forEach { (old, new) ->
                     db.updateCategory(userID, old, new, {isError(it)})
-                    { fetchUserPersonal( { isError(it) } ) { callBack() } }
+                    {
+                        remaining--
+                        if (remaining <= 0) { callBack() }
+                    }
                 }
-            } else {
-                fetchUserPersonal( { isError(it) } ) { callBack() }
-            }
+            } else { callBack() }
         }
     }
 }

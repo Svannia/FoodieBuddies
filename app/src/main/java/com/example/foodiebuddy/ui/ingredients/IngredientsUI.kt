@@ -1,6 +1,8 @@
 package com.example.foodiebuddy.ui.ingredients
 
+import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -20,17 +22,16 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,9 +92,8 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
 }
 
 @Composable
-fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>) {
+fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>, unavailableCategoryNames: SnapshotStateList<String>, context: Context) {
     val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val isFocused = remember { mutableStateOf(false) }
 
     val categoryName = remember { mutableStateOf("") }
@@ -113,12 +113,16 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
                     if (isFocused.value) {
                         categoryName.value = categoryName.value.trimEnd()
                         if (categoryName.value.isNotBlank()) {
-                            val mutableNewCategories = newCategories.value.toMutableMap()
-                            mutableNewCategories[categoryName.value] = mutableListOf()
-                            newCategories.value = mutableNewCategories
-                            keyboardController?.hide()
-                            focusRequester.freeFocus()
-                            isFocused.value = false
+                            if (unavailableCategoryNames.contains(categoryName.value)) {
+                                Toast.makeText(context, context.getString(R.string.toast_categoryName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                val mutableNewCategories = newCategories.value.toMutableMap()
+                                mutableNewCategories[categoryName.value] = mutableListOf()
+                                newCategories.value = mutableNewCategories
+                                unavailableCategoryNames.add(categoryName.value)
+                                focusRequester.freeFocus()
+                                isFocused.value = false
+                            }
                         }
                         categoryName.value = ""
 
@@ -151,11 +155,16 @@ fun AddCategory(newCategories: MutableState<Map<String, MutableList<OwnedIngredi
                     onDone = {
                         categoryName.value = categoryName.value.trimEnd()
                         if (categoryName.value.isNotBlank()) {
-                            val mutableNewCategories = newCategories.value.toMutableMap()
-                            mutableNewCategories[categoryName.value] = mutableListOf()
-                            newCategories.value = mutableNewCategories
-                            keyboardController?.hide()
-                            isFocused.value = false
+                            if (unavailableCategoryNames.contains(categoryName.value)) {
+                                Toast.makeText(context, context.getString(R.string.toast_categoryName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                val mutableNewCategories = newCategories.value.toMutableMap()
+                                mutableNewCategories[categoryName.value] = mutableListOf()
+                                newCategories.value = mutableNewCategories
+                                unavailableCategoryNames.add(categoryName.value)
+                                focusRequester.freeFocus()
+                                isFocused.value = false
+                            }
                         }
                         categoryName.value = ""
                     }
@@ -192,7 +201,6 @@ fun IngredientCategoryView(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngredientCategoryEdit(
     name: String,
@@ -200,12 +208,10 @@ fun IngredientCategoryEdit(
     addedItems: MutableList<OwnedIngredient>,
     editedCategories: MutableMap<String, String>,
     onRemoveItem: (String, String) -> Unit,
-    onRemoveCategory: (String) -> Unit,
+    onRemoveCategory: (String) -> Unit
 ) {
-    Log.d("Debug", "this category is $name")
     val isEditingName = remember { mutableStateOf(false) }
     val editedName = remember { mutableStateOf(name) }
-    Log.d("Debug", "with edited name ${editedName.value}")
 
     val newItemName = remember { mutableStateOf("") }
     val sortedIngredients = ingredients.sortedBy { it.displayedName }
@@ -400,7 +406,6 @@ private fun IngredientItemEdit(
 @Composable
 private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableState<String>) -> Unit) {
     val focusRequester = remember { FocusRequester() }
-    val keyboardController = LocalSoftwareKeyboardController.current
     val isFocused = remember { mutableStateOf(false) }
 
     Box(
@@ -422,7 +427,6 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
                         displayName.value = displayName.value.trimEnd()
                         if (displayName.value.isNotBlank()) {
                             onAdd(displayName)
-                            keyboardController?.hide()
                             focusRequester.freeFocus()
                             isFocused.value = false
                         }
@@ -455,7 +459,6 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
                         displayName.value = displayName.value.trimEnd()
                         if (displayName.value.isNotBlank()) {
                             onAdd(displayName)
-                            keyboardController?.hide()
                             focusRequester.freeFocus()
                             isFocused.value = false
                         }
