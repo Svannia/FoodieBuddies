@@ -200,7 +200,8 @@ fun EditAccount(
                 // if on account edition -> any data has been modified
                 item {
                     val isEnabled = dataEdited?.value ?: true
-                    SaveButton(name.value.isNotEmpty() && isEnabled && termsAccepted.value) { onSave() }
+                    val termsNeedAccepting = if (dataEdited == null) termsAccepted.value else true
+                    SaveButton(name.value.isNotEmpty() && isEnabled && termsNeedAccepting) { onSave() }
                 }
             }
             // terms and conditions dialog window
