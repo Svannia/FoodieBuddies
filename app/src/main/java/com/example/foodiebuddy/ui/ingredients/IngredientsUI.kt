@@ -187,7 +187,8 @@ fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableSta
 fun IngredientCategoryView(
     name: String,
     ingredients: List<OwnedIngredient>,
-    onTick: (OwnedIngredient, Boolean) -> Unit
+    canTick: Boolean,
+    onTick: (OwnedIngredient, Boolean) -> Unit = { _, _ -> }
 ) {
     val sortedIngredients = ingredients.sortedBy { it.displayedName }
     Column {
@@ -199,7 +200,7 @@ fun IngredientCategoryView(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             sortedIngredients.forEach { ingredient ->
-                IngredientItemView(ingredient, onTick)
+                IngredientItemView(ingredient, canTick, onTick)
             }
         }
         Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
@@ -209,6 +210,7 @@ fun IngredientCategoryView(
 @Composable
 fun IngredientCategoryEdit(
     name: String,
+    canTick: Boolean,
     ingredients: List<OwnedIngredient>,
     addedItems: MutableList<OwnedIngredient>,
     editedCategories: MutableMap<String, String>,
@@ -297,7 +299,7 @@ fun IngredientCategoryEdit(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             allTempIngredients.forEach { ingredient ->
-                IngredientItemEdit(ingredient) {
+                IngredientItemEdit(ingredient, canTick) {
                     allTempIngredients.remove(ingredient)
                     onRemoveItem(ingredient.uid, ingredient.displayedName)
                 }
@@ -317,16 +319,23 @@ fun IngredientCategoryEdit(
 @Composable
 private fun IngredientItemView(
     ingredient: OwnedIngredient,
+    canTick: Boolean,
     onTick: (OwnedIngredient, Boolean) -> Unit
 ) {
     val isTicked = remember { mutableStateOf(ingredient.isTicked) }
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(HEIGHT.dp)
-            .clickable {
-                isTicked.value = !isTicked.value
-                onTick(ingredient, isTicked.value)
+        modifier = if (canTick) {
+            Modifier
+                .fillMaxWidth()
+                .height(HEIGHT.dp)
+                .clickable {
+                    isTicked.value = !isTicked.value
+                    onTick(ingredient, isTicked.value)
+                }
+        } else {
+            Modifier
+                .fillMaxWidth()
+                .height(HEIGHT.dp)
             },
         contentAlignment = Alignment.CenterStart
     ) {
@@ -337,15 +346,17 @@ private fun IngredientItemView(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Checkbox(
-                modifier = Modifier.size(INLINE_ICON.dp),
-                checked = isTicked.value,
-                onCheckedChange = {
-                    isTicked.value = !isTicked.value
-                    onTick(ingredient, isTicked.value)
-                },
-                colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.secondary)
-            )
+            if (canTick) {
+                Checkbox(
+                    modifier = Modifier.size(INLINE_ICON.dp),
+                    checked = isTicked.value,
+                    onCheckedChange = {
+                        isTicked.value = !isTicked.value
+                        onTick(ingredient, isTicked.value)
+                    },
+                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.secondary)
+                )
+            }
             Text(
                 text = ingredient.displayedName,
                 style =
@@ -362,6 +373,7 @@ private fun IngredientItemView(
 @Composable
 private fun IngredientItemEdit(
     ingredient: OwnedIngredient,
+    canTick: Boolean,
     onDelete: () -> Unit
 ) {
     val isTicked = remember { mutableStateOf(ingredient.isTicked) }
@@ -379,12 +391,14 @@ private fun IngredientItemEdit(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Checkbox(
-                    modifier = Modifier.size(INLINE_ICON.dp),
-                    checked = isTicked.value,
-                    onCheckedChange = {},
-                    colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.secondary)
-                )
+                if (canTick) {
+                    Checkbox(
+                        modifier = Modifier.size(INLINE_ICON.dp),
+                        checked = isTicked.value,
+                        onCheckedChange = {},
+                        colors = CheckboxDefaults.colors(checkedColor = MaterialTheme.colorScheme.secondary)
+                    )
+                }
                 Text(
                     text = ingredient.displayedName,
                     style =

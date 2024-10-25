@@ -233,6 +233,13 @@ class DatabaseConnection {
                     fetchIngredient(ref)
                 }
             }
+
+            val fridgeListRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
+            val fridgeList = fridgeListRefs.mapValues { entry ->
+                entry.value.map { ref ->
+                    fetchIngredient(ref)
+                }
+            }
             /*val fridgeRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val fridge = fridgeRefs.mapValues { entry ->
                 entry.value.mapNotNull { ref ->
@@ -241,7 +248,7 @@ class DatabaseConnection {
             }*/
             // Create and return the UserPersonal object
             Log.d("DB", "Successfully fetched user personal")
-            UserPersonal(userID, emptyList(), groceryList, emptyMap())
+            UserPersonal(userID, emptyList(), groceryList, fridgeList)
         } else {
             Log.d("DB", "Failed to fetch user personal for userID $userID")
             UserPersonal.empty()

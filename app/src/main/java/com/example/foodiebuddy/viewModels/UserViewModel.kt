@@ -148,6 +148,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             if (newUserPersonal.isEmpty()) { isError(true) }
                             else {
                                 isError(false)
+                                Log.d("Debug", "new User Personal is $newUserPersonal")
                                 _userPersonal.value = newUserPersonal
                                 callBack()
                             }
@@ -180,6 +181,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         }
                     }
                 } else {
+                    Log.d("Debug", "else edit")
                     editCategoryNames(editedCategories, {isError(it)}) { callBack() }
                 }
             } else {
@@ -211,22 +213,32 @@ constructor(private val userID: String ?= null) : ViewModel() {
         viewModelScope.launch {
             if (userID != null) {
                 if (newItems.isNotEmpty()) {
+                    Log.d("VM", "Adding items")
                     var remainingItems = newItems.size
+                    Log.d("Debug", "new items are: $newItems")
+                    Log.d("Debug", "remainingItems: $remainingItems")
                     newItems.forEach { (_, ingredients) ->
                         if (ingredients.isNotEmpty()) {
                             var remaining = ingredients.size
+                            Log.d("Debug", "remaining: $remaining")
                             ingredients.forEach { ingredient ->
                                 db.createIngredient(userID, ingredient, isInFridge, {isError(it) }) {
                                     remaining--
+                                    Log.d("Debug", "now remaining: $remaining")
                                     if (remaining <= 0) {
                                         remainingItems--
+                                        Log.d("Debug", "now remainingItems: $remainingItems")
                                         if (remainingItems <= 0) {
                                             callBack()
                                         }
                                     }
                                 }
                             }
-                        } else { callBack() }
+                        } else { remainingItems--
+                            if (remainingItems <= 0) {
+                                callBack()
+                            }
+                        }
                     }
                 } else { callBack() }
             } else {
@@ -248,7 +260,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun removeIngredients(removedItems: Map<String, List<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             if (removedItems.isNotEmpty()) {
+                Log.d("VM", "Removing items")
                 var remainingItems = removedItems.size
+                Log.d("Debug", "new items are: $removedItems")
+                Log.d("Debug", "remainingItems: $remainingItems")
                 removedItems.forEach { (category, ingredients) ->
                     if (ingredients.isNotEmpty()) {
                         var remaining = ingredients.size
@@ -262,6 +277,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                     }
                                 }
                             }
+                        }
+                    } else { remainingItems--
+                        if (remainingItems <= 0) {
+                            callBack()
                         }
                     }
                 }
@@ -283,7 +302,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         if (remaining <= 0) { callBack() }
                     }
                 }
-            } else { callBack() }
+            } else {
+                Log.d("Debug", "else inside edit")
+
+                callBack() }
         }
     }
 }

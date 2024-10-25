@@ -235,6 +235,20 @@ fun PrimaryScreen(
 
 }
 
+@Composable
+fun MiniLoading(paddingValues: PaddingValues) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues),
+        verticalArrangement = Arrangement.Top,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Spacer(modifier = Modifier.size(16.dp))
+        LoadingAnimation(30f, 10f)
+    }
+}
+
 /**
  * A simple plain screen with a rotating loading animation.
  */

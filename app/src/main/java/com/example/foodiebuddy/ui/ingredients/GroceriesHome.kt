@@ -1,5 +1,6 @@
 package com.example.foodiebuddy.ui.ingredients
 
+import android.content.Context
 import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
@@ -14,11 +15,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,12 +33,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.OwnedIngredient
+import com.example.foodiebuddy.data.User
+import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.LoadingAnimation
 import com.example.foodiebuddy.ui.LoadingPage
+import com.example.foodiebuddy.ui.MiniLoading
 import com.example.foodiebuddy.ui.PrimaryScreen
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
@@ -74,9 +80,14 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
         userViewModel.fetchUserPersonal({
             if (it) { handleError(context, "Could not fetch user personal") }
         }){
-            groceries.value = userPersonal.groceryList.toMutableMap()
             screenState.value = ScreenState.VIEWING
         }
+    }
+
+    LaunchedEffect(userPersonal) {
+        groceries.value = userPersonal.groceryList.toMutableMap()
+        Log.d("Debug", "Groceries: userPersonal is $userPersonal")
+        Log.d("Debug", "groceries contain ${groceries.value}")
     }
 
     if (loading.value) {
@@ -90,73 +101,12 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
-                var remainingUpdates = 4
-                userViewModel.removeIngredients(removedItems, {
-                    if (it) handleError(context, "Could not remove ingredient")
-                }) {
-                    remainingUpdates--
-                    if (remainingUpdates <= 0) {
-                        userViewModel.fetchUserPersonal({
-                            if (it) { handleError(context, "Could not fetch user personal") }
-                        }){
-                            groceries.value = userPersonal.groceryList
-                            loading.value = false
-                        }
-                    }
-                }
-                userViewModel.addIngredients(newItems, false, {
-                    if (it) handleError(context, "Could not update owned ingredients list")
-                }) {
-                    remainingUpdates--
-                    if (remainingUpdates <= 0) {
-                        userViewModel.fetchUserPersonal({
-                            if (it) { handleError(context, "Could not fetch user personal") }
-                        }){
-                            groceries.value = userPersonal.groceryList
-                            loading.value = false
-                        }
-                    }
-                }
-                userViewModel.updateCategories(newCategories.value, editedCategories, {
-                    if (it) {handleError(context, "Could not update category names")}
-                }) {
-                    remainingUpdates--
-                    if (remainingUpdates <= 0) {
-                        userViewModel.fetchUserPersonal({
-                            if (it) { handleError(context, "Could not fetch user personal") }
-                        }){
-                            groceries.value = userPersonal.groceryList
-                            loading.value = false
-                        }
-                    }
-                }
-                userViewModel.deleteCategories(removedCategories, {
-                    if (it) {handleError(context, "Could not update category names")}
-                }) {
-                    remainingUpdates--
-                    if (remainingUpdates <= 0) {
-                        userViewModel.fetchUserPersonal({
-                            if (it) { handleError(context, "Could not fetch user personal") }
-                        }){
-                            groceries.value = userPersonal.groceryList
-                            loading.value = false
-                        }
-                    }
-                }
+                loadModifications(userViewModel, userPersonal, {it.groceryList}, false, context, loading, groceries, newItems, removedItems, editedCategories, newCategories, removedCategories)
             }},
             content = { paddingValues ->
                 when (screenState.value) {
                     ScreenState.LOADING -> {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(paddingValues),
-                            verticalArrangement = Arrangement.Top,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Spacer(modifier = Modifier.size(16.dp))
-                            LoadingAnimation(30f, 10f)
-                        }
+                        MiniLoading(paddingValues)
                     }
 
                     ScreenState.VIEWING -> {
@@ -165,20 +115,12 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                 .fillMaxSize()
                                 .padding(paddingValues)
                         ) {
-                            groceries.value = userPersonal.groceryList.toMutableMap()
-                            newItems.forEach { (_, value) -> value.clear() }
-                            removedItems.forEach { (_, value) -> value.clear() }
-                            editedCategories.clear()
-                            val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
-                            newCategories.value = mutableNewCategories
-                            removedCategories.clear()
-                            unavailableCategoryNames.clear()
-                            unavailableCategoryNames.addAll(groceries.value.keys)
+                            clearTemporaryModifications(userPersonal, groceries, {it.groceryList}, newItems, removedItems, editedCategories, newCategories, removedCategories, unavailableCategoryNames)
 
                             if (groceries.value.isNotEmpty() || groceries.value.any { it.value.isNotEmpty() }) {
                                 items(groceries.value.toSortedMap().keys.toList(), key = {it}) { category ->
                                     if (groceries.value[category]?.isNotEmpty() == true) {
-                                        IngredientCategoryView(category, groceries.value[category] ?: mutableListOf()) { ingredient, isTicked ->
+                                        IngredientCategoryView(category, groceries.value[category] ?: mutableListOf(), true) { ingredient, isTicked ->
                                             userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
                                                 if (it) { handleError(context, "Could not update ingredient") }
                                             }) {}
@@ -212,6 +154,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                             items(newCategories.value.keys.reversed().toList(), key = {it})  { category ->
                                 IngredientCategoryEdit(
                                     category,
+                                    true,
                                     newCategories.value[category] ?: mutableListOf(),
                                     newCategories.value[category] ?: mutableListOf(),
                                     editedCategories,
@@ -232,6 +175,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                 if (category !in removedCategories) {
                                     IngredientCategoryEdit(
                                         category,
+                                        true,
                                         groceries.value[category] ?: mutableListOf(),
                                         newItems[category] ?: mutableListOf(),
                                         editedCategories,
@@ -266,5 +210,104 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                 }
             }
         )
+    }
+}
+
+fun clearTemporaryModifications(
+    userPersonal: UserPersonal,
+    list: MutableState<Map<String, List<OwnedIngredient>>>,
+    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
+    newItems: Map<String, MutableList<OwnedIngredient>>,
+    removedItems: Map<String, MutableList<String>>,
+    editedCategories: MutableMap<String, String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    removedCategories: SnapshotStateList<String>,
+    unavailableCategoryNames: SnapshotStateList<String>
+) {
+    list.value = fieldToRead(userPersonal).toMutableMap()
+    newItems.forEach { (_, value) -> value.clear() }
+    removedItems.forEach { (_, value) -> value.clear() }
+    editedCategories.clear()
+    val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
+    newCategories.value = mutableNewCategories
+    removedCategories.clear()
+    unavailableCategoryNames.clear()
+    unavailableCategoryNames.addAll(list.value.keys)
+}
+
+fun loadModifications(
+    userViewModel: UserViewModel,
+    userPersonal: UserPersonal,
+    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
+    isInFridge: Boolean,
+    context: Context,
+    loading: MutableState<Boolean>,
+    list: MutableState<Map<String, List<OwnedIngredient>>>,
+    newItems: Map<String, MutableList<OwnedIngredient>>,
+    removedItems: Map<String, MutableList<String>>,
+    editedCategories: MutableMap<String, String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    removedCategories: SnapshotStateList<String>
+) {
+    var remainingUpdates = 4
+    userViewModel.removeIngredients(removedItems, {
+        if (it) handleError(context, "Could not remove ingredient")
+    }) {
+        remainingUpdates--
+        Log.d("Debug", "came back from removing ingredients")
+
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
+    }
+    userViewModel.addIngredients(newItems, isInFridge, {
+        if (it) handleError(context, "Could not update owned ingredients list")
+    }) {
+        remainingUpdates--
+        Log.d("Debug", "came back from adding ingredients")
+
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
+    }
+    userViewModel.updateCategories(newCategories.value, editedCategories, {
+        if (it) {handleError(context, "Could not update category names")}
+    }) {
+        remainingUpdates--
+        Log.d("Debug", "came back from updating categories")
+
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
+    }
+    userViewModel.deleteCategories(removedCategories, {
+        if (it) {handleError(context, "Could not update category names")}
+    }) {
+        remainingUpdates--
+        Log.d("Debug", "came back from deleting categories")
+
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
     }
 }
