@@ -92,7 +92,7 @@ class DatabaseConnection {
     }
 
     /**
-     * Creates a new user profile given all the input information.
+     * Creates a new user profile given all the input information, and its corresponding userPersonal document.
      * The userID and username are mandatory, bio can be empty and the default profile picture is used if no picture was input.
      *
      * @param userID ID of the user to create
@@ -102,8 +102,10 @@ class DatabaseConnection {
      * @param isError block that runs if there is an error executing the function
      */
     suspend fun createUser(userID: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
+        // process the input data to create a document
         val formattedBio = bio.replace("\n", "\\n")
         val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
+        // create the new userData document
         userDataCollection
             .document(userID)
             .set(user)
@@ -116,11 +118,14 @@ class DatabaseConnection {
                 Log.d("DB", "Failed to create user with error $e")
                 return@addOnFailureListener
             }
+        // if the user input their own profile picture -> add it to the storage (the new path is automatically created)
         if (picture != getDefaultPicture()) {
-            addUserPicture(userID, picture) { isError(it) }
+            updateUserPicture(userID, picture, { isError(it) }) {}
+        // else -> copy the default profile picture in the new user's storage path
         } else {
             copyDefaultPicture(userID) { isError(it) }
         }
+        // create a document for the new user's personal data
         createPersonal(userID, isError)
     }
 
@@ -128,10 +133,10 @@ class DatabaseConnection {
      * Fetches all of a user's profile data.
      *
      * @param userID ID of the user whose data to retrieve
-     * @return User data structure with all profile data
+     * @return User data object with all profile data
      */
     suspend fun fetchUserData(userID: String): User {
-        if (userID.isEmpty()) { return User.empty()}
+        if (userID.isEmpty()) { return User.empty() }
 
         val document = userDataCollection.document(userID).get().await()
         return if (document.exists()) {
@@ -159,12 +164,15 @@ class DatabaseConnection {
      * @param callBack block that runs after DB was updated
      */
     fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // only user and bio text fields can be modified by the user
         val formattedBio = bio.replace("\n", "\\n")
         val task = hashMapOf(USERNAME to username, BIO to formattedBio)
+        // update those modifications to the document
         userDataCollection
             .document(userID)
             .update(task as Map<String, Any>)
             .addOnSuccessListener {
+                // if the modification was successful -> check if picture also needs to be updated
                 if (updatePicture) { updateUserPicture(userID, picture, { isError(it) }, callBack) }
                 else { callBack() }
                 isError(false)
@@ -184,11 +192,16 @@ class DatabaseConnection {
      * @param callBack block that runs after DB was updated
      */
     fun deleteUser(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // delete the userData document of the user to be deleted
         userDataCollection
             .document(userID)
             .delete()
             .addOnSuccessListener {
-                deleteProfilePicture(userID, { isError(it) }, callBack)
+                // if document deletion was successful -> also delete the profile picture
+                deleteProfilePicture(userID, { isError(it) }) {
+                    // TODO delete userPersonal
+                    callBack()
+                }
                 isError(false)
                 Log.d("DB", "Successfully deleted user $userID")
             }
@@ -200,8 +213,17 @@ class DatabaseConnection {
 
 
     // user personal
-    private suspend fun createPersonal(userID: String, isError: (Boolean) -> Unit) {
+
+    /**
+     * Creates a new userPersonal. This function is only called when a new user is created.
+     *
+     * @param userID ID of the user
+     * @param isError block that runs if there is an error executing the function
+     */
+    private fun createPersonal(userID: String, isError: (Boolean) -> Unit) {
+        // the initial document only contains empty lists or maps
         val user = hashMapOf(FAV_RECIPES to emptyList<String>(), GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap<String, List<String>>())
+        // add the new document to userPersonal, setting its reference to be the user UID
         userPersonalCollection
             .document(userID)
             .set(user)
@@ -216,36 +238,41 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Fetches all of a user's personal data.
+     *
+     * @param userID ID of the user
+     * @return UserPersonal object with all personal data
+     */
     suspend fun fetchUserPersonal(userID: String): UserPersonal {
+        // check that a correct userID was given
         if (userID.isEmpty()) {
+            Log.d("DB", "userID is null")
             return UserPersonal.empty()
         }
 
+        // fetches the userPersonal document
         val document = userPersonalCollection.document(userID).get().await()
         return if (document.exists()) {
+            // TODO: fetch list of favourite recipes
            /* val favouriteRecipesRefs = document.get(FAV_RECIPES) as? List<DocumentReference> ?: emptyList()
             val favouriteRecipes = favouriteRecipesRefs.mapNotNull { ref ->
                 ref.get().await().toObject(Recipe::class.java)
             }*/
+            // fetch each ingredient from the groceries map
             val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val groceryList = groceryListRefs.mapValues { entry ->
                 entry.value.map { ref ->
                     fetchIngredient(ref)
                 }
             }
-
+            // fetch each ingredient from the fridge map
             val fridgeListRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val fridgeList = fridgeListRefs.mapValues { entry ->
                 entry.value.map { ref ->
                     fetchIngredient(ref)
                 }
             }
-            /*val fridgeRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
-            val fridge = fridgeRefs.mapValues { entry ->
-                entry.value.mapNotNull { ref ->
-                    ref.get().await().toObject(OwnedIngredient::class.java)
-                }
-            }*/
             // Create and return the UserPersonal object
             Log.d("DB", "Successfully fetched user personal")
             UserPersonal(userID, emptyList(), groceryList, fridgeList)
@@ -255,37 +282,23 @@ class DatabaseConnection {
         }
     }
 
-    fun updatePersonalIngredients(userID: String, groceries: Map<String, List<OwnedIngredient>>, fridge: Map<String, List<OwnedIngredient>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        val groceriesData = groceries.mapValues { entry ->
-            entry.value.map { ingredient ->
-                ingredientsCollection.document(ingredient.uid)
-            }
-        }
-        val fridgeData = fridge.mapValues { entry ->
-            entry.value.map { ingredient ->
-                ingredientsCollection.document(ingredient.uid)
-            }
-        }
-        val task = hashMapOf(GROCERIES to groceriesData, FRIDGE to fridgeData)
-        userPersonalCollection
-            .document(userID)
-            .update(task as Map<String, Any>)
-            .addOnSuccessListener {
-                isError(false)
-                callBack()
-                Log.d("DB", "Successfully updated user ingredients")
-            }
-            .addOnFailureListener { e ->
-                isError(true)
-                Log.d("DB", "Failed to update user ingredients with error $e")
-            }
-    }
-
-    suspend fun addCategory(category: String, ingredients: List<OwnedIngredient>, owner: String, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
-        if (ingredients.isEmpty()) {
+    /**
+     * Adds a new user-defined category in both the groceries list and fridge.
+     *
+     * @param owner UID of the user
+     * @param category name input by the user
+     * @param ingredients potential list of ingredient to be added in the new category (can be empty)
+     * @param isInFridge whether the list of new ingredients is to be added in the fridge. Goes in the groceries if false
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
+     suspend fun addCategory(owner: String, category: String, ingredients: List<OwnedIngredient>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
+         // if the ingredients list is empty ->
+         if (ingredients.isEmpty()) {
             userPersonalCollection
                 .document(owner)
                 .update(
+                    // only add the new category as empty map in both groceries and fridge
                     "$GROCERIES.${category}", FieldValue.arrayUnion(),
                     "$FRIDGE.${category}", FieldValue.arrayUnion()
                 )
@@ -298,9 +311,12 @@ class DatabaseConnection {
                     isError(true)
                     Log.d("DB", "Failed to add empty category $category with error $e")
                 }
+         // if there are new ingredients to be added ->
         } else {
+            // check how many ingredients are left to update before callBack
             var remaining = ingredients.size
             for (ingredient in ingredients) {
+                // add new ingredient
                 createIngredient(owner, ingredient, isInFridge, { isError(it) }) {
                     remaining--
                     if (remaining <= 0) {
@@ -312,27 +328,41 @@ class DatabaseConnection {
 
     }
 
+    /**
+     * Changes a category name, both in the userPersonal maps of references and the category field of concerned ingredients.
+     *
+     * @param userID ID of the user
+     * @param old former category name, that needs to be changed
+     * @param new new category name
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun updateCategory(userID: String, old: String, new: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // fetch the user's personal data document
         val userRef = userPersonalCollection.document(userID)
-
         userRef.get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    // combine together all the ingredients from the groceries and the fridge in the category that is changing
                     val groceriesMap = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
                     val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
                     val groceries = groceriesMap[old] ?: emptyList()
                     val fridge = fridgeMap[old] ?: emptyList()
                     val allIngredients = groceries + fridge
 
+                    // for each of those ingredients -> change the category field to the new name
                     allIngredients.forEach { ref ->
                         ref.update(CATEGORY, new)
-                            .addOnSuccessListener {  }
+                            .addOnSuccessListener {
+                                Log.d("DB", "Successfully updated category of ingredient $ref")
+                            }
                             .addOnFailureListener { e ->
                                 isError(true)
                                 Log.d("DB", "Failed to udpate category of ingredient $ref with error $e")
                             }
                     }
 
+                    // for both groceries and fridge, create a new map where the old category key is removed, and new category key is put instead
                     val updatedGroceries = groceriesMap.toMutableMap()
                     val updatedFridge = fridgeMap.toMutableMap()
 
@@ -342,11 +372,13 @@ class DatabaseConnection {
                     val newFridgeList = updatedFridge.remove(old)?.toMutableList() ?: mutableListOf()
                     updatedFridge[new] = newFridgeList
 
+                    // update the userPersonal document with the new maps
                     userRef.update(mapOf(
                         GROCERIES to updatedGroceries,
                         FRIDGE to updatedFridge
                     )).addOnSuccessListener {
-                        callBack()  // success callback
+                        isError(false)
+                        callBack()
                         Log.d("DB", "Successfully updated category in groceryList and fridge")
                     }.addOnFailureListener { e ->
                         isError(true)
@@ -356,29 +388,43 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Deletes a category and all its children ingredients, both in groceries and fridge.
+     *
+     * @param owner ID of the user
+     * @param category name of the category that needs to be deleted
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun deleteCategory(owner: String, category: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val ingredientsToDelete = mutableListOf<DocumentReference>()
 
+        // fetch the userPersonal document
         userPersonalCollection
             .document(owner)
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
+                    // put together all ingredients from the category that needs to be deleted
                     val groceriesMap = document.get(GROCERIES) as? Map<String, List<DocumentReference>>
                     val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>>
 
                     groceriesMap?.get(category)?.let { ingredientsToDelete.addAll(it) }
                     fridgeMap?.get(category)?.let { ingredientsToDelete.addAll(it) }
 
+                    // if there are any ingredients to delete ->
                     if (ingredientsToDelete.isNotEmpty()) {
+                        // check how many ingredients are left to delete before next steps
                         var remaining = ingredientsToDelete.size
                         ingredientsToDelete.forEach { ref ->
                             ref.delete()
                                 .addOnSuccessListener {
                                     remaining--
                                     if (remaining <= 0) {
+                                        // if all ingredients have been deleted ->
                                         userPersonalCollection
                                             .document(owner)
+                                            // delete the category entry from groceries and fridge maps
                                             .update(
                                                 "$GROCERIES.$category",FieldValue.delete(),
                                                 "$FRIDGE.$category", FieldValue.delete()
@@ -399,9 +445,11 @@ class DatabaseConnection {
                                     isError(true)
                                 }
                         }
+                    // if there are no ingredients to delete ->
                     } else {
                         userPersonalCollection
                             .document(owner)
+                            // delete the category entry from groceries and fridge maps
                             .update(
                                 "$GROCERIES.$category",FieldValue.delete(),
                                 "$FRIDGE.$category", FieldValue.delete()
@@ -426,6 +474,7 @@ class DatabaseConnection {
                 isError(true)
             }
     }
+
     fun updateFavourites(userID: String, favourite: Recipe, adding: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val recipeRef = recipesCollection.document(favourite.uid)
         val updateOperation =
@@ -446,16 +495,33 @@ class DatabaseConnection {
 
 
     // ingredients
-    suspend fun createIngredient(owner: String, newItem: OwnedIngredient, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+
+    /**
+     * Creates a new ingredient document and adds the necessary references.
+     *
+     * @param owner ID of the user
+     * @param newItem OwnedIngredient object representing the new ingredient
+     * @param isInFridge whether the new ingredient should be added in the fridge. If false, it is put in the groceries instead
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
+    fun createIngredient(owner: String, newItem: OwnedIngredient, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // determine in which field the ingredient has to be added
         val targetField = if (isInFridge) {"$FRIDGE.${newItem.category}"} else {"$GROCERIES.${newItem.category}"}
         val syncedField = if (isInFridge) {"$GROCERIES.${newItem.category}"} else {"$FRIDGE.${newItem.category}"}
+
         val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to newItem.displayedName, STAND_NAME to newItem.standName, CATEGORY to newItem.category, IS_TICKED to newItem.isTicked)
+
+        // create the new ingredient document
         ingredientsCollection
             .add(ingredient)
             .addOnSuccessListener {
                 Log.d("DB", "Successfully created user ingredient")
+                // if the new ingredient was correctly added ->
                 userPersonalCollection
                     .document(owner)
+                    // add the new document reference to the userPersonal target map
+                    // add an empty list in the synced field in case the category is new
                     .update(
                         targetField, FieldValue.arrayUnion(it),
                         syncedField, FieldValue.arrayUnion()
@@ -476,6 +542,12 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Fetches all ingredient data.
+     *
+     * @param ref DocumentReference (contained in groceries and fridge maps of userPersonal)
+     * @return OwnedIngredient object with all ingredient data
+     */
     private suspend fun fetchIngredient(ref: DocumentReference): OwnedIngredient {
         val document = ref.get().await()
         return if (document.exists()) {
@@ -491,6 +563,14 @@ class DatabaseConnection {
 
     }
 
+    /**
+     * Changed whether an ingredient's tick is changed (only useful for groceries).
+     *
+     * @param uid ID of the ingredient
+     * @param isTicked new ticked state of the ingredient
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun updateIngredientTick(uid: String, isTicked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         ingredientsCollection
             .document(uid)
@@ -506,9 +586,19 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Deletes an ingredient and its existing references.
+     *
+     * @param uid ID of the ingredient
+     * @param owner ID of the user
+     * @param category in which the ingredient is referenced
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun deleteIngredient(uid: String, owner: String, category: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val ref = ingredientsCollection.document(uid)
 
+        // remove the ingredient document reference from the category in which it is
         userPersonalCollection
             .document(owner)
             .update("$GROCERIES.$category", FieldValue.arrayRemove(ref))
@@ -516,6 +606,7 @@ class DatabaseConnection {
                 isError(false)
                 Log.d("DB", "Successfully deleted ingredient ref from user $owner")
 
+                // if the reference was correctly removed -> delete the ingredient document
                 ref.delete()
                     .addOnSuccessListener {
                         isError(false)
@@ -545,31 +636,6 @@ class DatabaseConnection {
     }
 
     /**
-     * Adds the user-input profile picture to storage (creates the user's data path in storage).
-     *
-     * @param userID ID of the user
-     * @param picture Uri of the user-input profile picture
-     * @param isError block that runs if there is an error executing the function
-     */
-    private fun addUserPicture(userID: String, picture: Uri, isError: (Boolean) -> Unit) {
-        val pictureRef = storage.child(userPicturePath(userID))
-        pictureRef
-            .putFile(picture)
-            .addOnSuccessListener {
-                pictureRef.downloadUrl.addOnSuccessListener { uri ->
-                    userDataCollection.document(userID).update(PICTURE, uri.toString())
-                    isError(false)
-                    Log.d("DB", "Successfully added user profile picture")
-                }
-            }
-            .addOnFailureListener { e ->
-                isError(true)
-                Log.d("DB", "Failed to add user profile picture with error: $e")
-            }
-
-    }
-
-    /**
      * Copies the stores default profile picture into the user's profile picture data in Storage.
      *
      * @param userID ID of the user
@@ -579,13 +645,17 @@ class DatabaseConnection {
         val defaultRef = storage.child(defaultPicturePath)
         val pictureRef = storage.child(userPicturePath(userID))
 
+        // copy the default picture
         defaultRef
             .getBytes(Long.MAX_VALUE)
             .addOnSuccessListener { defaultData ->
+                // paste the picture in the new user's storage
                 pictureRef
                     .putBytes(defaultData)
                     .addOnSuccessListener {
+                        // if the picture was correctly copied -> fetch its URL
                         pictureRef.downloadUrl.addOnSuccessListener { uri ->
+                            // add the new URI as the picture field in the new user's userData document
                             userDataCollection.document(userID).update(PICTURE, uri.toString())
                             isError(false)
                             Log.d("DB", "Successfully added user profile picture")
@@ -608,15 +678,16 @@ class DatabaseConnection {
      */
     private fun updateUserPicture(userID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val pictureRef = storage.child(userPicturePath(userID))
+        // adds the new picture in storage (path is automatically created if it does not exist)
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {
+                // if the picture was correctly added -> fetch its URL
                 pictureRef.downloadUrl.addOnSuccessListener { uri ->
+                    // add the new URI as the picture field in the userData document
                     userDataCollection.document(userID).update(PICTURE, uri.toString())
-                        .addOnSuccessListener {
-                            isError(false)
-                            callBack()
-                        }
+                        isError(false)
+                        callBack()
                 }
                 Log.d("DB", "Successfully updated user profile picture")
             }
@@ -655,8 +726,10 @@ class DatabaseConnection {
      * @param callBack block that runs after DB was updated
      */
     private fun deleteProfilePicture(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // deletes all items in the user's storage data path
         val folderRef = storage.child(userPath(userID))
         folderRef.listAll().addOnSuccessListener { result ->
+            // check how many items are left to be deleted before callBack
             var deletedCount = 0
             val totalCount = result.items.size
             result.items.forEach { item ->

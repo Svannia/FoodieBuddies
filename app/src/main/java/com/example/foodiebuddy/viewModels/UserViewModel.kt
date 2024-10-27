@@ -174,7 +174,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                     Log.d("VM", "Adding new categories")
                     var remaining = newCategories.size
                     newCategories.forEach { (category, ingredients) ->
-                        db.addCategory(category, ingredients, userID, false, {isError(it)}) {
+                        db.addCategory(userID, category, ingredients, false, {isError(it)}) {
                             remaining--
                             if (remaining <= 0) { editCategoryNames(editedCategories, {isError(it)}) { callBack() }
                             }

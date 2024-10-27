@@ -16,7 +16,7 @@ data class User(val uid: String, val username: String, val picture: Uri, val num
         /**
          * Creates an empty User data object.
          *
-         * @return empty User data object
+         * @return empty User data object.
          */
         fun empty(): User {
             return User("", "", Uri.EMPTY, 0, "")
@@ -25,7 +25,7 @@ data class User(val uid: String, val username: String, val picture: Uri, val num
     /**
      * Checks if this User data object is empty.
      *
-     * @return true if the User data object is empty
+     * @return true if the User data object is empty.
      */
     fun isEmpty(): Boolean {
         return this == empty()
