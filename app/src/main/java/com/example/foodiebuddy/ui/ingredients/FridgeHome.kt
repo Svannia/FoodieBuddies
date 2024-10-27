@@ -38,6 +38,7 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
     val screenState = remember { mutableStateOf(ScreenState.VIEWING) }
     val loading = remember { mutableStateOf(false) }
+
     // pressing the Android back button on this screen does not change it
     BackHandler {
         navigationActions.navigateTo(Route.FRIDGE, true)
@@ -49,6 +50,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
     val userPersonal by userViewModel.userPersonal.collectAsState()
     val fridge = remember { mutableStateOf(userPersonal.fridge) }
 
+    // these variables hold all the modifications the user is making before they are bulked updated if the user saves the modifications
     val newItems = fridge.value.mapValues { mutableListOf<OwnedIngredient>() }
     val removedItems = fridge.value.mapValues { mutableListOf<String>() }
     val editedCategories = mutableMapOf<String, String>()
@@ -74,8 +76,6 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
 
     LaunchedEffect(userPersonal) {
         fridge.value = userPersonal.fridge.toMutableMap()
-        Log.d("Debug", "Fridge: userPersonal is $userPersonal")
-        Log.d("Debug", "fridge contain ${fridge.value}")
     }
 
     if (loading.value) {
@@ -89,7 +89,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
-                loadModifications(userViewModel, userPersonal, {it.fridge}, true, context, loading, fridge, newItems, removedItems, editedCategories, newCategories, removedCategories)
+                loadModifications(userViewModel, userPersonal, fridge, {it.fridge}, true, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
             }},
             content = {paddingValues ->
                 when (screenState.value) {
@@ -104,7 +104,6 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                         ) {
                             clearTemporaryModifications(userPersonal, fridge, {it.fridge}, newItems, removedItems, editedCategories, newCategories, removedCategories, unavailableCategoryNames)
 
-                            Log.d("Debug", "displaying fridge ${fridge.value}")
                             if (fridge.value.isNotEmpty() || fridge.value.any { it.value.isNotEmpty() }) {
                                 items(fridge.value.toSortedMap().keys.toList(), key = {it}) { category ->
                                     if (fridge.value[category]?.isNotEmpty() == true) {
@@ -135,11 +134,13 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                             item {
                                 AddCategory(newCategoryName, newCategories, unavailableCategoryNames, context)
                             }
+
+                            // new categories are displayed first, in added order, to make editing easier
                             items(newCategories.value.keys.reversed().toList(), key = {it})  { category ->
                                 IngredientCategoryEdit(
                                     category,
-                                    false,
                                     newCategories.value[category] ?: mutableListOf(),
+                                    false,
                                     newCategories.value[category] ?: mutableListOf(),
                                     editedCategories,
                                     onRemoveItem = { _, name ->
@@ -155,12 +156,14 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                     }
                                 )
                             }
+
+                            // existing categories are display next in alphabetical order
                             items(fridge.value.toSortedMap().keys.toList(), key = {it}) { category ->
                                 if (category !in removedCategories) {
                                     IngredientCategoryEdit(
                                         category,
-                                        false,
                                         fridge.value[category] ?: mutableListOf(),
+                                        false,
                                         newItems[category] ?: mutableListOf(),
                                         editedCategories,
                                         onRemoveItem = { uid, _ ->

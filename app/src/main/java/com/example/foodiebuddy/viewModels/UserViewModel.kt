@@ -23,9 +23,11 @@ class UserViewModel
 constructor(private val userID: String ?= null) : ViewModel() {
     private val db = DatabaseConnection()
 
+    // userData contains the user's profile information (can be seen by everyone)
     private val _userData = MutableStateFlow(User.empty())
     val userData: StateFlow<User> = _userData
 
+    // userPersonal contains the user's private data (can only be seen by its owner)
     private val _userPersonal = MutableStateFlow(UserPersonal.empty())
     val userPersonal: StateFlow<UserPersonal> = _userPersonal
 
@@ -36,7 +38,6 @@ constructor(private val userID: String ?= null) : ViewModel() {
      * @param picture Uri for the profile picture
      * @param bio input by user (can be empty)
      * @param isError block that runs if there is an error executing the function
-     * @return
      */
     fun createUser(username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
         viewModelScope.launch {
@@ -136,6 +137,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+    /**
+     * Fetches all personal data of this ViewModel's user.
+     *
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all data was retrieved
+     */
     fun fetchUserPersonal(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             // only fetches data if user exists
@@ -148,7 +155,6 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             if (newUserPersonal.isEmpty()) { isError(true) }
                             else {
                                 isError(false)
-                                Log.d("Debug", "new User Personal is $newUserPersonal")
                                 _userPersonal.value = newUserPersonal
                                 callBack()
                             }
@@ -166,22 +172,33 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    fun updateCategories(newCategories: Map<String, MutableList<OwnedIngredient>>, editedCategories: MutableMap<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    /**
+     * Updates changes to categories (new categories added and name change of existing categories).
+     *
+     * @param newCategories maps new category names to lists of new ingredients
+     * @param editedCategories maps old category names to new ones
+     * @param isInFridge whether the new ingredients should be added in the fridge. If false, they're added in groceries
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all categories were updated
+     */
+    fun updateCategories(newCategories: Map<String, List<OwnedIngredient>>, editedCategories: Map<String, String>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
-                Log.d("VM", "Updating categories")
+                // if there are new categories to add ->
                 if (newCategories.isNotEmpty()) {
-                    Log.d("VM", "Adding new categories")
+                    // check how many newCategories are left to add before callBack
                     var remaining = newCategories.size
+                    // for each new category, create it (also adds the potential new ingredients)
                     newCategories.forEach { (category, ingredients) ->
-                        db.addCategory(userID, category, ingredients, false, {isError(it)}) {
+                        db.addCategory(userID, category, ingredients, isInFridge, {isError(it)}) {
                             remaining--
+                            // if all categories have been added, process the name changes
                             if (remaining <= 0) { editCategoryNames(editedCategories, {isError(it)}) { callBack() }
                             }
                         }
                     }
+                // if there are no categories to add -> process name changes
                 } else {
-                    Log.d("Debug", "else edit")
                     editCategoryNames(editedCategories, {isError(it)}) { callBack() }
                 }
             } else {
@@ -190,10 +207,18 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+    /**
+     * Deletes a list of categories.
+     *
+     * @param removedCategories list of category names to be deleted
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all categories were deleted
+     */
     fun deleteCategories(removedCategories: List<String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
+            // if there are categories to delete ->
             if (removedCategories.isNotEmpty()) {
-                Log.d("VM", "Removing categories")
+                // check how many categories left to delete before callBack
                 var remaining = removedCategories.size
                 removedCategories.forEach { category ->
                     db.deleteCategory(userID, category, { isError(it) }) {
@@ -201,6 +226,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         if (remaining <= 0) { fetchUserPersonal( { isError(it) } ) { callBack() } }
                     }
                 }
+            // if there are no categories to delete -> directly callBack
             } else {
                 callBack()
             }
@@ -209,37 +235,45 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    fun addIngredients(newItems: Map<String, MutableList<OwnedIngredient>>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    /**
+     * Adds a list of ingredients to existing categories.
+     *
+     * @param newItems maps category names to their lists of new ingredients
+     * @param isInFridge whether the new ingredients should be added in the fridge. If false, they're added in groceries
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all ingredients were added
+     */
+    fun addIngredients(newItems: Map<String, List<OwnedIngredient>>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
+                // if the map is not empty ->
                 if (newItems.isNotEmpty()) {
-                    Log.d("VM", "Adding items")
+                    // check how many categories still have ingredients left to add before callBack
                     var remainingItems = newItems.size
-                    Log.d("Debug", "new items are: $newItems")
-                    Log.d("Debug", "remainingItems: $remainingItems")
+                    // for each category, if there are new ingredients to add ->
                     newItems.forEach { (_, ingredients) ->
                         if (ingredients.isNotEmpty()) {
+                            // check how many ingredients are left to add before decreasing category counter
                             var remaining = ingredients.size
-                            Log.d("Debug", "remaining: $remaining")
                             ingredients.forEach { ingredient ->
                                 db.createIngredient(userID, ingredient, isInFridge, {isError(it) }) {
                                     remaining--
-                                    Log.d("Debug", "now remaining: $remaining")
                                     if (remaining <= 0) {
                                         remainingItems--
-                                        Log.d("Debug", "now remainingItems: $remainingItems")
                                         if (remainingItems <= 0) {
                                             callBack()
                                         }
                                     }
                                 }
                             }
+                        // if this category does not have any new ingredients -> decrease category counter
                         } else { remainingItems--
                             if (remainingItems <= 0) {
                                 callBack()
                             }
                         }
                     }
+                // if the map is empty -> callBack
                 } else { callBack() }
             } else {
                 isError(true)
@@ -248,6 +282,14 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+    /**
+     * Changes the isTicked field of an ingredient.
+     *
+     * @param uid ID of the ingredient
+     * @param ticked new isTicked value
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after ingredient's isTicked was updated
+     */
     fun updateIngredientTick(uid: String, ticked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.updateIngredientTick(uid, ticked, { isError(it) }) {
@@ -257,15 +299,23 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    fun removeIngredients(removedItems: Map<String, List<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    /**
+     * Removes a list of ingredients.
+     *
+     * @param removedItems maps category names to a list of ingredients ids to be deleted
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all ingredients were deleted
+     */
+    fun deleteIngredients(removedItems: Map<String, List<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
+            // if the map is not empty
             if (removedItems.isNotEmpty()) {
-                Log.d("VM", "Removing items")
+                // check how many categories are left with ingredients to delete before callBack
                 var remainingItems = removedItems.size
-                Log.d("Debug", "new items are: $removedItems")
-                Log.d("Debug", "remainingItems: $remainingItems")
                 removedItems.forEach { (category, ingredients) ->
+                    // if this category has ingredients to delete ->
                     if (ingredients.isNotEmpty()) {
+                        // check how ingredients are left to delete before decreasing category counter
                         var remaining = ingredients.size
                         ingredients.forEach { ingredient ->
                             db.deleteIngredient(ingredient, userID, category, { isError(it) }){
@@ -278,22 +328,32 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                 }
                             }
                         }
+                    // if this category does not have any ingredient to delete -> decrease category counter
                     } else { remainingItems--
                         if (remainingItems <= 0) {
                             callBack()
                         }
                     }
                 }
+            // if the map is empty -> callBack
             } else { callBack() }
         } else {
             Log.d("VM", "Failed to delete user: ID is null")
         }
     }
 
-    private fun editCategoryNames(editedCategories: MutableMap<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    /**
+     * Updates changes in category names.
+     *
+     * @param editedCategories maps old category names to new ones
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all category names were updated
+     */
+    private fun editCategoryNames(editedCategories: Map<String, String>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
+            // if the map is not emtpy ->
             if (editedCategories.isNotEmpty()) {
-                Log.d("VM", "Editing categories")
+                // check how many categories are left to update before callBack
                 var remaining = editedCategories.size
                 editedCategories.forEach { (old, new) ->
                     db.updateCategory(userID, old, new, {isError(it)})
@@ -302,10 +362,8 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         if (remaining <= 0) { callBack() }
                     }
                 }
-            } else {
-                Log.d("Debug", "else inside edit")
-
-                callBack() }
+            // if the map is empty -> callBack
+            } else { callBack() }
         }
     }
 }

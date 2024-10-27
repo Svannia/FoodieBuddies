@@ -147,6 +147,7 @@ fun SecondaryScreen(
  * @param navigationIndex indicates which primary screen is currently selected (for bottom navigation bar)
  * @param topBarIcons composable for icons on the right-side of the top bar
  * @param userViewModel to access user data
+ * @param floatingButton composable for the floating button
  * @param content screen body
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -235,6 +236,11 @@ fun PrimaryScreen(
 
 }
 
+/**
+ * This creates a column with a small loading animation that can be used as a screen content.
+ *
+ * @param paddingValues to be used in the main column
+ */
 @Composable
 fun MiniLoading(paddingValues: PaddingValues) {
     Column(
@@ -264,6 +270,12 @@ fun LoadingPage() {
     }
 }
 
+/**
+ * A rotating animation to be used for when waiting for information to load/change.
+ *
+ * @param size diameter of the loading circle
+ * @param strokeWidth width of the circle
+ */
 @Composable
 fun LoadingAnimation(size: Float, strokeWidth: Float) {
     val infiniteTransition = rememberInfiniteTransition(label = stringResource(R.string.desc_loading))
@@ -321,6 +333,12 @@ fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
  * @param placeHolder text displayed in the empty text field
  * @param singleLine whether or not the value of the text field can contain line breaks
  * @param maxLength maximum amount of characters allowed in the text field
+ * @param focusRequester optional FocusRequester when the TextField needs to be manually put into focus
+ * @param onFocusedChanged needed if there is a FocusRequester: block that runs when focus is changed
+ * @param showMaxChara whether or not to show supporting text with the max amount of character. True by default
+ * @param width width of the TextField
+ * @param keyboardActions optional overriding of default keyboard actions
+ * @param keyboardOptions optional overriding of default keyboard options
  */
 @Composable
 fun CustomTextField(
@@ -401,6 +419,7 @@ fun CustomTextField(
  * @param content text inside the window
  * @param confirmText text within the confirm button
  * @param confirmColour colour of the confirm text and button
+ * @param additionOnDismiss optional block that runs when dismissing the dialog window
  * @param onConfirm block that runs if the confirm button is pressed
  */
 @Composable
@@ -519,6 +538,12 @@ private fun BurgerMenu(scope: CoroutineScope, drawerState: DrawerState) {
     }
 }
 
+/**
+ * This creates the navigation bar at the bottom of the main screens.
+ *
+ * @param navigationActions to handle screen navigation
+ * @param navigationIndex from the BOTTOM_NAVIGATIONS list, index of the current destination
+ */
 @Composable
 private fun BottomNavBar(
     navigationActions: NavigationActions,

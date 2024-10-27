@@ -1,45 +1,33 @@
 package com.example.foodiebuddy.ui.ingredients
 
-import android.content.Context
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.toMutableStateList
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.isDebugInspectorInfoEnabled
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.OwnedIngredient
-import com.example.foodiebuddy.data.User
-import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.DialogWindow
-import com.example.foodiebuddy.ui.LoadingAnimation
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.MiniLoading
 import com.example.foodiebuddy.ui.PrimaryScreen
@@ -50,16 +38,19 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
     val screenState = remember { mutableStateOf(ScreenState.VIEWING) }
     val loading = remember { mutableStateOf(false) }
+
     // pressing the Android back button on this screen does not change it
     BackHandler {
         navigationActions.navigateTo(Route.GROCERIES, true)
         if (screenState.value == ScreenState.EDITING) screenState.value = ScreenState.VIEWING
     }
+
     val context = LocalContext.current
 
     val userPersonal by userViewModel.userPersonal.collectAsState()
     val groceries = remember { mutableStateOf(userPersonal.groceryList) }
 
+    // these variables hold all the modifications the user is making before they are bulked updated if the user saves the modifications
     val newItems = groceries.value.mapValues { mutableListOf<OwnedIngredient>() }
     val removedItems = groceries.value.mapValues { mutableListOf<String>() }
     val editedCategories = mutableMapOf<String, String>()
@@ -86,8 +77,6 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
 
     LaunchedEffect(userPersonal) {
         groceries.value = userPersonal.groceryList.toMutableMap()
-        Log.d("Debug", "Groceries: userPersonal is $userPersonal")
-        Log.d("Debug", "groceries contain ${groceries.value}")
     }
 
     if (loading.value) {
@@ -101,7 +90,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
-                loadModifications(userViewModel, userPersonal, {it.groceryList}, false, context, loading, groceries, newItems, removedItems, editedCategories, newCategories, removedCategories)
+                loadModifications(userViewModel, userPersonal, groceries, {it.groceryList}, false, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
             }},
             content = { paddingValues ->
                 when (screenState.value) {
@@ -151,11 +140,13 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                             item {
                                 AddCategory(newCategoryName, newCategories, unavailableCategoryNames, context)
                             }
+
+                            // new categories are displayed first, in added order, to make editing easier
                             items(newCategories.value.keys.reversed().toList(), key = {it})  { category ->
                                 IngredientCategoryEdit(
                                     category,
-                                    true,
                                     newCategories.value[category] ?: mutableListOf(),
+                                    true,
                                     newCategories.value[category] ?: mutableListOf(),
                                     editedCategories,
                                     onRemoveItem = { _, name ->
@@ -171,12 +162,14 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                     }
                                 )
                             }
+
+                            // existing categories are display next in alphabetical order
                             items(groceries.value.toSortedMap().keys.toList(), key = {it}) { category ->
                                 if (category !in removedCategories) {
                                     IngredientCategoryEdit(
                                         category,
-                                        true,
                                         groceries.value[category] ?: mutableListOf(),
+                                        true,
                                         newItems[category] ?: mutableListOf(),
                                         editedCategories,
                                         onRemoveItem = { uid, _ ->
@@ -210,104 +203,5 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                 }
             }
         )
-    }
-}
-
-fun clearTemporaryModifications(
-    userPersonal: UserPersonal,
-    list: MutableState<Map<String, List<OwnedIngredient>>>,
-    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
-    newItems: Map<String, MutableList<OwnedIngredient>>,
-    removedItems: Map<String, MutableList<String>>,
-    editedCategories: MutableMap<String, String>,
-    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
-    removedCategories: SnapshotStateList<String>,
-    unavailableCategoryNames: SnapshotStateList<String>
-) {
-    list.value = fieldToRead(userPersonal).toMutableMap()
-    newItems.forEach { (_, value) -> value.clear() }
-    removedItems.forEach { (_, value) -> value.clear() }
-    editedCategories.clear()
-    val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
-    newCategories.value = mutableNewCategories
-    removedCategories.clear()
-    unavailableCategoryNames.clear()
-    unavailableCategoryNames.addAll(list.value.keys)
-}
-
-fun loadModifications(
-    userViewModel: UserViewModel,
-    userPersonal: UserPersonal,
-    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
-    isInFridge: Boolean,
-    context: Context,
-    loading: MutableState<Boolean>,
-    list: MutableState<Map<String, List<OwnedIngredient>>>,
-    newItems: Map<String, MutableList<OwnedIngredient>>,
-    removedItems: Map<String, MutableList<String>>,
-    editedCategories: MutableMap<String, String>,
-    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
-    removedCategories: SnapshotStateList<String>
-) {
-    var remainingUpdates = 4
-    userViewModel.removeIngredients(removedItems, {
-        if (it) handleError(context, "Could not remove ingredient")
-    }) {
-        remainingUpdates--
-        Log.d("Debug", "came back from removing ingredients")
-
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
-    userViewModel.addIngredients(newItems, isInFridge, {
-        if (it) handleError(context, "Could not update owned ingredients list")
-    }) {
-        remainingUpdates--
-        Log.d("Debug", "came back from adding ingredients")
-
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
-    userViewModel.updateCategories(newCategories.value, editedCategories, {
-        if (it) {handleError(context, "Could not update category names")}
-    }) {
-        remainingUpdates--
-        Log.d("Debug", "came back from updating categories")
-
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
-    userViewModel.deleteCategories(removedCategories, {
-        if (it) {handleError(context, "Could not update category names")}
-    }) {
-        remainingUpdates--
-        Log.d("Debug", "came back from deleting categories")
-
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
     }
 }

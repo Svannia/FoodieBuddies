@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.ui.ingredients
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -36,7 +35,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -44,14 +42,27 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.OwnedIngredient
+import com.example.foodiebuddy.data.UserPersonal
+import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.theme.MyTypography
+import com.example.foodiebuddy.viewModels.UserViewModel
 
 private const val HEIGHT = 42
 private const val OFFSET = 45
 private const val INLINE_ICON = 20
+private const val MAX_CHARA = 21
 
 enum class ScreenState { LOADING, VIEWING, EDITING }
+
+// shared UI components
+
+/**
+ * Floating button that changes functionality whether the user is currently viewing or editing their ingredients.
+ *
+ * @param screenState ScreenState to switch between the button's functionalities
+ * @param onSave block that runs when the user is in Editing mode and saves their modifications
+ */
 @Composable
 fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
     Row(
@@ -93,12 +104,19 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
     }
 }
 
+/**
+ * Element that allows the user to enter a new category name.
+ *
+ * @param newCategoryName new name input by the user
+ * @param newCategories map of new category names to their list of new ingredients
+ * @param unavailableCategoryNames list of category names that already exist
+ * @param context used to display Toast
+ */
 @Composable
 fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>, unavailableCategoryNames: SnapshotStateList<String>, context: Context) {
     val focusRequester = remember { FocusRequester() }
     val isFocused = remember { mutableStateOf(false) }
 
-    Log.d("Debug", "name beginning : ${newCategoryName.value}")
     Column (
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(0.dp)
@@ -110,6 +128,7 @@ fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableSta
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // add button next to the new category text field
             IconButton(
                 onClick = {
                     if (isFocused.value) {
@@ -139,7 +158,6 @@ fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableSta
                     contentDescription = stringResource(R.string.desc_add)
                 )
             }
-            Log.d("Debug", "name before text field : ${newCategoryName.value}")
             CustomTextField(
                 value = newCategoryName.value,
                 onValueChange = {
@@ -149,7 +167,7 @@ fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableSta
                 icon = -1,
                 placeHolder = stringResource(R.string.button_addCategory),
                 singleLine = true,
-                maxLength = 50,
+                maxLength = MAX_CHARA,
                 showMaxChara = false,
                 width = 300.dp,
                 focusRequester = focusRequester,
@@ -170,7 +188,6 @@ fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableSta
                             }
                         }
                         newCategoryName.value = ""
-                        Log.d("Debug", "name after done : ${newCategoryName.value}")
                     }
                 ),
                 keyboardOptions = KeyboardOptions.Default.copy(
@@ -180,9 +197,16 @@ fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableSta
         }
         Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
     }
-    Log.d("Debug", "name at the end is : ${newCategoryName.value}")
 }
 
+/**
+ * How a category is displayed in View mode.
+ *
+ * @param name of the category
+ * @param ingredients list of ingredients in this category
+ * @param canTick whether this ingredient should display a checkBox
+ * @param onTick block that runs with the ingredient and its ticked value after ticking it
+ */
 @Composable
 fun IngredientCategoryView(
     name: String,
@@ -207,11 +231,22 @@ fun IngredientCategoryView(
     }
 }
 
+/**
+ * How a category is displayed in Edit mode.
+ *
+ * @param name of the category
+ * @param ingredients list of ingredients in this category
+ * @param canTick whether this ingredient should display a checkBox
+ * @param addedItems list of ingredients added in this category
+ * @param editedCategories maps old category names to new ones
+ * @param onRemoveItem block that runs with an the ingredient' ID and its displayed name after removing it
+ * @param onRemoveCategory block that runs with this category's name after removing it
+ */
 @Composable
 fun IngredientCategoryEdit(
     name: String,
-    canTick: Boolean,
     ingredients: List<OwnedIngredient>,
+    canTick: Boolean,
     addedItems: MutableList<OwnedIngredient>,
     editedCategories: MutableMap<String, String>,
     onRemoveItem: (String, String) -> Unit,
@@ -220,6 +255,7 @@ fun IngredientCategoryEdit(
     val isEditingName = remember { mutableStateOf(false) }
     val editedName = remember { mutableStateOf(name) }
 
+    // show all existing ingredients in alphabetical order, then newly added ones
     val newItemName = remember { mutableStateOf("") }
     val sortedIngredients = ingredients.sortedBy { it.displayedName }
     val allTempIngredients = remember { mutableStateListOf(*sortedIngredients.toTypedArray()) }
@@ -236,6 +272,7 @@ fun IngredientCategoryEdit(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ){
+            // if the user is editing the category's name -> show a text field
             if (isEditingName.value) {
                 Spacer(modifier = Modifier.size(16.dp))
                 CustomTextField(
@@ -244,7 +281,7 @@ fun IngredientCategoryEdit(
                     icon = -1,
                     placeHolder = stringResource(R.string.button_addItem),
                     singleLine = true,
-                    maxLength = 15,
+                    maxLength = MAX_CHARA,
                     showMaxChara = false,
                     width = 200.dp,
                     keyboardActions = KeyboardActions(
@@ -266,6 +303,7 @@ fun IngredientCategoryEdit(
             Row(
                 horizontalArrangement = Arrangement.End
             ) {
+                // edit button next to the category's name (can be used to bring the text field in and out of focus)
                 IconButton(
                     modifier = Modifier
                         .height(24.dp)
@@ -282,6 +320,7 @@ fun IngredientCategoryEdit(
                 ){
                     Icon(painterResource(R.drawable.pencil), contentDescription = stringResource(R.string.desc_edit))
                 }
+                // delete button next to the category's name to delete it
                 IconButton(
                     modifier = Modifier
                         .height(24.dp)
@@ -300,8 +339,15 @@ fun IngredientCategoryEdit(
         ) {
             allTempIngredients.forEach { ingredient ->
                 IngredientItemEdit(ingredient, canTick) {
+                    // when removing an ingredient ->
                     allTempIngredients.remove(ingredient)
-                    onRemoveItem(ingredient.uid, ingredient.displayedName)
+                    // if ingredient is already in DB -> add to items to be deleted
+                    if (sortedIngredients.contains(ingredient)) {
+                        onRemoveItem(ingredient.uid, ingredient.displayedName)
+                    // else remove item from list of items to be added
+                    } else {
+                        addedItems.removeIf { it.displayedName == ingredient.displayedName }
+                    }
                 }
             }
         }
@@ -316,6 +362,13 @@ fun IngredientCategoryEdit(
     }
 }
 
+/**
+ * How an ingredient is displayed in View mode.
+ *
+ * @param ingredient OwnedIngredient object that represents the ingredient
+ * @param canTick whether this ingredient should display a checkBox
+ * @param onTick block that runs with the ingredient and its ticked value after ticking it
+ */
 @Composable
 private fun IngredientItemView(
     ingredient: OwnedIngredient,
@@ -346,6 +399,7 @@ private fun IngredientItemView(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // if the ingredient can be ticker -> display a checkBox
             if (canTick) {
                 Checkbox(
                     modifier = Modifier.size(INLINE_ICON.dp),
@@ -360,7 +414,7 @@ private fun IngredientItemView(
             Text(
                 text = ingredient.displayedName,
                 style =
-                if (isTicked.value) MyTypography.bodyMedium.copy(
+                if (isTicked.value && canTick) MyTypography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.outline,
                     textDecoration = TextDecoration.LineThrough
                 )
@@ -370,6 +424,13 @@ private fun IngredientItemView(
     }
 }
 
+/**
+ * How an ingredient is displayed in Edit mode.
+ *
+ * @param ingredient OwnedIngredient object that represents the ingredient
+ * @param canTick whether this ingredient should display a checkBox
+ * @param onDelete block that runs after deleting this ingredient
+ */
 @Composable
 private fun IngredientItemEdit(
     ingredient: OwnedIngredient,
@@ -391,6 +452,7 @@ private fun IngredientItemEdit(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // if the ingredient can be ticker -> display a checkBox
                 if (canTick) {
                     Checkbox(
                         modifier = Modifier.size(INLINE_ICON.dp),
@@ -402,13 +464,14 @@ private fun IngredientItemEdit(
                 Text(
                     text = ingredient.displayedName,
                     style =
-                    if (isTicked.value) MyTypography.bodyMedium.copy(
+                    if (isTicked.value && canTick) MyTypography.bodyMedium.copy(
                         color = MaterialTheme.colorScheme.outline,
                         textDecoration = TextDecoration.LineThrough
                     )
                     else MyTypography.bodyMedium
                 )
             }
+            // delete button next to the ingredient
             IconButton(
                 modifier = Modifier
                     .height(24.dp)
@@ -422,6 +485,12 @@ private fun IngredientItemEdit(
     }
 }
 
+/**
+ * Element that allows the user to enter a new ingredient name.
+ *
+ * @param displayName name input by the user
+ * @param onAdd block that runs with the ingredient name after adding it
+ */
 @Composable
 private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableState<String>) -> Unit) {
     val focusRequester = remember { FocusRequester() }
@@ -440,6 +509,7 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
+            // add button next to the new ingredient text field
             IconButton(
                 onClick = {
                     if (isFocused.value) {
@@ -468,7 +538,7 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
                 icon = -1,
                 placeHolder = stringResource(R.string.button_addItem),
                 singleLine = true,
-                maxLength = 50,
+                maxLength = MAX_CHARA,
                 showMaxChara = false,
                 width = 300.dp,
                 focusRequester = focusRequester,
@@ -488,6 +558,135 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
                     imeAction = ImeAction.Done
                 )
             )
+        }
+    }
+}
+
+
+// shared functionalities
+
+// TODO: standardize ingredient names
+
+/**
+ * Clears all variables that hold temporary modifications.
+ *
+ * @param userPersonal UserPersonal object that contains all the private data
+ * @param list map read from userPersonal
+ * @param fieldToRead which map to read from userPersonal (groceries or fridge)
+ * @param newItems maps all existing categories to a list of new added ingredients
+ * @param removedItems maps all existing categories to a list of deleted ingredients
+ * @param editedCategories maps old category names to new ones
+ * @param newCategories map of new categories and their list of new ingredients
+ * @param removedCategories list of names of deleted category
+ * @param unavailableCategoryNames list of category names that are already in use
+ */
+fun clearTemporaryModifications(
+    userPersonal: UserPersonal,
+    list: MutableState<Map<String, List<OwnedIngredient>>>,
+    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
+    newItems: Map<String, MutableList<OwnedIngredient>>,
+    removedItems: Map<String, MutableList<String>>,
+    editedCategories: MutableMap<String, String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    removedCategories: SnapshotStateList<String>,
+    unavailableCategoryNames: SnapshotStateList<String>
+) {
+    list.value = fieldToRead(userPersonal).toMutableMap()
+    newItems.forEach { (_, value) -> value.clear() }
+    removedItems.forEach { (_, value) -> value.clear() }
+    editedCategories.clear()
+    val mutableNewCategories = newCategories.value.toMutableMap().also {it.clear()}
+    newCategories.value = mutableNewCategories
+    removedCategories.clear()
+    unavailableCategoryNames.clear()
+    unavailableCategoryNames.addAll(list.value.keys)
+}
+
+/**
+ * Bulk updates all modifications to the database.
+ *
+ * @param userViewModel to process modifications
+ * @param userPersonal UserPersonal object that contains all the private data
+ * @param list map read from userPersonal
+ * @param fieldToRead which map to read from userPersonal (groceries or fridge)
+ * @param isInFridge whether the ingredient modifications should be updated in the fridge. Updates the groceries if false
+ * @param context used to handle errors
+ * @param loading set to false once all updates have called back
+ * @param newItems maps all existing categories to a list of new added ingredients
+ * @param removedItems maps all existing categories to a list of deleted ingredients
+ * @param editedCategories maps old category names to new ones
+ * @param newCategories map of new categories and their list of new ingredients
+ * @param removedCategories list of names of deleted category
+ */
+fun loadModifications(
+    userViewModel: UserViewModel,
+    userPersonal: UserPersonal,
+    list: MutableState<Map<String, List<OwnedIngredient>>>,
+    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
+    isInFridge: Boolean,
+    context: Context,
+    loading: MutableState<Boolean>,
+    newItems: Map<String, MutableList<OwnedIngredient>>,
+    removedItems: Map<String, MutableList<String>>,
+    editedCategories: MutableMap<String, String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    removedCategories: SnapshotStateList<String>
+) {
+    var remainingUpdates = 4
+    userViewModel.deleteIngredients(removedItems, {
+        if (it) handleError(context, "Could not remove ingredient")
+    }) {
+        remainingUpdates--
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
+    }
+    userViewModel.addIngredients(newItems, isInFridge, {
+        if (it) handleError(context, "Could not update owned ingredients list")
+    }) {
+        remainingUpdates--
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
+    }
+    userViewModel.updateCategories(newCategories.value, editedCategories, isInFridge, {
+        if (it) {
+            handleError(context, "Could not update category names")
+        }
+    }) {
+        remainingUpdates--
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
+        }
+    }
+    userViewModel.deleteCategories(removedCategories, {
+        if (it) {
+            handleError(context, "Could not update category names")
+        }
+    }) {
+        remainingUpdates--
+        if (remainingUpdates <= 0) {
+            userViewModel.fetchUserPersonal({
+                if (it) { handleError(context, "Could not fetch user personal") }
+            }){
+                list.value = fieldToRead(userPersonal)
+                loading.value = false
+            }
         }
     }
 }

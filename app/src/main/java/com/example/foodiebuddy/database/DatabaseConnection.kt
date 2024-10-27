@@ -2,8 +2,6 @@ package com.example.foodiebuddy.database
 
 import android.net.Uri
 import android.util.Log
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.User
@@ -12,11 +10,12 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import java.time.chrono.IsoEra
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
@@ -199,8 +198,7 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 // if document deletion was successful -> also delete the profile picture
                 deleteProfilePicture(userID, { isError(it) }) {
-                    // TODO delete userPersonal
-                    callBack()
+                    deleteUserPersonal(userID, {isError(it)}) { callBack() }
                 }
                 isError(false)
                 Log.d("DB", "Successfully deleted user $userID")
@@ -280,6 +278,49 @@ class DatabaseConnection {
             Log.d("DB", "Failed to fetch user personal for userID $userID")
             UserPersonal.empty()
         }
+    }
+
+    /**
+     * Deletes all ingredients owned by a user and userPersonal document.
+     *
+     * @param userID ID of the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
+    private fun deleteUserPersonal(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // delete all documents in ingredients collection where the owner is userID
+        ingredientsCollection
+            .whereEqualTo(OWNER, userID)
+            .get()
+            .addOnSuccessListener { query ->
+                val batch = Firebase.firestore.batch()
+                for (document in query.documents) {
+                    batch.delete(document.reference)
+                }
+
+                // once all ingredients deletion is complete ->
+                batch.commit()
+                    .addOnSuccessListener {
+                        Log.d("DB", "Successfully deleted ingredients for user $userID")
+                        // delete the userPersonal document of the user to be deleted
+                        userPersonalCollection
+                            .document(userID)
+                            .delete()
+                            .addOnSuccessListener {
+                                callBack()
+                                isError(false)
+                                Log.d("DB", "Successfully deleted user personal for $userID")
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("DB", "Failed to delete user personal for $userID with error $e")
+                            }
+                    }
+                    .addOnFailureListener { e ->
+                        isError(true)
+                        Log.d("DB", "Failed to delete ingredients for user $userID with error $e")
+                    }
+            }
     }
 
     /**
