@@ -106,7 +106,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                         ) {
                             clearTemporaryModifications(userPersonal, groceries, {it.groceryList}, newItems, removedItems, editedCategories, newCategories, removedCategories, unavailableCategoryNames)
 
-                            if (groceries.value.isNotEmpty() || groceries.value.any { it.value.isNotEmpty() }) {
+                            Log.d("Debug", "groceries contain: ${groceries.value}")
+                            Log.d("Debug", "boolean is: ${!groceries.value.all { it.value.isEmpty() }}")
+                            if (groceries.value.isNotEmpty() && !groceries.value.all { it.value.isEmpty() }) {
                                 items(groceries.value.toSortedMap().keys.toList(), key = {it}) { category ->
                                     if (groceries.value[category]?.isNotEmpty() == true) {
                                         IngredientCategoryView(category, groceries.value[category] ?: mutableListOf(), true) { ingredient, isTicked ->

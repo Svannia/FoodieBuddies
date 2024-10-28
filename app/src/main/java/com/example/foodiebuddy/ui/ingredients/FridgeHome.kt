@@ -58,6 +58,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
     val newCategories = remember { mutableStateOf(mapOf<String, MutableList<OwnedIngredient>>()) }
     val removedCategories = remember { mutableStateListOf<String>() }
     val unavailableCategoryNames = fridge.value.keys.toMutableStateList()
+    val newGroceryItems = fridge.value.mapValues { mutableListOf<OwnedIngredient>() }.toMutableMap()
 
     val showAlert = remember { mutableStateOf(false) }
     var deletingCategory = ""
@@ -90,6 +91,14 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
                 loadModifications(userViewModel, userPersonal, fridge, {it.fridge}, true, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
+                // add the ingredients sent from fridge to grocery list
+                userViewModel.addIngredients(newGroceryItems, false, {
+                    if (it) handleError(context, "Could not update owned ingredients list")
+                }) {
+                    userViewModel.fetchUserPersonal({
+                        if (it) { handleError(context, "Could not fetch user personal") }
+                    }) {}
+                }
             }},
             content = {paddingValues ->
                 when (screenState.value) {
@@ -103,6 +112,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                 .padding(paddingValues)
                         ) {
                             clearTemporaryModifications(userPersonal, fridge, {it.fridge}, newItems, removedItems, editedCategories, newCategories, removedCategories, unavailableCategoryNames)
+                            newGroceryItems.forEach { (_, value) -> value.clear() }
 
                             if (fridge.value.isNotEmpty() || fridge.value.any { it.value.isNotEmpty() }) {
                                 items(fridge.value.toSortedMap().keys.toList(), key = {it}) { category ->
@@ -116,7 +126,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(top = 16.dp),
-                                        text = stringResource(R.string.txt_emptyGroceries),
+                                        text = stringResource(R.string.txt_emptyFridge),
                                         style = MyTypography.bodyMedium,
                                         textAlign = TextAlign.Center
                                     )
@@ -153,6 +163,15 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                         mutableNewCategories.remove(it)
                                         newCategories.value = mutableNewCategories
                                         unavailableCategoryNames.remove(it)
+                                        newGroceryItems.remove(category)
+                                    },
+                                    onShop = {
+                                        newGroceryItems[category]?.add(it) ?: run {
+                                            newGroceryItems[category] = mutableListOf(it)
+                                        }
+                                    },
+                                    onShopCancel = {
+                                        newGroceryItems[category]?.remove(it)
                                     }
                                 )
                             }
@@ -172,6 +191,12 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                         onRemoveCategory = {
                                             deletingCategory = it
                                             showAlert.value = true
+                                        },
+                                        onShop = {
+                                            newGroceryItems[category]?.add(it)
+                                        },
+                                        onShopCancel = {
+                                            newGroceryItems[category]?.remove(it)
                                         }
                                     )
                                 }
@@ -190,6 +215,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                         removedCategories.add(deletingCategory)
                         fridge.value = fridge.value.filterKeys { key -> key !in removedCategories }
                         unavailableCategoryNames.remove(deletingCategory)
+                        newGroceryItems.remove(deletingCategory)
                         deletingCategory = ""
                         showAlert.value = false
                     }

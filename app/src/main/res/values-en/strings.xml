@@ -36,6 +36,7 @@
     <string name="desc_googleLogo">google logo</string>
     <string name="desc_loading">loading</string>
     <string name="desc_profilePic">profile picture</string>
+    <string name="desc_shop">"add to groceries" button</string>
     <string name="desc_textFieldIcon">text field icon</string>
 
     <string name="dst_account">Profile</string>
@@ -62,6 +63,7 @@
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
     <string name="toast_unknownError">There was an error, please retry. If it keeps failing, please contact Alice!</string>
 
+    <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
     <string name="txt_systemDark">Dark</string>

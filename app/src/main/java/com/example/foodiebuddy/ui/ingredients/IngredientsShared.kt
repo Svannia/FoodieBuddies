@@ -68,13 +68,13 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxSize()
-            .padding(8.dp),
+            .padding(6.dp),
         verticalAlignment = Alignment.Bottom,
         horizontalArrangement = Arrangement.End
     ) {
         Button(
             modifier = Modifier
-                .size(62.dp)
+                .size(58.dp)
                 .clip(MaterialTheme.shapes.medium),
             onClick = {
                 // switch the icon displayed on the floating button
@@ -250,7 +250,9 @@ fun IngredientCategoryEdit(
     addedItems: MutableList<OwnedIngredient>,
     editedCategories: MutableMap<String, String>,
     onRemoveItem: (String, String) -> Unit,
-    onRemoveCategory: (String) -> Unit
+    onRemoveCategory: (String) -> Unit,
+    onShop: (OwnedIngredient) -> Unit = {},
+    onShopCancel: (OwnedIngredient) -> Unit = {}
 ) {
     val isEditingName = remember { mutableStateOf(false) }
     val editedName = remember { mutableStateOf(name) }
@@ -338,7 +340,7 @@ fun IngredientCategoryEdit(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             allTempIngredients.forEach { ingredient ->
-                IngredientItemEdit(ingredient, canTick) {
+                IngredientItemEdit(ingredient, canTick, {onShop(it)}, {onShopCancel(it)}) {
                     // when removing an ingredient ->
                     allTempIngredients.remove(ingredient)
                     // if ingredient is already in DB -> add to items to be deleted
@@ -431,14 +433,18 @@ private fun IngredientItemView(
  * @param ingredient OwnedIngredient object that represents the ingredient
  * @param canTick whether this ingredient should display a checkBox
  * @param onDelete block that runs after deleting this ingredient
+ * @param onShop optional block that runs when adding a fridge item to the groceries list
  */
 @Composable
 private fun IngredientItemEdit(
     ingredient: OwnedIngredient,
     canTick: Boolean,
+    onShop: (OwnedIngredient) -> Unit = {},
+    onShopCancel: (OwnedIngredient) -> Unit = {},
     onDelete: () -> Unit
 ) {
     val isTicked = remember { mutableStateOf(ingredient.isTicked) }
+    val canShop = remember { mutableStateOf(true) }
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -453,7 +459,7 @@ private fun IngredientItemEdit(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                // if the ingredient can be ticker -> display a checkBox
+                // if the ingredient can be ticked -> display a checkBox
                 if (canTick) {
                     Checkbox(
                         modifier = Modifier.size(INLINE_ICON.dp),
@@ -472,15 +478,40 @@ private fun IngredientItemEdit(
                     else MyTypography.bodyMedium
                 )
             }
-            // delete button next to the ingredient
-            IconButton(
-                modifier = Modifier
-                    .height(24.dp)
-                    .width(40.dp)
-                    .padding(end = 16.dp),
-                onClick = { onDelete() }
-            ){
-                Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
+            Row(
+                horizontalArrangement = Arrangement.End
+            ) {
+                // if the items cannot be ticked (means it is in fridge) ->
+                if (!canTick) {
+                    // "add to groceries" button next to the ingredient
+                    IconButton(
+                        modifier = Modifier
+                            .height(24.dp)
+                            .width(40.dp)
+                            .padding(end = 16.dp),
+                        onClick = {
+                            if (canShop.value) { onShop(ingredient) }
+                            else { onShopCancel(ingredient) }
+                            canShop.value = !canShop.value
+                        }
+                    ){
+                        if (canShop.value) {
+                            Icon(painterResource(R.drawable.cart_add), contentDescription = stringResource(R.string.desc_shop))
+                        } else {
+                            Icon(painterResource(R.drawable.cart_cancel), contentDescription = stringResource(R.string.desc_shop))
+                        }
+                    }
+                }
+                // delete button next to the ingredient
+                IconButton(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(40.dp)
+                        .padding(end = 16.dp),
+                    onClick = { onDelete() }
+                ){
+                    Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
+                }
             }
         }
     }

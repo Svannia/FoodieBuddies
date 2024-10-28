@@ -551,7 +551,7 @@ class DatabaseConnection {
         val targetField = if (isInFridge) {"$FRIDGE.${newItem.category}"} else {"$GROCERIES.${newItem.category}"}
         val syncedField = if (isInFridge) {"$GROCERIES.${newItem.category}"} else {"$FRIDGE.${newItem.category}"}
 
-        val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to newItem.displayedName, STAND_NAME to newItem.standName, CATEGORY to newItem.category, IS_TICKED to newItem.isTicked)
+        val ingredient = hashMapOf(OWNER to owner, DISPLAY_NAME to newItem.displayedName, STAND_NAME to newItem.standName, CATEGORY to newItem.category, IS_TICKED to false)
 
         // create the new ingredient document
         ingredientsCollection
