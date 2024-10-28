@@ -346,15 +346,16 @@ fun IngredientCategoryEdit(
                         onRemoveItem(ingredient.uid, ingredient.displayedName)
                     // else remove item from list of items to be added
                     } else {
-                        addedItems.removeIf { it.displayedName == ingredient.displayedName }
+                        addedItems.remove(ingredient)
                     }
                 }
             }
         }
         newItemName.value = ""
         AddIngredient(newItemName) { displayName ->
-            allTempIngredients.add(OwnedIngredient("", displayName.value, "", name, false))
-            val newIngredient = OwnedIngredient("", displayName.value, displayName.value, name, false)
+            val standName = standardizeName(displayName.value)
+            val newIngredient = OwnedIngredient("", displayName.value, standName, name, false)
+            allTempIngredients.add(newIngredient)
             addedItems.add(newIngredient)
         }
         Spacer(modifier = Modifier.size(16.dp))
@@ -565,7 +566,40 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
 
 // shared functionalities
 
-// TODO: standardize ingredient names
+/**
+ * Creates a standard version of ingredients names to compare more easily with recipe ingredients.
+ *
+ * @param ingredient name to standardize
+ * @return standardized name
+ */
+fun standardizeName(ingredient: String): String {
+    // list of words whose following word should be kept
+    val particles = listOf("de", "à", "aux", "d", "l", "pour")
+    val nouns = listOf("sauce", "vin")
+
+    // removes trailing whitespaces and plural "s", and puts the entire word in lowercase
+    val name = ingredient.trimEnd()
+    val words = name.split(" ", "'").map { it.lowercase().removeSuffix("s") }
+
+    val result = mutableListOf(words[0])
+
+    // loop over all the ingredient's words to only keep the most important ones
+    var i = 0
+    var addNextWord = false
+    while (i < words.size) {
+        val currentWord = words[i]
+
+        if (currentWord in particles || currentWord in nouns) {
+            addNextWord = true
+        }
+        else if (addNextWord) {
+            result.add(currentWord)
+            addNextWord = false
+        }
+        i++
+    }
+    return result.joinToString(" ")
+}
 
 /**
  * Clears all variables that hold temporary modifications.
