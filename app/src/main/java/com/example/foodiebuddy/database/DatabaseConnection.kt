@@ -538,7 +538,7 @@ class DatabaseConnection {
     // ingredients
 
     /**
-     * Checks if some user owns an ingredient with given name in given category.
+     * Checks if some user owns an ingredient with given name in given category, in their groceries list.
      *
      * @param userID ID of the user
      * @param category category the ingredient should be in
@@ -546,16 +546,49 @@ class DatabaseConnection {
      * @param onSuccess block that runs if the check succeeds (whether or not the ingredient exists)
      * @param onFailure block that runs if there is an error executing the function
      */
-    fun ingredientExistsInCategory(userID: String, category: String, ingredient: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
-        ingredientsCollection
-            .whereEqualTo(OWNER, userID)
-            .whereEqualTo(CATEGORY, category)
-            .whereEqualTo(DISPLAY_NAME, ingredient)
-            .get()
-            .addOnSuccessListener { query ->
-                onSuccess(query.documents.isNotEmpty())
+    fun ingredientExistsInCategory(userID: String, category: String, ingredientName: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        userPersonalCollection.document(userID).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val groceriesMap = document.get(GROCERIES) as? Map<*, *>
+                    val ingredientRefs = groceriesMap?.get(category) as? List<DocumentReference>
+
+                    if (ingredientRefs != null) {
+                        var remaining = ingredientRefs.size
+                        Log.d("Debug", "starting to check for size ${ingredientRefs.size}")
+                        ingredientRefs.forEach { ref ->
+                            ref.get()
+                                .addOnSuccessListener { ingredient ->
+                                    val displayName = ingredient.getString(DISPLAY_NAME)
+                                    if (displayName == ingredientName) {
+                                        Log.d("DB", "Successfully found that ingredient exists")
+                                        onSuccess(true)
+                                        return@addOnSuccessListener
+                                    }
+                                    Log.d("Debug", "checking $displayName")
+                                    remaining--
+                                    if (remaining <= 0) {
+                                        Log.d("DB", "Successfully found that ingredient does not exist")
+                                        onSuccess(false)
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    remaining--
+                                    Log.d("DB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
+                                    onFailure(e)
+                                }
+                        }
+                    } else {
+                        onSuccess(false)
+                        Log.d("DB", "Failed to check ingredient existence because ingredient references are null")
+                    }
+                } else {
+                    onSuccess(false)
+                    Log.d("DB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
+                }
             }
             .addOnFailureListener { e ->
+                Log.d("DB", "Failed to check ingredient existence because could not access userPersonal with error $e")
                 onFailure(e)
             }
     }

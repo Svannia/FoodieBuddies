@@ -249,7 +249,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.ingredientExistsInCategory(
                 userID = userID,
                 category = category,
-                ingredient = ingredient,
+                ingredientName = ingredient,
                 onSuccess = { ingredientExists ->
                     isError(false)
                     onResult(ingredientExists)

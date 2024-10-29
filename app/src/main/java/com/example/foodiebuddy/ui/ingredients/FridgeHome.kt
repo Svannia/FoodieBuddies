@@ -90,16 +90,13 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             topBarIcons = {},
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
+                loading.value = true
                 // add the ingredients sent from fridge to grocery list
-                loadModifications(userViewModel, userPersonal, fridge, {it.fridge}, true, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
                 userViewModel.addIngredients(newGroceryItems, false, {
                     if (it) handleError(context, "Could not update owned ingredients list")
                 }) {
-                    userViewModel.fetchUserPersonal({
-                        if (it) { handleError(context, "Could not fetch user personal") }
-                    }) {}
+                    loadModifications(userViewModel, userPersonal, fridge, {it.fridge}, true, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
                 }
-                loading.value = true
             }},
             content = {paddingValues ->
                 when (screenState.value) {

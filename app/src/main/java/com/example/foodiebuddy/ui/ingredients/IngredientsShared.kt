@@ -510,6 +510,7 @@ private fun IngredientItemEdit(
                                         newGroceryItems[ingredient.category]?.add(ingredient) ?: run {
                                             newGroceryItems[ingredient.category] = mutableListOf(ingredient)
                                         }
+                                        Log.d("Debug", "new grocery items: $newGroceryItems")
                                         canShop.value = !canShop.value
                                     }
                                 }
