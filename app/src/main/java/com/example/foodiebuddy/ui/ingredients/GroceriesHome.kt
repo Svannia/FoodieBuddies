@@ -161,7 +161,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                         mutableNewCategories.remove(it)
                                         newCategories.value = mutableNewCategories
                                         unavailableCategoryNames.remove(it)
-                                    }
+                                    },
+                                    context,
+                                    userViewModel
                                 )
                             }
 
@@ -180,7 +182,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                         onRemoveCategory = {
                                             deletingCategory = it
                                             showAlert.value = true
-                                        }
+                                        },
+                                        context,
+                                        userViewModel
                                     )
                                 }
                             }

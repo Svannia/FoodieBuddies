@@ -1,6 +1,7 @@
 package com.example.foodiebuddy.ui.ingredients
 
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -89,9 +90,8 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             topBarIcons = {},
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
-                loading.value = true
-                loadModifications(userViewModel, userPersonal, fridge, {it.fridge}, true, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
                 // add the ingredients sent from fridge to grocery list
+                loadModifications(userViewModel, userPersonal, fridge, {it.fridge}, true, context, loading, newItems, removedItems, editedCategories, newCategories, removedCategories)
                 userViewModel.addIngredients(newGroceryItems, false, {
                     if (it) handleError(context, "Could not update owned ingredients list")
                 }) {
@@ -99,6 +99,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                         if (it) { handleError(context, "Could not fetch user personal") }
                     }) {}
                 }
+                loading.value = true
             }},
             content = {paddingValues ->
                 when (screenState.value) {
@@ -114,7 +115,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                             clearTemporaryModifications(userPersonal, fridge, {it.fridge}, newItems, removedItems, editedCategories, newCategories, removedCategories, unavailableCategoryNames)
                             newGroceryItems.forEach { (_, value) -> value.clear() }
 
-                            if (fridge.value.isNotEmpty() || fridge.value.any { it.value.isNotEmpty() }) {
+                            if (fridge.value.isNotEmpty() && !fridge.value.all { it.value.isEmpty() }) {
                                 items(fridge.value.toSortedMap().keys.toList(), key = {it}) { category ->
                                     if (fridge.value[category]?.isNotEmpty() == true) {
                                         IngredientCategoryView(category, fridge.value[category] ?: mutableListOf(), false)
@@ -165,14 +166,9 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                         unavailableCategoryNames.remove(it)
                                         newGroceryItems.remove(category)
                                     },
-                                    onShop = {
-                                        newGroceryItems[category]?.add(it) ?: run {
-                                            newGroceryItems[category] = mutableListOf(it)
-                                        }
-                                    },
-                                    onShopCancel = {
-                                        newGroceryItems[category]?.remove(it)
-                                    }
+                                    context,
+                                    userViewModel,
+                                    newGroceryItems
                                 )
                             }
 
@@ -192,12 +188,9 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                             deletingCategory = it
                                             showAlert.value = true
                                         },
-                                        onShop = {
-                                            newGroceryItems[category]?.add(it)
-                                        },
-                                        onShopCancel = {
-                                            newGroceryItems[category]?.remove(it)
-                                        }
+                                        context,
+                                        userViewModel,
+                                        newGroceryItems
                                     )
                                 }
                             }

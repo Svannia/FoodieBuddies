@@ -236,6 +236,36 @@ constructor(private val userID: String ?= null) : ViewModel() {
     }
 
     /**
+     * Checks if some user owns an ingredient with given name in given category.
+     *
+     * @param category category the ingredient should be in
+     * @param ingredient displayed name of the ingredient looked for
+     * @param isError block that runs if there is an error executing the function
+     * @param onResult block that runs if the function succeeded, with the existence result
+     */
+    fun ingredientExistsInCategory(category: String, ingredient: String, isError: (Boolean) -> Unit, onResult: (Boolean) -> Unit) {
+        if (userID != null) {
+            // only fetches data if user exists
+            db.ingredientExistsInCategory(
+                userID = userID,
+                category = category,
+                ingredient = ingredient,
+                onSuccess = { ingredientExists ->
+                    isError(false)
+                    onResult(ingredientExists)
+                },
+                onFailure = { e ->
+                    isError(true)
+                    Log.d("VM", "Failed to check ingredient existence with error $e")
+                }
+            )
+        } else {
+            isError(true)
+            Log.d("VM", "userID is null")
+        }
+    }
+
+    /**
      * Adds a list of ingredients to existing categories.
      *
      * @param newItems maps category names to their lists of new ingredients
@@ -306,7 +336,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after all ingredients were deleted
      */
-    fun deleteIngredients(removedItems: Map<String, List<String>>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    fun deleteIngredients(removedItems: Map<String, List<String>>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             // if the map is not empty
             if (removedItems.isNotEmpty()) {
@@ -318,7 +348,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         // check how ingredients are left to delete before decreasing category counter
                         var remaining = ingredients.size
                         ingredients.forEach { ingredient ->
-                            db.deleteIngredient(ingredient, userID, category, { isError(it) }){
+                            db.deleteIngredient(ingredient, userID, category, isInFridge, { isError(it) }){
                                 remaining--
                                 if (remaining <= 0) {
                                     remainingItems--

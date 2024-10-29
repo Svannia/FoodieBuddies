@@ -1,6 +1,7 @@
 package com.example.foodiebuddy.ui.ingredients
 
 import android.content.Context
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -241,6 +242,9 @@ fun IngredientCategoryView(
  * @param editedCategories maps old category names to new ones
  * @param onRemoveItem block that runs with an the ingredient' ID and its displayed name after removing it
  * @param onRemoveCategory block that runs with this category's name after removing it
+ * @param context used to show toast
+ * @param userViewModel used to check for ingredient existence in groceries list
+ * @param newGroceryItems map of ingredients from fridge to add to groceries list
  */
 @Composable
 fun IngredientCategoryEdit(
@@ -251,8 +255,9 @@ fun IngredientCategoryEdit(
     editedCategories: MutableMap<String, String>,
     onRemoveItem: (String, String) -> Unit,
     onRemoveCategory: (String) -> Unit,
-    onShop: (OwnedIngredient) -> Unit = {},
-    onShopCancel: (OwnedIngredient) -> Unit = {}
+    context: Context,
+    userViewModel: UserViewModel,
+    newGroceryItems: MutableMap<String, MutableList<OwnedIngredient>> = emptyMap<String, MutableList<OwnedIngredient>>().toMutableMap()
 ) {
     val isEditingName = remember { mutableStateOf(false) }
     val editedName = remember { mutableStateOf(name) }
@@ -340,7 +345,7 @@ fun IngredientCategoryEdit(
             verticalArrangement = Arrangement.spacedBy(0.dp)
         ) {
             allTempIngredients.forEach { ingredient ->
-                IngredientItemEdit(ingredient, canTick, {onShop(it)}, {onShopCancel(it)}) {
+                IngredientItemEdit(ingredient, canTick, context, userViewModel, newGroceryItems) {
                     // when removing an ingredient ->
                     allTempIngredients.remove(ingredient)
                     // if ingredient is already in DB -> add to items to be deleted
@@ -357,6 +362,7 @@ fun IngredientCategoryEdit(
         AddIngredient(newItemName) { displayName ->
             val standName = standardizeName(displayName.value)
             val newIngredient = OwnedIngredient("", displayName.value, standName, name, false)
+            Log.d("Debug", "new ingredient is $newIngredient")
             allTempIngredients.add(newIngredient)
             addedItems.add(newIngredient)
         }
@@ -432,15 +438,18 @@ private fun IngredientItemView(
  *
  * @param ingredient OwnedIngredient object that represents the ingredient
  * @param canTick whether this ingredient should display a checkBox
+ * @param context used to show toast
+ * @param userViewModel used to check for ingredient existence in groceries list
+ * @param newGroceryItems map of ingredients from fridge to add to groceries list
  * @param onDelete block that runs after deleting this ingredient
- * @param onShop optional block that runs when adding a fridge item to the groceries list
  */
 @Composable
 private fun IngredientItemEdit(
     ingredient: OwnedIngredient,
     canTick: Boolean,
-    onShop: (OwnedIngredient) -> Unit = {},
-    onShopCancel: (OwnedIngredient) -> Unit = {},
+    context: Context,
+    userViewModel: UserViewModel,
+    newGroceryItems: MutableMap<String, MutableList<OwnedIngredient>>,
     onDelete: () -> Unit
 ) {
     val isTicked = remember { mutableStateOf(ingredient.isTicked) }
@@ -490,9 +499,26 @@ private fun IngredientItemEdit(
                             .width(40.dp)
                             .padding(end = 16.dp),
                         onClick = {
-                            if (canShop.value) { onShop(ingredient) }
-                            else { onShopCancel(ingredient) }
-                            canShop.value = !canShop.value
+                            if (canShop.value) {
+                                // check that this ingredient hasn't already been added to the grocery list
+                                userViewModel.ingredientExistsInCategory(ingredient.category, ingredient.displayedName,
+                                    { error -> if (error) { handleError(context, "Could not check ingredient existence") }})
+                                { exists ->
+                                    if (exists) {
+                                        Toast.makeText(context, context.getString(R.string.toast_ingredientExists), Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        newGroceryItems[ingredient.category]?.add(ingredient) ?: run {
+                                            newGroceryItems[ingredient.category] = mutableListOf(ingredient)
+                                        }
+                                        canShop.value = !canShop.value
+                                    }
+                                }
+                            }
+                            else {
+                                newGroceryItems[ingredient.category]?.remove(ingredient)
+                                canShop.value = !canShop.value
+                            }
+
                         }
                     ){
                         if (canShop.value) {
@@ -516,6 +542,67 @@ private fun IngredientItemEdit(
         }
     }
 }
+
+/**
+ * Bulk updates all modifications to the database.
+ *
+ * @param userViewModel to process modifications
+ * @param userPersonal UserPersonal object that contains all the private data
+ * @param list map read from userPersonal
+ * @param fieldToRead which map to read from userPersonal (groceries or fridge)
+ * @param isInFridge whether the ingredient modifications should be updated in the fridge. Updates the groceries if false
+ * @param context used to handle errors
+ * @param loading set to false once all updates have called back
+ * @param newItems maps all existing categories to a list of new added ingredients
+ * @param removedItems maps all existing categories to a list of deleted ingredients
+ * @param editedCategories maps old category names to new ones
+ * @param newCategories map of new categories and their list of new ingredients
+ * @param removedCategories list of names of deleted category
+ */
+fun loadModifications(
+    userViewModel: UserViewModel,
+    userPersonal: UserPersonal,
+    list: MutableState<Map<String, List<OwnedIngredient>>>,
+    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
+    isInFridge: Boolean,
+    context: Context,
+    loading: MutableState<Boolean>,
+    newItems: Map<String, MutableList<OwnedIngredient>>,
+    removedItems: Map<String, MutableList<String>>,
+    editedCategories: MutableMap<String, String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    removedCategories: SnapshotStateList<String>
+) {
+    userViewModel.deleteIngredients(removedItems, isInFridge, {
+        if (it) handleError(context, "Could not remove ingredient")
+    }) {
+        userViewModel.addIngredients(newItems, isInFridge, {
+            if (it) handleError(context, "Could not update owned ingredients list")
+        }) {
+            userViewModel.updateCategories(newCategories.value, editedCategories, isInFridge, {
+                if (it) {
+                    handleError(context, "Could not update category names")
+                }
+            }) {
+                userViewModel.deleteCategories(removedCategories, {
+                    if (it) {
+                        handleError(context, "Could not delete categories")
+                    }
+                }) {
+                    userViewModel.fetchUserPersonal({
+                        if (it) {
+                            handleError(context, "Could not fetch user personal")
+                        }
+                    }) {
+                        list.value = fieldToRead(userPersonal)
+                        loading.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+
 
 /**
  * Element that allows the user to enter a new ingredient name.
@@ -594,7 +681,6 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
     }
 }
 
-
 // shared functionalities
 
 /**
@@ -665,93 +751,4 @@ fun clearTemporaryModifications(
     removedCategories.clear()
     unavailableCategoryNames.clear()
     unavailableCategoryNames.addAll(list.value.keys)
-}
-
-/**
- * Bulk updates all modifications to the database.
- *
- * @param userViewModel to process modifications
- * @param userPersonal UserPersonal object that contains all the private data
- * @param list map read from userPersonal
- * @param fieldToRead which map to read from userPersonal (groceries or fridge)
- * @param isInFridge whether the ingredient modifications should be updated in the fridge. Updates the groceries if false
- * @param context used to handle errors
- * @param loading set to false once all updates have called back
- * @param newItems maps all existing categories to a list of new added ingredients
- * @param removedItems maps all existing categories to a list of deleted ingredients
- * @param editedCategories maps old category names to new ones
- * @param newCategories map of new categories and their list of new ingredients
- * @param removedCategories list of names of deleted category
- */
-fun loadModifications(
-    userViewModel: UserViewModel,
-    userPersonal: UserPersonal,
-    list: MutableState<Map<String, List<OwnedIngredient>>>,
-    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
-    isInFridge: Boolean,
-    context: Context,
-    loading: MutableState<Boolean>,
-    newItems: Map<String, MutableList<OwnedIngredient>>,
-    removedItems: Map<String, MutableList<String>>,
-    editedCategories: MutableMap<String, String>,
-    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
-    removedCategories: SnapshotStateList<String>
-) {
-    var remainingUpdates = 4
-    userViewModel.deleteIngredients(removedItems, {
-        if (it) handleError(context, "Could not remove ingredient")
-    }) {
-        remainingUpdates--
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
-    userViewModel.addIngredients(newItems, isInFridge, {
-        if (it) handleError(context, "Could not update owned ingredients list")
-    }) {
-        remainingUpdates--
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
-    userViewModel.updateCategories(newCategories.value, editedCategories, isInFridge, {
-        if (it) {
-            handleError(context, "Could not update category names")
-        }
-    }) {
-        remainingUpdates--
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
-    userViewModel.deleteCategories(removedCategories, {
-        if (it) {
-            handleError(context, "Could not update category names")
-        }
-    }) {
-        remainingUpdates--
-        if (remainingUpdates <= 0) {
-            userViewModel.fetchUserPersonal({
-                if (it) { handleError(context, "Could not fetch user personal") }
-            }){
-                list.value = fieldToRead(userPersonal)
-                loading.value = false
-            }
-        }
-    }
 }

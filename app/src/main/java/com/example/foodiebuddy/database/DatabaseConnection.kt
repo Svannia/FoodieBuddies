@@ -538,6 +538,29 @@ class DatabaseConnection {
     // ingredients
 
     /**
+     * Checks if some user owns an ingredient with given name in given category.
+     *
+     * @param userID ID of the user
+     * @param category category the ingredient should be in
+     * @param ingredient displayed name of the ingredient looked for
+     * @param onSuccess block that runs if the check succeeds (whether or not the ingredient exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun ingredientExistsInCategory(userID: String, category: String, ingredient: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        ingredientsCollection
+            .whereEqualTo(OWNER, userID)
+            .whereEqualTo(CATEGORY, category)
+            .whereEqualTo(DISPLAY_NAME, ingredient)
+            .get()
+            .addOnSuccessListener { query ->
+                onSuccess(query.documents.isNotEmpty())
+            }
+            .addOnFailureListener { e ->
+                onFailure(e)
+            }
+    }
+
+    /**
      * Creates a new ingredient document and adds the necessary references.
      *
      * @param owner ID of the user
@@ -636,13 +659,14 @@ class DatabaseConnection {
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after DB was updated
      */
-    fun deleteIngredient(uid: String, owner: String, category: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    fun deleteIngredient(uid: String, owner: String, category: String, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val ref = ingredientsCollection.document(uid)
+        val targetField = if (isInFridge) {"$FRIDGE.${category}"} else {"$GROCERIES.${category}"}
 
         // remove the ingredient document reference from the category in which it is
         userPersonalCollection
             .document(owner)
-            .update("$GROCERIES.$category", FieldValue.arrayRemove(ref))
+            .update(targetField, FieldValue.arrayRemove(ref))
             .addOnSuccessListener {
                 isError(false)
                 Log.d("DB", "Successfully deleted ingredient ref from user $owner")
