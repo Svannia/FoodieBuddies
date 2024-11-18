@@ -59,8 +59,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
     val removedCategories = remember { mutableStateListOf<String>() }
     val unavailableCategoryNames = groceries.value.keys.toMutableStateList()
 
-    val showAlert = remember { mutableStateOf(false) }
+    val showCategoryAlert = remember { mutableStateOf(false) }
     var deletingCategory = ""
+    val showDeleteAlert = remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
@@ -86,7 +87,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             navigationActions = navigationActions,
             title = stringResource(R.string.title_groceries),
             navigationIndex = 1,
-            topBarIcons = {},
+            topBarIcons = { OptionsMenu(
+                stringResource(R.string.button_clearList) to { showDeleteAlert.value = true }
+            ) },
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
@@ -181,7 +184,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                         },
                                         onRemoveCategory = {
                                             deletingCategory = it
-                                            showAlert.value = true
+                                            showCategoryAlert.value = true
                                         },
                                         context,
                                         userViewModel
@@ -192,9 +195,9 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
 
                     }
                 }
-                if (showAlert.value) {
+                if (showCategoryAlert.value) {
                     DialogWindow(
-                        visible = showAlert,
+                        visible = showCategoryAlert,
                         content = stringResource(R.string.alert_deleteCatGroceries),
                         confirmText = stringResource(R.string.button_delete),
                         confirmColour = Color.Red,
@@ -204,7 +207,27 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                         groceries.value = groceries.value.filterKeys { key -> key !in removedCategories }
                         unavailableCategoryNames.remove(deletingCategory)
                         deletingCategory = ""
-                        showAlert.value = false
+                        showCategoryAlert.value = false
+                    }
+                }
+                if (showDeleteAlert.value) {
+                    DialogWindow(
+                        visible = showDeleteAlert,
+                        content = stringResource(R.string.alert_clearList),
+                        confirmText = stringResource(R.string.button_delete),
+                        confirmColour = Color.Red
+                    ) {
+                        showDeleteAlert.value = false
+                        loading.value = true
+                        userViewModel.clearIngredients(false, {
+                            if (it) { handleError(context, "Failed to clear fridge") }
+                        }) {
+                            userViewModel.fetchUserPersonal({
+                                if (it) { handleError(context, "Could not fetch user personal") }
+                            }) {
+                                loading.value = false
+                            }
+                        }
                     }
                 }
             }

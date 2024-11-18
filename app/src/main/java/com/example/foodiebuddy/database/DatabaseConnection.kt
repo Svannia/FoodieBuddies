@@ -722,6 +722,95 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Clears all ingredients from either the fridge or the groceries. The category names are retained.
+     *
+     * @param owner ID of the user
+     * @param isInFridge whether the fridge list should be cleared. If false, the groceries list is cleared instead
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
+    fun clearIngredients(owner: String, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val targetField = if (isInFridge) FRIDGE else GROCERIES
+
+        userPersonalCollection
+            .document(owner)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // get the map that needs to be cleared (fridge or groceries)
+                    val targetMap = document[targetField] as? Map<String, List<DocumentReference>> ?: emptyMap()
+
+                    // if the map is already no empty -> no ingredients to clear
+                    if (targetMap.isEmpty()) {
+                        isError(false)
+                        Log.d("Debug", "callback on empty map")
+                        callBack()
+                        Log.d("DB", "Map $targetField is already empty")
+                    }
+
+                    // if the map is not empty -> clear it
+                    else {
+                        var remainingCat = targetMap.size
+                        targetMap.forEach { (category, refs) ->
+                            var remainingRefs = refs.size
+
+                            // if this category does not contain any reference -> just increase counter
+                            if (refs.isEmpty()) {
+                                remainingCat--
+                                if (remainingCat <= 0) {
+                                    isError(false)
+                                    callBack()
+                                    Log.d("DB", "Successfully cleared all ingredients for $targetField")
+                                }
+                            } else {
+                                refs.forEach { ref ->
+                                    ref.delete()
+                                        .addOnSuccessListener {
+                                            remainingRefs--
+                                            if (remainingRefs <= 0) {
+                                                // once all references items have been deleted -> empty the references list
+                                                userPersonalCollection.document(owner)
+                                                    .update("$targetField.$category", emptyList<DocumentReference>())
+                                                    .addOnSuccessListener {
+                                                        remainingCat--
+                                                        if (remainingCat <= 0) {
+                                                            isError(false)
+                                                            callBack()
+                                                            Log.d("Debug", "callback on success")
+                                                            Log.d("DB", "Successfully cleared all ingredients for $targetField")
+                                                        }
+                                                    }
+                                                    .addOnFailureListener { e ->
+                                                        isError(true)
+                                                        Log.d(
+                                                            "DB",
+                                                            "Failed to delete references in category $category with error $e"
+                                                        )
+                                                    }
+                                            }
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isError(true)
+                                            Log.d(
+                                                "DB",
+                                                "Failed to delete ingredient $ref with error $e"
+                                            )
+                                        }
+                                }
+                            }
+
+
+                        }
+                    }
+
+                } else {
+                    isError(true)
+                    Log.d("DB", "Failed to clear ingredients for user $owner: document does not exist")
+                }
+            }
+    }
+
 
     // storage pictures
     /**

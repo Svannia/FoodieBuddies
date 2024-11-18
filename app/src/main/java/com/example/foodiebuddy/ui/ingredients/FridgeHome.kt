@@ -61,8 +61,9 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
     val unavailableCategoryNames = fridge.value.keys.toMutableStateList()
     val newGroceryItems = fridge.value.mapValues { mutableListOf<OwnedIngredient>() }.toMutableMap()
 
-    val showAlert = remember { mutableStateOf(false) }
+    val showCategoryAlert = remember { mutableStateOf(false) }
     var deletingCategory = ""
+    val showDeleteAlert = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         screenState.value = ScreenState.LOADING
@@ -87,7 +88,9 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             navigationActions = navigationActions,
             title = stringResource(R.string.title_fridge),
             navigationIndex = 2,
-            topBarIcons = {},
+            topBarIcons = { OptionsMenu(
+                stringResource(R.string.button_clearList) to { showDeleteAlert.value = true }
+            ) },
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {
                 loading.value = true
@@ -183,7 +186,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                         },
                                         onRemoveCategory = {
                                             deletingCategory = it
-                                            showAlert.value = true
+                                            showCategoryAlert.value = true
                                         },
                                         context,
                                         userViewModel,
@@ -194,9 +197,9 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                         }
                     }
                 }
-                if (showAlert.value) {
+                if (showCategoryAlert.value) {
                     DialogWindow(
-                        visible = showAlert,
+                        visible = showCategoryAlert,
                         content = stringResource(R.string.alert_deleteCatFridge),
                         confirmText = stringResource(R.string.button_delete),
                         confirmColour = Color.Red,
@@ -207,7 +210,27 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                         unavailableCategoryNames.remove(deletingCategory)
                         newGroceryItems.remove(deletingCategory)
                         deletingCategory = ""
-                        showAlert.value = false
+                        showCategoryAlert.value = false
+                    }
+                }
+                if (showDeleteAlert.value) {
+                    DialogWindow(
+                        visible = showDeleteAlert,
+                        content = stringResource(R.string.alert_clearList),
+                        confirmText = stringResource(R.string.button_delete),
+                        confirmColour = Color.Red
+                    ) {
+                        showDeleteAlert.value = false
+                        loading.value = true
+                        userViewModel.clearIngredients(true, {
+                            if (it) { handleError(context, "Failed to clear fridge") }
+                        }) {
+                            userViewModel.fetchUserPersonal({
+                                if (it) { handleError(context, "Could not fetch user personal") }
+                            }) {
+                                loading.value = false
+                            }
+                        }
                     }
                 }
             }

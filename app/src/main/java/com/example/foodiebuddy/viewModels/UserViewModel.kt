@@ -261,7 +261,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             )
         } else {
             isError(true)
-            Log.d("VM", "userID is null")
+            Log.d("VM", "Failed to check ingredient existence: ID is null")
         }
     }
 
@@ -368,7 +368,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             // if the map is empty -> callBack
             } else { callBack() }
         } else {
-            Log.d("VM", "Failed to delete user: ID is null")
+            Log.d("VM", "Failed to delete ingredient: ID is null")
         }
     }
 
@@ -394,6 +394,23 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 }
             // if the map is empty -> callBack
             } else { callBack() }
+        } else {
+            Log.d("VM", "Failed to edit category name: ID is null")
+        }
+    }
+
+    /**
+     * Clears all ingredients from either the fridge or the groceries. The category names are retained.
+     *
+     * @param isInFridge whether the fridge list should be cleared. If false, the groceries list is cleared instead.
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the list was cleared
+     */
+    fun clearIngredients(isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            db.clearIngredients(userID, isInFridge, {isError(it)}) { callBack() }
+        } else {
+            Log.d("VM", "Failed to clear fridge: ID is null")
         }
     }
 }

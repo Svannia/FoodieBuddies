@@ -22,6 +22,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -408,7 +410,7 @@ private fun IngredientItemView(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // if the ingredient can be ticker -> display a checkBox
+            // if the ingredient can be ticked -> display a checkBox
             if (canTick) {
                 Checkbox(
                     modifier = Modifier.size(INLINE_ICON.dp),
@@ -523,9 +525,15 @@ private fun IngredientItemEdit(
                         }
                     ){
                         if (canShop.value) {
-                            Icon(painterResource(R.drawable.cart_add), contentDescription = stringResource(R.string.desc_shop))
+                            Icon(
+                                painterResource(R.drawable.cart_add),
+                                contentDescription = stringResource(R.string.desc_shop)
+                            )
                         } else {
-                            Icon(painterResource(R.drawable.cart_cancel), contentDescription = stringResource(R.string.desc_shop))
+                            Icon(
+                                painterResource(R.drawable.undo),
+                                contentDescription = stringResource(R.string.desc_shop)
+                            )
                         }
                     }
                 }
@@ -544,65 +552,7 @@ private fun IngredientItemEdit(
     }
 }
 
-/**
- * Bulk updates all modifications to the database.
- *
- * @param userViewModel to process modifications
- * @param userPersonal UserPersonal object that contains all the private data
- * @param list map read from userPersonal
- * @param fieldToRead which map to read from userPersonal (groceries or fridge)
- * @param isInFridge whether the ingredient modifications should be updated in the fridge. Updates the groceries if false
- * @param context used to handle errors
- * @param loading set to false once all updates have called back
- * @param newItems maps all existing categories to a list of new added ingredients
- * @param removedItems maps all existing categories to a list of deleted ingredients
- * @param editedCategories maps old category names to new ones
- * @param newCategories map of new categories and their list of new ingredients
- * @param removedCategories list of names of deleted category
- */
-fun loadModifications(
-    userViewModel: UserViewModel,
-    userPersonal: UserPersonal,
-    list: MutableState<Map<String, List<OwnedIngredient>>>,
-    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
-    isInFridge: Boolean,
-    context: Context,
-    loading: MutableState<Boolean>,
-    newItems: Map<String, MutableList<OwnedIngredient>>,
-    removedItems: Map<String, MutableList<String>>,
-    editedCategories: MutableMap<String, String>,
-    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
-    removedCategories: SnapshotStateList<String>
-) {
-    userViewModel.deleteIngredients(removedItems, isInFridge, {
-        if (it) handleError(context, "Could not remove ingredient")
-    }) {
-        userViewModel.addIngredients(newItems, isInFridge, {
-            if (it) handleError(context, "Could not update owned ingredients list")
-        }) {
-            userViewModel.updateCategories(newCategories.value, editedCategories, isInFridge, {
-                if (it) {
-                    handleError(context, "Could not update category names")
-                }
-            }) {
-                userViewModel.deleteCategories(removedCategories, {
-                    if (it) {
-                        handleError(context, "Could not delete categories")
-                    }
-                }) {
-                    userViewModel.fetchUserPersonal({
-                        if (it) {
-                            handleError(context, "Could not fetch user personal")
-                        }
-                    }) {
-                        list.value = fieldToRead(userPersonal)
-                        loading.value = false
-                    }
-                }
-            }
-        }
-    }
-}
+
 
 
 /**
@@ -682,6 +632,43 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
     }
 }
 
+/**
+ * Element that creates an icon button that opens a drop-down menu of options when pressed.
+ *
+ * @param options non-exhaustive number of pairs.
+ * Each pair contains a string the name of the action appearing in the drop-down menu,
+ * and a block to run when that button is pressed.
+ */
+@Composable
+fun OptionsMenu(vararg options: Pair<String, () -> Unit>) {
+    val menuExpanded = remember { mutableStateOf(false) }
+
+    Row{
+        IconButton(
+            onClick = { menuExpanded.value = !menuExpanded.value }
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.options),
+                contentDescription = stringResource(R.string.button_options)
+            )
+        }
+        DropdownMenu(
+            expanded = menuExpanded.value,
+            onDismissRequest = { menuExpanded.value = false }
+        ) {
+            for ((text, block) in options) {
+                DropdownMenuItem(
+                    text = { Text(text) },
+                    onClick = {
+                        menuExpanded.value = false
+                        block()
+                    }
+                )
+            }
+        }
+    }
+}
+
 // shared functionalities
 
 /**
@@ -717,6 +704,66 @@ fun standardizeName(ingredient: String): String {
         i++
     }
     return result.joinToString(" ")
+}
+
+/**
+ * Bulk updates all modifications to the database.
+ *
+ * @param userViewModel to process modifications
+ * @param userPersonal UserPersonal object that contains all the private data
+ * @param list map read from userPersonal
+ * @param fieldToRead which map to read from userPersonal (groceries or fridge)
+ * @param isInFridge whether the ingredient modifications should be updated in the fridge. Updates the groceries if false
+ * @param context used to handle errors
+ * @param loading set to false once all updates have called back
+ * @param newItems maps all existing categories to a list of new added ingredients
+ * @param removedItems maps all existing categories to a list of deleted ingredients
+ * @param editedCategories maps old category names to new ones
+ * @param newCategories map of new categories and their list of new ingredients
+ * @param removedCategories list of names of deleted category
+ */
+fun loadModifications(
+    userViewModel: UserViewModel,
+    userPersonal: UserPersonal,
+    list: MutableState<Map<String, List<OwnedIngredient>>>,
+    fieldToRead: (UserPersonal) -> Map<String, List<OwnedIngredient>>,
+    isInFridge: Boolean,
+    context: Context,
+    loading: MutableState<Boolean>,
+    newItems: Map<String, MutableList<OwnedIngredient>>,
+    removedItems: Map<String, MutableList<String>>,
+    editedCategories: MutableMap<String, String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    removedCategories: SnapshotStateList<String>
+) {
+    userViewModel.deleteIngredients(removedItems, isInFridge, {
+        if (it) handleError(context, "Could not remove ingredient")
+    }) {
+        userViewModel.addIngredients(newItems, isInFridge, {
+            if (it) handleError(context, "Could not update owned ingredients list")
+        }) {
+            userViewModel.updateCategories(newCategories.value, editedCategories, isInFridge, {
+                if (it) {
+                    handleError(context, "Could not update category names")
+                }
+            }) {
+                userViewModel.deleteCategories(removedCategories, {
+                    if (it) {
+                        handleError(context, "Could not delete categories")
+                    }
+                }) {
+                    userViewModel.fetchUserPersonal({
+                        if (it) {
+                            handleError(context, "Could not fetch user personal")
+                        }
+                    }) {
+                        list.value = fieldToRead(userPersonal)
+                        loading.value = false
+                    }
+                }
+            }
+        }
+    }
 }
 
 /**
