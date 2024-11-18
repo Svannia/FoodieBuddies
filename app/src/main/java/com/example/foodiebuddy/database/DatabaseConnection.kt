@@ -556,6 +556,11 @@ class DatabaseConnection {
                     if (ingredientRefs != null) {
                         var remaining = ingredientRefs.size
                         Log.d("Debug", "starting to check for size ${ingredientRefs.size}")
+                        if (ingredientRefs.isEmpty()) {
+                            Log.d("DB", "Successfully found that ingredient does not exist")
+                            onSuccess(false)
+                            return@addOnSuccessListener
+                        }
                         ingredientRefs.forEach { ref ->
                             ref.get()
                                 .addOnSuccessListener { ingredient ->
