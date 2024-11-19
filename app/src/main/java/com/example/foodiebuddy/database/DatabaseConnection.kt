@@ -67,10 +67,10 @@ class DatabaseConnection {
     fun getCurrentUserID(): String {
         val userID = FirebaseAuth.getInstance().currentUser?.uid
         return if (userID != null) {
-            Log.d("DB", "Successfully identified user $userID")
+            Log.d("MyDB", "Successfully identified user $userID")
             userID
         } else {
-            Log.d("DB", "Failed to identify user")
+            Log.d("MyDB", "Failed to identify user")
             ""
         }
     }
@@ -110,11 +110,11 @@ class DatabaseConnection {
             .set(user)
             .addOnSuccessListener {
                 isError(false)
-                Log.d("DB", "Successfully created user")
+                Log.d("MyDB", "Successfully created user")
             }
             .addOnFailureListener {e ->
                 isError(true)
-                Log.d("DB", "Failed to create user with error $e")
+                Log.d("MyDB", "Failed to create user with error $e")
                 return@addOnFailureListener
             }
         // if the user input their own profile picture -> add it to the storage (the new path is automatically created)
@@ -146,7 +146,7 @@ class DatabaseConnection {
             val formattedBio = bio.replace("\\n", "\n")
             User(userID, username, picture, numberRecipes, formattedBio)
         } else {
-            Log.d("DB", "Failed to fetch user data for userID $userID")
+            Log.d("MyDB", "Failed to fetch user data for userID $userID")
             User.empty()
         }
     }
@@ -175,11 +175,11 @@ class DatabaseConnection {
                 if (updatePicture) { updateUserPicture(userID, picture, { isError(it) }, callBack) }
                 else { callBack() }
                 isError(false)
-                Log.d("DB", "Successfully update user data")
+                Log.d("MyDB", "Successfully update user data")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("DB", "Failed to update user data with error $e")
+                Log.d("MyDB", "Failed to update user data with error $e")
             }
     }
 
@@ -201,11 +201,11 @@ class DatabaseConnection {
                     deleteUserPersonal(userID, {isError(it)}) { callBack() }
                 }
                 isError(false)
-                Log.d("DB", "Successfully deleted user $userID")
+                Log.d("MyDB", "Successfully deleted user $userID")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("DB", "Failed to delete user $userID with error $e")
+                Log.d("MyDB", "Failed to delete user $userID with error $e")
             }
     }
 
@@ -227,11 +227,11 @@ class DatabaseConnection {
             .set(user)
             .addOnSuccessListener {
                 isError(false)
-                Log.d("DB", "Successfully created user personal")
+                Log.d("MyDB", "Successfully created user personal")
             }
             .addOnFailureListener {e ->
                 isError(true)
-                Log.d("DB", "Failed to create user personal with error $e")
+                Log.d("MyDB", "Failed to create user personal with error $e")
                 return@addOnFailureListener
             }
     }
@@ -245,7 +245,7 @@ class DatabaseConnection {
     suspend fun fetchUserPersonal(userID: String): UserPersonal {
         // check that a correct userID was given
         if (userID.isEmpty()) {
-            Log.d("DB", "userID is null")
+            Log.d("MyDB", "userID is null")
             return UserPersonal.empty()
         }
 
@@ -272,10 +272,10 @@ class DatabaseConnection {
                 }
             }
             // Create and return the UserPersonal object
-            Log.d("DB", "Successfully fetched user personal")
+            Log.d("MyDB", "Successfully fetched user personal")
             UserPersonal(userID, emptyList(), groceryList, fridgeList)
         } else {
-            Log.d("DB", "Failed to fetch user personal for userID $userID")
+            Log.d("MyDB", "Failed to fetch user personal for userID $userID")
             UserPersonal.empty()
         }
     }
@@ -301,7 +301,7 @@ class DatabaseConnection {
                 // once all ingredients deletion is complete ->
                 batch.commit()
                     .addOnSuccessListener {
-                        Log.d("DB", "Successfully deleted ingredients for user $userID")
+                        Log.d("MyDB", "Successfully deleted ingredients for user $userID")
                         // delete the userPersonal document of the user to be deleted
                         userPersonalCollection
                             .document(userID)
@@ -309,16 +309,16 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 callBack()
                                 isError(false)
-                                Log.d("DB", "Successfully deleted user personal for $userID")
+                                Log.d("MyDB", "Successfully deleted user personal for $userID")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("DB", "Failed to delete user personal for $userID with error $e")
+                                Log.d("MyDB", "Failed to delete user personal for $userID with error $e")
                             }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("DB", "Failed to delete ingredients for user $userID with error $e")
+                        Log.d("MyDB", "Failed to delete ingredients for user $userID with error $e")
                     }
             }
     }
@@ -346,11 +346,11 @@ class DatabaseConnection {
                 .addOnSuccessListener {
                     isError(false)
                     callBack()
-                    Log.d("DB", "Successfully added the empty category $category")
+                    Log.d("MyDB", "Successfully added the empty category $category")
                 }
                 .addOnFailureListener { e ->
                     isError(true)
-                    Log.d("DB", "Failed to add empty category $category with error $e")
+                    Log.d("MyDB", "Failed to add empty category $category with error $e")
                 }
          // if there are new ingredients to be added ->
         } else {
@@ -395,11 +395,11 @@ class DatabaseConnection {
                     allIngredients.forEach { ref ->
                         ref.update(CATEGORY, new)
                             .addOnSuccessListener {
-                                Log.d("DB", "Successfully updated category of ingredient $ref")
+                                Log.d("MyDB", "Successfully updated category of ingredient $ref")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("DB", "Failed to udpate category of ingredient $ref with error $e")
+                                Log.d("MyDB", "Failed to udpate category of ingredient $ref with error $e")
                             }
                     }
 
@@ -420,10 +420,10 @@ class DatabaseConnection {
                     )).addOnSuccessListener {
                         isError(false)
                         callBack()
-                        Log.d("DB", "Successfully updated category in groceryList and fridge")
+                        Log.d("MyDB", "Successfully updated category in groceryList and fridge")
                     }.addOnFailureListener { e ->
                         isError(true)
-                        Log.d("DB", "Failed to update category with error: $e")
+                        Log.d("MyDB", "Failed to update category with error: $e")
                     }
                 }
             }
@@ -471,18 +471,18 @@ class DatabaseConnection {
                                                 "$FRIDGE.$category", FieldValue.delete()
                                             )
                                             .addOnSuccessListener {
-                                                Log.d("DB", "Successfully deleted category $category")
+                                                Log.d("MyDB", "Successfully deleted category $category")
                                                 isError(false)
                                                 callBack()
                                             }
                                             .addOnFailureListener { e ->
-                                                Log.d("DB", "Failed to delete category $category with $e")
+                                                Log.d("MyDB", "Failed to delete category $category with $e")
                                                 isError(true)
                                             }
                                     }
                                 }
                                 .addOnFailureListener { e ->
-                                    Log.d("DB", "Failed to delete ingredient $ref with error $e")
+                                    Log.d("MyDB", "Failed to delete ingredient $ref with error $e")
                                     isError(true)
                                 }
                         }
@@ -496,22 +496,22 @@ class DatabaseConnection {
                                 "$FRIDGE.$category", FieldValue.delete()
                             )
                             .addOnSuccessListener {
-                                Log.d("DB", "Successfully deleted category $category")
+                                Log.d("MyDB", "Successfully deleted category $category")
                                 isError(false)
                                 callBack()
                             }
                             .addOnFailureListener { e ->
-                                Log.d("DB", "Failed to delete category $category with $e")
+                                Log.d("MyDB", "Failed to delete category $category with $e")
                                 isError(true)
                             }
                     }
                 } else {
-                    Log.d("DB", "Failed to delete category $category because it does not exist")
+                    Log.d("MyDB", "Failed to delete category $category because it does not exist")
                     isError(true)
                 }
             }
             .addOnFailureListener { e ->
-                Log.d("DB", "Failed to retrieve userPersonal for $owner with error $e")
+                Log.d("MyDB", "Failed to retrieve userPersonal for $owner with error $e")
                 isError(true)
             }
     }
@@ -526,11 +526,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("DB", "Successfully updated favourites")
+                Log.d("MyDB", "Successfully updated favourites")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("DB", "Failed to update favourites with error $e")
+                Log.d("MyDB", "Failed to update favourites with error $e")
             }
     }
 
@@ -555,9 +555,8 @@ class DatabaseConnection {
 
                     if (ingredientRefs != null) {
                         var remaining = ingredientRefs.size
-                        Log.d("Debug", "starting to check for size ${ingredientRefs.size}")
                         if (ingredientRefs.isEmpty()) {
-                            Log.d("DB", "Successfully found that ingredient does not exist")
+                            Log.d("MyDB", "Successfully found that ingredient does not exist")
                             onSuccess(false)
                             return@addOnSuccessListener
                         }
@@ -566,34 +565,33 @@ class DatabaseConnection {
                                 .addOnSuccessListener { ingredient ->
                                     val displayName = ingredient.getString(DISPLAY_NAME)
                                     if (displayName == ingredientName) {
-                                        Log.d("DB", "Successfully found that ingredient exists")
+                                        Log.d("MyDB", "Successfully found that ingredient exists")
                                         onSuccess(true)
                                         return@addOnSuccessListener
                                     }
-                                    Log.d("Debug", "checking $displayName")
                                     remaining--
                                     if (remaining <= 0) {
-                                        Log.d("DB", "Successfully found that ingredient does not exist")
+                                        Log.d("MyDB", "Successfully found that ingredient does not exist")
                                         onSuccess(false)
                                     }
                                 }
                                 .addOnFailureListener { e ->
                                     remaining--
-                                    Log.d("DB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
+                                    Log.d("MyDB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
                                     onFailure(e)
                                 }
                         }
                     } else {
                         onSuccess(false)
-                        Log.d("DB", "Failed to check ingredient existence because ingredient references are null")
+                        Log.d("MyDB", "Failed to check ingredient existence because ingredient references are null")
                     }
                 } else {
                     onSuccess(false)
-                    Log.d("DB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
+                    Log.d("MyDB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
                 }
             }
             .addOnFailureListener { e ->
-                Log.d("DB", "Failed to check ingredient existence because could not access userPersonal with error $e")
+                Log.d("MyDB", "Failed to check ingredient existence because could not access userPersonal with error $e")
                 onFailure(e)
             }
     }
@@ -618,7 +616,7 @@ class DatabaseConnection {
         ingredientsCollection
             .add(ingredient)
             .addOnSuccessListener {
-                Log.d("DB", "Successfully created user ingredient")
+                Log.d("MyDB", "Successfully created user ingredient")
                 // if the new ingredient was correctly added ->
                 userPersonalCollection
                     .document(owner)
@@ -631,16 +629,16 @@ class DatabaseConnection {
                     .addOnSuccessListener {
                         isError(false)
                         callBack()
-                        Log.d("DB", "Successfully added the ingredient reference")
+                        Log.d("MyDB", "Successfully added the ingredient reference")
                     }
                     .addOnFailureListener {e ->
                         isError(true)
-                        Log.d("DB", "Failed to add ingredient reference with error $e")
+                        Log.d("MyDB", "Failed to add ingredient reference with error $e")
                     }
             }
             .addOnFailureListener {e ->
                 isError(true)
-                Log.d("DB", "Failed to create ingredient with error $e")
+                Log.d("MyDB", "Failed to create ingredient with error $e")
             }
     }
 
@@ -657,7 +655,7 @@ class DatabaseConnection {
             val standName = document.getString(STAND_NAME) ?: ""
             val category = document.getString(CATEGORY) ?: ""
             val isTicked = document.getBoolean(IS_TICKED) ?: false
-            Log.d("DB", "Successfully fetched ingredient")
+            Log.d("MyDB", "Successfully fetched ingredient")
             OwnedIngredient(ref.id, displayName, standName, category, isTicked)
         } else {
             OwnedIngredient.empty()
@@ -680,11 +678,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("DB", "Successfully updated ingredient")
+                Log.d("MyDB", "Successfully updated ingredient")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("DB", "Failed to update ingredient with error $e")
+                Log.d("MyDB", "Failed to update ingredient with error $e")
             }
     }
 
@@ -707,23 +705,23 @@ class DatabaseConnection {
             .update(targetField, FieldValue.arrayRemove(ref))
             .addOnSuccessListener {
                 isError(false)
-                Log.d("DB", "Successfully deleted ingredient ref from user $owner")
+                Log.d("MyDB", "Successfully deleted ingredient ref from user $owner")
 
                 // if the reference was correctly removed -> delete the ingredient document
                 ref.delete()
                     .addOnSuccessListener {
                         isError(false)
-                        Log.d("DB", "Sucessfully deleted ingredient $uid")
+                        Log.d("MyDB", "Sucessfully deleted ingredient $uid")
                         callBack()
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("DB", "Failed to delete ingredient $uid with error $e")
+                        Log.d("MyDB", "Failed to delete ingredient $uid with error $e")
                     }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("DB", "Failed to delete ingredient ref from user with error $e")
+                Log.d("MyDB", "Failed to delete ingredient ref from user with error $e")
             }
     }
 
@@ -749,9 +747,8 @@ class DatabaseConnection {
                     // if the map is already no empty -> no ingredients to clear
                     if (targetMap.isEmpty()) {
                         isError(false)
-                        Log.d("Debug", "callback on empty map")
                         callBack()
-                        Log.d("DB", "Map $targetField is already empty")
+                        Log.d("MyDB", "Map $targetField is already empty")
                     }
 
                     // if the map is not empty -> clear it
@@ -766,7 +763,7 @@ class DatabaseConnection {
                                 if (remainingCat <= 0) {
                                     isError(false)
                                     callBack()
-                                    Log.d("DB", "Successfully cleared all ingredients for $targetField")
+                                    Log.d("MyDB", "Successfully cleared all ingredients for $targetField")
                                 }
                             } else {
                                 refs.forEach { ref ->
@@ -782,8 +779,7 @@ class DatabaseConnection {
                                                         if (remainingCat <= 0) {
                                                             isError(false)
                                                             callBack()
-                                                            Log.d("Debug", "callback on success")
-                                                            Log.d("DB", "Successfully cleared all ingredients for $targetField")
+                                                            Log.d("MyDB", "Successfully cleared all ingredients for $targetField")
                                                         }
                                                     }
                                                     .addOnFailureListener { e ->
@@ -811,7 +807,7 @@ class DatabaseConnection {
 
                 } else {
                     isError(true)
-                    Log.d("DB", "Failed to clear ingredients for user $owner: document does not exist")
+                    Log.d("MyDB", "Failed to clear ingredients for user $owner: document does not exist")
                 }
             }
     }
@@ -850,12 +846,12 @@ class DatabaseConnection {
                             // add the new URI as the picture field in the new user's userData document
                             userDataCollection.document(userID).update(PICTURE, uri.toString())
                             isError(false)
-                            Log.d("DB", "Successfully added user profile picture")
+                            Log.d("MyDB", "Successfully added user profile picture")
                         }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("DB", "Failed to add user profile picture with error: $e")
+                        Log.d("MyDB", "Failed to add user profile picture with error: $e")
                     }
             }
     }
@@ -881,13 +877,13 @@ class DatabaseConnection {
                         isError(false)
                         callBack()
                 }
-                Log.d("DB", "Successfully updated user profile picture")
+                Log.d("MyDB", "Successfully updated user profile picture")
             }
             .addOnFailureListener { e ->
                 val errorCode = (e as? StorageException)?.errorCode
                 val httpErrorCode = (e as? StorageException)?.httpResultCode
                 isError(true)
-                Log.d("DB", "Failed to update user profile picture with error $e\n" +
+                Log.d("MyDB", "Failed to update user profile picture with error $e\n" +
                         "errorCode is $errorCode\n" +
                         "and http status is $httpErrorCode")
             }
@@ -928,16 +924,16 @@ class DatabaseConnection {
                 item.delete().addOnSuccessListener {
                     deletedCount++
                     isError(false)
-                    Log.d("DB", "Successfully deleted stored files from user $userID")
+                    Log.d("MyDB", "Successfully deleted stored files from user $userID")
                     if (deletedCount == totalCount) { callBack() }
                 }.addOnFailureListener { e ->
                     isError(true)
-                    Log.d("DB", "Failed to delete stored files from user $userID with error $e")
+                    Log.d("MyDB", "Failed to delete stored files from user $userID with error $e")
                 }
             }
         }.addOnFailureListener { e ->
             isError(true)
-            Log.d("DB", "Failed to list stored files from user $userID with error $e")
+            Log.d("MyDB", "Failed to list stored files from user $userID with error $e")
         }
     }
 

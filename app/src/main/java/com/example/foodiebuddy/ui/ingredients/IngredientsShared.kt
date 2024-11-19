@@ -364,7 +364,6 @@ fun IngredientCategoryEdit(
         AddIngredient(newItemName) { displayName ->
             val standName = standardizeName(displayName.value)
             val newIngredient = OwnedIngredient("", displayName.value, standName, name, false)
-            Log.d("Debug", "new ingredient is $newIngredient")
             allTempIngredients.add(newIngredient)
             addedItems.add(newIngredient)
         }
@@ -512,7 +511,6 @@ private fun IngredientItemEdit(
                                         newGroceryItems[ingredient.category]?.add(ingredient) ?: run {
                                             newGroceryItems[ingredient.category] = mutableListOf(ingredient)
                                         }
-                                        Log.d("Debug", "new grocery items: $newGroceryItems")
                                         canShop.value = !canShop.value
                                     }
                                 }

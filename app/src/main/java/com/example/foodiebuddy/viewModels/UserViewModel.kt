@@ -47,7 +47,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 }
             } else {
                 isError(true)
-                Log.d("VM", "Failed to create user: ID is null")
+                Log.d("UserVM", "Failed to create user: ID is null")
             }
         }
     }
@@ -75,11 +75,11 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             }
                         }
                     } else {
-                        Log.d("VM", "Failed to retrieve user data: user does not exist.")
+                        Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
                     }
                 },
                 onFailure = { e ->
-                    Log.d("VM", "Failed to check user existence when fetching in VM with error $e")
+                    Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         }
@@ -110,7 +110,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 fetchUserData({ isError(it) }) {callBack()}
             }
         }  else {
-            Log.d("VM", "Failed to update user: ID is null")
+            Log.d("UserVM", "Failed to update user: ID is null")
         }
     }
 
@@ -133,7 +133,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
         if (userID != null) {
             db.deleteUser(userID, { isError(it) }, callBack)
         } else {
-            Log.d("VM", "Failed to delete user: ID is null")
+            Log.d("UserVM", "Failed to delete user: ID is null")
         }
     }
 
@@ -160,15 +160,15 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             }
                         }
                     } else {
-                        Log.d("VM", "Failed to retrieve user data: user does not exist.")
+                        Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
                     }
                 },
                 onFailure = { e ->
-                    Log.d("VM", "Failed to check user existence when fetching in VM with error $e")
+                    Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         } else {
-            Log.d("VM", "userID is null")
+            Log.d("UserVM", "userID is null")
         }
     }
 
@@ -202,7 +202,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                     editCategoryNames(editedCategories, {isError(it)}) { callBack() }
                 }
             } else {
-                Log.d("VM", "Could not update categories, userID is null")
+                Log.d("UserVM", "Could not update categories, userID is null")
             }
         }
     }
@@ -231,7 +231,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 callBack()
             }
         } else {
-            Log.d("VM", "Could not delete categories, userID is null")
+            Log.d("UserVM", "Could not delete categories, userID is null")
         }
     }
 
@@ -256,12 +256,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("VM", "Failed to check ingredient existence with error $e")
+                    Log.d("UserVM", "Failed to check ingredient existence with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("VM", "Failed to check ingredient existence: ID is null")
+            Log.d("UserVM", "Failed to check ingredient existence: ID is null")
         }
     }
 
@@ -307,7 +307,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 } else { callBack() }
             } else {
                 isError(true)
-                Log.d("VM", "Failed to add ingredients: ID is null")
+                Log.d("UserVM", "Failed to add ingredients: ID is null")
             }
         }
     }
@@ -325,7 +325,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.updateIngredientTick(uid, ticked, { isError(it) }) {
                 fetchUserPersonal({ isError(it) }) { callBack()} }
         }  else {
-            Log.d("VM", "Failed to update user: ID is null")
+            Log.d("UserVM", "Failed to update user: ID is null")
         }
     }
 
@@ -368,7 +368,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             // if the map is empty -> callBack
             } else { callBack() }
         } else {
-            Log.d("VM", "Failed to delete ingredient: ID is null")
+            Log.d("UserVM", "Failed to delete ingredient: ID is null")
         }
     }
 
@@ -395,7 +395,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             // if the map is empty -> callBack
             } else { callBack() }
         } else {
-            Log.d("VM", "Failed to edit category name: ID is null")
+            Log.d("UserVM", "Failed to edit category name: ID is null")
         }
     }
 
@@ -410,7 +410,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
         if (userID != null) {
             db.clearIngredients(userID, isInFridge, {isError(it)}) { callBack() }
         } else {
-            Log.d("VM", "Failed to clear fridge: ID is null")
+            Log.d("UserVM", "Failed to clear fridge: ID is null")
         }
     }
 }
