@@ -5,12 +5,12 @@ A private Android app for close friends, where we can share everyday food recipe
 ### Log tags
 There are different logcat tags to help with debugging:
 - Compose : When new screens are successfully composed.
-- DB : Successes and failures in accessing/updating the Firestore Database.
 - Debug : Only to use when currently debugging a specific feature. There shouldn't be any Debug tag on stable versions.
 - Error : for errors correctly caught and handled.
 - Login : All authentication, account existence checks / creation / accesses / deletion.
+- MyDB : Successes and failures in accessing/updating the Firestore Database.
 - NavAction : Navigation from a route to the other, backstack controls when going back in navigation history.
-- VM : All ViewModel actions like initialization, accesses to Database, etc...
+- UserVM : All UserViewModel actions like initialization, accesses to Database, etc...
   
 ### JavaDoc
 All functions are commented with typical JavaDoc. To write them more easily, you can follow these steps:
