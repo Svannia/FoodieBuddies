@@ -27,10 +27,15 @@ constructor(private val userID: String ?= null) : ViewModel() {
     private val _userData = MutableStateFlow(User.empty())
     val userData: StateFlow<User> = _userData
 
+    // allUsers contains a list of all public users' info
+    private val _allUsers = MutableStateFlow(emptyList<User>())
+    val allUsers: StateFlow<List<User>> = _allUsers
+
     // userPersonal contains the user's private data (can only be seen by its owner)
     private val _userPersonal = MutableStateFlow(UserPersonal.empty())
     val userPersonal: StateFlow<UserPersonal> = _userPersonal
 
+    // user profile
     /**
      * Creates a new user in DB.
      *
@@ -137,6 +142,34 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+
+    // all users
+    fun fetchAllUsers(isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            // only fetches data if user exists
+            db.userExists(
+                userID = userID,
+                onSuccess = { userExists ->
+                    if (userExists) {
+                        viewModelScope.launch {
+                            val allUsers = db.fetchAllUsers(userID)
+                            isError(false)
+                            _allUsers.value = allUsers
+                            callBack()
+                        }
+                    } else {
+                        Log.d("UserVM", "Failed to retrieve all users: user does not exist.")
+                    }
+                },
+                onFailure = { e ->
+                    Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
+                }
+            )
+        }
+    }
+
+
+    // personal information (fridge and groceries)
     /**
      * Fetches all personal data of this ViewModel's user.
      *
@@ -411,6 +444,20 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.clearIngredients(userID, isInFridge, {isError(it)}) { callBack() }
         } else {
             Log.d("UserVM", "Failed to clear fridge: ID is null")
+        }
+    }
+
+    /**
+     * Sends ticked items from the grocery list to the fridge and removes them from the groceries list.
+     *
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the items were transferred
+     */
+    fun groceriesToFridge(isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            db.groceriesToFridge(userID, {isError(it)}) { callBack() }
+        } else {
+            Log.d("UserVM", "Failed to transfer items to fridge: ID is null")
         }
     }
 }

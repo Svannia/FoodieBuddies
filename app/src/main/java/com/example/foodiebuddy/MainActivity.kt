@@ -24,6 +24,7 @@ import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.account.AccountSettings
+import com.example.foodiebuddy.ui.account.Buddies
 import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.ingredients.FridgeHome
@@ -139,6 +140,16 @@ class MainActivity : ComponentActivity() {
                                 }
                                 AccountSettings(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Account Settings")
+                            }
+                        }
+                        composable(Route.BUDDIES) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val userVM: UserViewModel = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
+                                Buddies(userVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Buddies")
                             }
                         }
 

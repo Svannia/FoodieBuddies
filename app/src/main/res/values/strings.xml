@@ -25,6 +25,7 @@
     <string name="button_modifyProfilePicture">Modifier la photo de profil</string>
     <string name="button_options">options</string>
     <string name="button_save">Sauvegarder</string>
+    <string name="button_sendToFridge">Envoyer les courses dans le Frigo</string>
     <string name="button_signIn">S\'enregistrer</string>
     <string name="button_signOut">Se déconnecter</string>
     <string name="button_terms">Termes et Conditions</string>
@@ -44,6 +45,7 @@
     <string name="desc_textFieldIcon">icone du champ de texte</string>
 
     <string name="dst_account">Profil</string>
+    <string name="dst_buddies">Buddies</string>
     <string name="dst_fridge">Mon Frigo</string>
     <string name="dst_groceries">Courses</string>
     <string name="dst_recipes">Recettes</string>
@@ -70,6 +72,7 @@
 
     <string name="txt_emptyFridge">Ton frigo est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_emptyGroceries">Ta liste de courses est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
+    <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>
     <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>

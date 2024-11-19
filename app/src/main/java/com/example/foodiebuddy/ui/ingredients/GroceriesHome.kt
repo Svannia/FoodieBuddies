@@ -88,7 +88,19 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             title = stringResource(R.string.title_groceries),
             navigationIndex = 1,
             topBarIcons = { OptionsMenu(
-                stringResource(R.string.button_clearList) to { showDeleteAlert.value = true }
+                stringResource(R.string.button_clearList) to { showDeleteAlert.value = true },
+                stringResource(R.string.button_sendToFridge) to {
+                    loading.value = true
+                    userViewModel.groceriesToFridge({
+                        if (it) { handleError(context, "Failed to send grocery items to fridge") }
+                    }) {
+                        userViewModel.fetchUserPersonal({
+                            if (it) { handleError(context, "Could not fetch user personal") }
+                        }) {
+                            loading.value = false
+                        }
+                    }
+                }
             ) },
             userViewModel = userViewModel,
             floatingButton = { FloatingButton(screenState) {

@@ -24,6 +24,7 @@
     <string name="button_modifyProfilePicture">Edit your profile picture</string>
     <string name="button_options">options</string>
     <string name="button_save">Save</string>
+    <string name="button_sendToFridge">Send ticked items to Fridge</string>
     <string name="button_signIn">Log in</string>
     <string name="button_signOut">Log out</string>
     <string name="button_terms">Terms and Conditions</string>
@@ -43,6 +44,7 @@
     <string name="desc_textFieldIcon">text field icon</string>
 
     <string name="dst_account">Profile</string>
+    <string name="dst_buddies">Buddies</string>
     <string name="dst_fridge">My Fridge</string>
     <string name="dst_groceries">Groceries</string>
     <string name="dst_recipes">Recipes</string>
@@ -69,6 +71,7 @@
 
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
+    <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>

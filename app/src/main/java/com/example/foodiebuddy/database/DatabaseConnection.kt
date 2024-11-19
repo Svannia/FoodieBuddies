@@ -209,6 +209,26 @@ class DatabaseConnection {
             }
     }
 
+    suspend fun fetchAllUsers(userID: String): List<User> {
+        if (userID.isEmpty()) { return emptyList() }
+
+        return try {
+            val query = userDataCollection.get().await()
+            query.documents
+                .filter { it.id != userID }
+                .map { document ->
+                    val username = document.getString(USERNAME) ?: ""
+                    val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
+                    val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
+                    val bio = document.getString(BIO) ?: ""
+                    val formattedBio = bio.replace("\\n", "\n")
+                    User(document.id, username, picture, numberRecipes, formattedBio)
+                }
+        } catch (e: Exception) {
+            Log.d("MyDB", "Failed to fetch all users data for userID $userID")
+            emptyList()
+        }
+    }
 
     // user personal
 
@@ -810,10 +830,86 @@ class DatabaseConnection {
                     Log.d("MyDB", "Failed to clear ingredients for user $owner: document does not exist")
                 }
             }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to clear ingredients with error $e")
+            }
+    }
+
+    /**
+     * Sends ticked items from the grocery list to the fridge and removes them from the groceries list.
+     *
+     * @param owner ID of the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
+    fun groceriesToFridge(owner: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        userPersonalCollection
+            .document(owner)
+            .get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val groceries = document[GROCERIES] as Map<String, List<DocumentReference>> ?: emptyMap()
+                    val fridge = document[FRIDGE] as Map<String, List<DocumentReference>> ?: emptyMap()
+                    val newGroceries = groceries.toMutableMap()
+                    val newFridge = fridge.toMutableMap()
+
+                    var remainingItems = groceries.values.flatten().size
+
+                    // if groceries doesn't contain any items -> return
+                    if (remainingItems <= 0) {
+                        isError(false)
+                        callBack()
+                        Log.d("MyDB", "Successfully completed transfer: groceries list is empty")
+                    // if there are groceries items to check -> go through them
+                    } else {
+                        groceries.forEach { (category, refs) ->
+                            refs.forEach { ref ->
+                                ref.get()
+                                    .addOnSuccessListener { ingredient ->
+                                        // if the ingredient is ticked ->
+                                        if (ingredient.exists() && ingredient.getBoolean(IS_TICKED) == true) {
+                                            // remove ref from groceries
+                                            newGroceries[category] = newGroceries[category]?.filter { it != ref } ?: emptyList()
+                                            // add ref to fridge
+                                            newFridge[category] = (newFridge[category] ?: emptyList()) + ref
+                                        }
+                                        // increase counter
+                                        remainingItems--
+                                        if (remainingItems <= 0) {
+                                            // bring changes to Database
+                                            userPersonalCollection
+                                                .document(owner).update(
+                                                    GROCERIES, newGroceries,
+                                                    FRIDGE, newFridge
+                                                )
+                                            isError(false)
+                                            callBack()
+                                            Log.d("MyDB", "Successfully finished transferring items")
+                                        }
+
+                                    }
+                                    .addOnFailureListener { e ->
+                                        isError(true)
+                                        Log.d("MyDB", "Failed to transfer items because $ref does not exist with error $e")
+                                    }
+                            }
+                        }
+                    }
+                } else {
+                    isError(true)
+                    Log.d("MyDB", "Failed to transfer items for user $owner: document does not exist")
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to transfer items with error $e")
+            }
     }
 
 
     // storage pictures
+
     /**
      * Retrieves the default (empty) profile picture from the storage.
      *
