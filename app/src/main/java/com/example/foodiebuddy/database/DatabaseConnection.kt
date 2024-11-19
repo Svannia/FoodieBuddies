@@ -74,7 +74,10 @@ class DatabaseConnection {
             ""
         }
     }
+
+
     // user data
+
     /**
      * Checks if a user exists in the DB.
      * 
@@ -134,8 +137,12 @@ class DatabaseConnection {
      * @param userID ID of the user whose data to retrieve
      * @return User data object with all profile data
      */
-    suspend fun fetchUserData(userID: String): User {
-        if (userID.isEmpty()) { return User.empty() }
+    suspend fun fetchUserData(userID: String, isError: (Boolean) -> Unit): User {
+        if (userID.isEmpty()) {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch user data because userID $userID is empty")
+            return User.empty()
+        }
 
         val document = userDataCollection.document(userID).get().await()
         return if (document.exists()) {
@@ -144,8 +151,10 @@ class DatabaseConnection {
             val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
             val bio = document.getString(BIO) ?: ""
             val formattedBio = bio.replace("\\n", "\n")
+            isError(false)
             User(userID, username, picture, numberRecipes, formattedBio)
         } else {
+            isError(true)
             Log.d("MyDB", "Failed to fetch user data for userID $userID")
             User.empty()
         }
@@ -209,8 +218,18 @@ class DatabaseConnection {
             }
     }
 
-    suspend fun fetchAllUsers(userID: String): List<User> {
-        if (userID.isEmpty()) { return emptyList() }
+    /**
+     * Fetches all users' data except for the one calling this function.
+     *
+     * @param userID ID of the user whose data is to be exempted
+     * @return List of User data objects from all other users
+     */
+    suspend fun fetchAllUsers(userID: String, isError: (Boolean) -> Unit): List<User> {
+        if (userID.isEmpty()) {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch all users because userID $userID is empty")
+            return emptyList()
+        }
 
         return try {
             val query = userDataCollection.get().await()
@@ -222,13 +241,16 @@ class DatabaseConnection {
                     val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
                     val bio = document.getString(BIO) ?: ""
                     val formattedBio = bio.replace("\\n", "\n")
+                    isError(false)
                     User(document.id, username, picture, numberRecipes, formattedBio)
                 }
         } catch (e: Exception) {
+            isError(true)
             Log.d("MyDB", "Failed to fetch all users data for userID $userID")
             emptyList()
         }
     }
+
 
     // user personal
 
@@ -262,10 +284,11 @@ class DatabaseConnection {
      * @param userID ID of the user
      * @return UserPersonal object with all personal data
      */
-    suspend fun fetchUserPersonal(userID: String): UserPersonal {
+    suspend fun fetchUserPersonal(userID: String, isError: (Boolean) -> Unit): UserPersonal {
         // check that a correct userID was given
         if (userID.isEmpty()) {
-            Log.d("MyDB", "userID is null")
+            isError(true)
+            Log.d("MyDB", "Failed to fetch user personal because userID $userID is empty")
             return UserPersonal.empty()
         }
 
@@ -281,20 +304,22 @@ class DatabaseConnection {
             val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val groceryList = groceryListRefs.mapValues { entry ->
                 entry.value.map { ref ->
-                    fetchIngredient(ref)
+                    fetchIngredient(ref) { isError(it) }
                 }
             }
             // fetch each ingredient from the fridge map
             val fridgeListRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val fridgeList = fridgeListRefs.mapValues { entry ->
                 entry.value.map { ref ->
-                    fetchIngredient(ref)
+                    fetchIngredient(ref) { isError(it) }
                 }
             }
             // Create and return the UserPersonal object
+            isError(false)
             Log.d("MyDB", "Successfully fetched user personal")
             UserPersonal(userID, emptyList(), groceryList, fridgeList)
         } else {
+            isError(true)
             Log.d("MyDB", "Failed to fetch user personal for userID $userID")
             UserPersonal.empty()
         }
@@ -668,7 +693,7 @@ class DatabaseConnection {
      * @param ref DocumentReference (contained in groceries and fridge maps of userPersonal)
      * @return OwnedIngredient object with all ingredient data
      */
-    private suspend fun fetchIngredient(ref: DocumentReference): OwnedIngredient {
+    private suspend fun fetchIngredient(ref: DocumentReference, isError: (Boolean) -> Unit): OwnedIngredient {
         val document = ref.get().await()
         return if (document.exists()) {
             val displayName = document.getString(DISPLAY_NAME) ?: ""
@@ -676,8 +701,11 @@ class DatabaseConnection {
             val category = document.getString(CATEGORY) ?: ""
             val isTicked = document.getBoolean(IS_TICKED) ?: false
             Log.d("MyDB", "Successfully fetched ingredient")
+            isError(false)
             OwnedIngredient(ref.id, displayName, standName, category, isTicked)
         } else {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch ingredient because document does not exist")
             OwnedIngredient.empty()
         }
 
@@ -905,6 +933,25 @@ class DatabaseConnection {
                 isError(true)
                 Log.d("MyDB", "Failed to transfer items with error $e")
             }
+    }
+
+
+    // recipes
+
+    suspend fun fetchAllRecipes(isError: (Boolean) -> Unit): List<Recipe> {
+        return try {
+            val query = recipesCollection.get().await()
+            query.documents
+                .map { document ->
+                    val owner = document.getString(OWNER) ?: ""
+                    isError(false)
+                    Recipe(document.id, owner)
+                }
+        } catch (e: Exception) {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch all recipes with error $e")
+            emptyList()
+        }
     }
 
 

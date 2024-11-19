@@ -82,6 +82,7 @@ fun Buddies(userViewModel: UserViewModel, navigationActions: NavigationActions) 
                         .padding(paddingValues)
                         .padding(start = 16.dp, end = 16.dp)
                 ) {
+                    // if there are no other users -> display default text
                     if (allUsers.value.isEmpty()) {
                         item {
                             Text(

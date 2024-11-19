@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.ui.account.LoginScreen
 import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.handleError
@@ -29,10 +30,13 @@ import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.ingredients.FridgeHome
 import com.example.foodiebuddy.ui.ingredients.GroceriesHome
+import com.example.foodiebuddy.ui.recipes.RecipeView
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
 import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
+import com.example.foodiebuddy.viewModels.RecipeListViewModel
+import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -161,8 +165,25 @@ class MainActivity : ComponentActivity() {
                                 val userVM: UserViewModel = viewModel {
                                     UserViewModel(currentUser.uid)
                                 }
-                                RecipesHome(userVM, navigationActions)
+                                val recipesListVM: RecipeListViewModel = viewModel {
+                                    RecipeListViewModel()
+                                }
+                                RecipesHome(userVM, recipesListVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipes Home")
+                            }
+                        }
+                        composable(
+                            route = "${Route.RECIPE}/{recipeID}",
+                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType })) {
+                                backStackEntry ->
+                            val recipeID =
+                                backStackEntry.arguments?.getString("recipeID")
+                            if (recipeID != null) {
+                                val recipeVM: RecipeViewModel = viewModel {
+                                    RecipeViewModel(recipeID)
+                                }
+                                RecipeView(recipeVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Recipe of recipe $recipeID")
                             }
                         }
 

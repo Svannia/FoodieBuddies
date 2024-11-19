@@ -72,6 +72,7 @@
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
+    <string name="txt_noRecipes">There are no recipes on the app for now!</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>

@@ -10,6 +10,7 @@ object Route {
     const val ACCOUNT_SETTINGS = "AccountSettings"
     const val BUDDIES = "Buddies"
     const val RECIPES_HOME = "RecipesHome"
+    const val RECIPE = "Recipe"
     const val GROCERIES = "Groceries"
     const val FRIDGE = "MyFridge"
     const val SETTINGS = "Settings"

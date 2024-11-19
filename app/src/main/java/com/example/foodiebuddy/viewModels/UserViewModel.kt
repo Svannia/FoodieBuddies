@@ -71,13 +71,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
-                            val newUser = db.fetchUserData(userID)
-                            if (newUser.isEmpty()) { isError(true) }
-                            else {
-                                isError(false)
-                                _userData.value = newUser
-                                callBack()
-                            }
+                            val newUser = db.fetchUserData(userID) { isError(it) }
+                            isError(false)
+                            _userData.value = newUser
+                            callBack()
                         }
                     } else {
                         Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
@@ -144,6 +141,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
 
 
     // all users
+    /**
+     * Fetches all users' data except for the one calling this function.
+     *
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all data was retrieved
+     */
     fun fetchAllUsers(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             // only fetches data if user exists
@@ -152,8 +155,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
-                            val allUsers = db.fetchAllUsers(userID)
-                            isError(false)
+                            val allUsers = db.fetchAllUsers(userID) { isError(it) }
                             _allUsers.value = allUsers
                             callBack()
                         }
@@ -184,13 +186,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
-                            val newUserPersonal = db.fetchUserPersonal(userID)
-                            if (newUserPersonal.isEmpty()) { isError(true) }
-                            else {
-                                isError(false)
-                                _userPersonal.value = newUserPersonal
-                                callBack()
-                            }
+                            val newUserPersonal = db.fetchUserPersonal(userID) { isError(it) }
+                            isError(false)
+                            _userPersonal.value = newUserPersonal
+                            callBack()
                         }
                     } else {
                         Log.d("UserVM", "Failed to retrieve user data: user does not exist.")

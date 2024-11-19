@@ -1,6 +1,5 @@
 package com.example.foodiebuddy.viewModels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.Recipe
@@ -14,9 +13,9 @@ import javax.inject.Inject
  * ViewModel for viewing and filtering all recipes in the Database.
  *
  */
-class RecipeListViewModel
+class RecipeViewModel
 @Inject
-constructor() : ViewModel() {
+constructor(private val recipeID: String ?= null) : ViewModel() {
     private val db = DatabaseConnection()
 
     // allRecipes contains a list of all recipes on the app
@@ -27,7 +26,6 @@ constructor() : ViewModel() {
         viewModelScope.launch {
             val allRecipes = db.fetchAllRecipes { isError(it) }
             _allRecipes.value = allRecipes
-            Log.d("RecipeVM", "Fetched all recipes $allRecipes")
             callBack()
         }
     }
