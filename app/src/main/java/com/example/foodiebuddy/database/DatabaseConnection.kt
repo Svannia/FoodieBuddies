@@ -910,8 +910,16 @@ class DatabaseConnection {
                                         if (ingredient.exists() && ingredient.getBoolean(IS_TICKED) == true) {
                                             // remove ref from groceries
                                             newGroceries[category] = newGroceries[category]?.filter { it != ref } ?: emptyList()
-                                            // add ref to fridge
-                                            newFridge[category] = (newFridge[category] ?: emptyList()) + ref
+                                            // add ref to fridge if it doesn't already exist
+                                            ingredientExistsInCategory(owner, category, ingredient.getString(DISPLAY_NAME) ?: "",
+                                                onSuccess = { exists ->
+                                                    if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
+                                                },
+                                                onFailure = { e ->
+                                                    isError(true)
+                                                    Log.d("MyDB", "Failed to check if ingredient already exists in fridge with error $e")
+                                                }
+                                            )
                                         }
                                         // increase counter
                                         remainingItems--
