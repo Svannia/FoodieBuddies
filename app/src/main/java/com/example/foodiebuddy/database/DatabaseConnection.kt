@@ -2,8 +2,11 @@ package com.example.foodiebuddy.database
 
 import android.net.Uri
 import android.util.Log
+import com.example.foodiebuddy.data.Diet
+import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
+import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
 import com.google.firebase.auth.FirebaseAuth
@@ -31,6 +34,14 @@ private const val DISPLAY_NAME = "displayName"
 private const val STAND_NAME = "standName"
 private const val CATEGORY = "category"
 private const val IS_TICKED = "isTicked"
+
+private const val OWNER_NAME = "ownerName"
+private const val NAME = "name"
+private const val RECIPE = "recipe"
+private const val INGREDIENTS = "ingredients"
+private const val ORIGIN = "origin"
+private const val DIET = "diet"
+private const val TAGS = "tags"
 
 private const val defaultPicturePath = "userData/default.jpg"
 
@@ -944,8 +955,18 @@ class DatabaseConnection {
             query.documents
                 .map { document ->
                     val owner = document.getString(OWNER) ?: ""
+                    val ownerName = document.getString(OWNER_NAME) ?: ""
+                    val name = document.getString(NAME) ?: ""
+                    val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
+                    val recipe = document.getString(RECIPE) ?: ""
+                    val formattedRecipe = recipe.replace("\\n", "\n")
+                    val ingredients = document.get(INGREDIENTS) as? List<Pair<String, String>> ?: emptyList()
+                    val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
+                    val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
+                    val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
+                    val tags = tagsList.map { Tag.valueOf(it) }
                     isError(false)
-                    Recipe(document.id, owner)
+                    Recipe(document.id, owner, ownerName, name, picture, formattedRecipe, ingredients, origin, diet, tags)
                 }
         } catch (e: Exception) {
             isError(true)

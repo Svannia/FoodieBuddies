@@ -41,8 +41,14 @@
     <string name="desc_googleLogo">logo google</string>
     <string name="desc_loading">chargement</string>
     <string name="desc_profilePic">photo de profil</string>
+    <string name="desc_recipePicture">photo de la recette</string>
     <string name="desc_shop">"bouton "ajouter à la liste de courses"</string>
     <string name="desc_textFieldIcon">icone du champ de texte</string>
+
+    <string name="diet_fish">Poisson</string>
+    <string name="diet_meat">Viande</string>
+    <string name="diet_none">Aucun</string>
+    <string name="diet_vegetarian">Végétarien</string>
 
     <string name="dst_account">Profil</string>
     <string name="dst_buddies">Buddies</string>
@@ -54,6 +60,44 @@
     <string name="field_bio">Bio</string>
     <string name="field_maxChar">max. %1$s caractères</string>
     <string name="field_username">Nom d\'utilisateur</string>
+
+    <string name="origin_american">Américain</string>
+    <string name="origin_chinese">Chinois</string>
+    <string name="origin_eastern_european">Est-européen</string>
+    <string name="origin_english">Anglais</string>
+    <string name="origin_french">Français</string>
+    <string name="origin_german">Allemand</string>
+    <string name="origin_greek">Grec</string>
+    <string name="origin_homemade">Maison</string>
+    <string name="origin_indian">Indien</string>
+    <string name="origin_italian">Italien</string>
+    <string name="origin_japanese">Japonais</string>
+    <string name="origin_korean">Coréen</string>
+    <string name="origin_lebanese">Libanais</string>
+    <string name="origin_mexican">Mexicain</string>
+    <string name="origin_moroccan">Marocain</string>
+    <string name="origin_none">Aucun</string>
+    <string name="origin_peruvian">Péruvien</string>
+    <string name="origin_portuguese">Portugais</string>
+    <string name="origin_south_african">Sud-africain</string>
+    <string name="origin_spanish">Espagnol</string>
+    <string name="origin_swedish">Suédois</string>
+    <string name="origin_swiss">Suisse</string>
+    <string name="origin_thai">Thaïlandais</string>
+    <string name="origin_turkish">Turc</string>
+    <string name="origin_vietnamese">Vietnamien</string>
+
+    <string name="tag_appetizer">Apéro</string>
+    <string name="tag_dessert">Dessert</string>
+    <string name="tag_long_prep_time">Longue préparation</string>
+    <string name="tag_main_dish">Plat principal</string>
+    <string name="tag_none">Aucun</string>
+    <string name="tag_one_pot">One-pot</string>
+    <string name="tag_quick_meal">Repas rapide</string>
+    <string name="tag_savory_snack">Snack salé</string>
+    <string name="tag_side_dish">Accompagnement</string>
+    <string name="tag_starter">Entrée</string>
+    <string name="tag_sweet_snack">Snack sucré</string>
 
     <string name="title_about">À propos</string>
     <string name="title_account">Compte</string>
@@ -75,6 +119,7 @@
     <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>
     <string name="txt_noRecipes">Il n\'y a pas encore de recettes sur l\'app!</string>
     <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
+    <string name="txt_recipeCreator">Créée par %1$s</string>
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>
     <string name="txt_systemLight">Clair</string>

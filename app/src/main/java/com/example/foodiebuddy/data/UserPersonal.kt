@@ -10,7 +10,12 @@ import android.net.Uri
  * @property groceryList maps a user's grocery list: entry keys are categories, values are lists of ingredients
  * @property fridge maps a user's "my fridge": entry keys are categories, values are lists of ingredients
  */
-data class UserPersonal(val uid: String, val favouriteRecipes: List<Recipe>, val groceryList: Map<String, List<OwnedIngredient>>, val fridge: Map<String, List<OwnedIngredient>>) {
+data class UserPersonal(
+    val uid: String,
+    val favouriteRecipes: List<Recipe>,
+    val groceryList: Map<String, List<OwnedIngredient>>,
+    val fridge: Map<String, List<OwnedIngredient>>
+) {
     companion object {
         /**
          * Creates an empty UserPersonal object.

@@ -11,7 +11,13 @@ import android.net.Uri
  * @property numberRecipes added by this user. This field cannot be edited directly by the user
  * @property bio optional description text that the user can add on their profile
  */
-data class User(val uid: String, val username: String, val picture: Uri, val numberRecipes: Int, val bio: String) {
+data class User(
+    val uid: String,
+    val username: String,
+    val picture: Uri,
+    val numberRecipes: Int,
+    val bio: String
+) {
     companion object {
         /**
          * Creates an empty User data object.

@@ -1,4 +1,5 @@
 [versions]
+accompanistFlowlayout = "0.27.0"
 accompanistPermissions = "1.0.0"
 agp = "8.3.0"
 kotlin = "1.9.0"
@@ -18,6 +19,7 @@ datastoreCoreJvm = "1.1.1"
 playServicesNearby = "19.3.0"
 
 [libraries]
+accompanist-flowlayout = { module = "com.google.accompanist:accompanist-flowlayout", version.ref = "accompanistFlowlayout" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanistPermissions" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }

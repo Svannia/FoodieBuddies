@@ -40,8 +40,14 @@
     <string name="desc_googleLogo">google logo</string>
     <string name="desc_loading">loading</string>
     <string name="desc_profilePic">profile picture</string>
+    <string name="desc_recipePicture">recipe picture</string>
     <string name="desc_shop">"add to groceries" button</string>
     <string name="desc_textFieldIcon">text field icon</string>
+
+    <string name="diet_fish">Fish</string>
+    <string name="diet_meat">Meat</string>
+    <string name="diet_none">None</string>
+    <string name="diet_vegetarian">Vegetarian</string>
 
     <string name="dst_account">Profile</string>
     <string name="dst_buddies">Buddies</string>
@@ -53,6 +59,44 @@
     <string name="field_bio">Bio</string>
     <string name="field_maxChar">max. %1$s characters</string>
     <string name="field_username">Username</string>
+
+    <string name="origin_american">American</string>
+    <string name="origin_chinese">Chinese</string>
+    <string name="origin_eastern_european">Eastern European</string>
+    <string name="origin_english">English</string>
+    <string name="origin_french">French</string>
+    <string name="origin_german">German</string>
+    <string name="origin_greek">Greek</string>
+    <string name="origin_homemade">Homemade</string>
+    <string name="origin_indian">Indian</string>
+    <string name="origin_italian">Italian</string>
+    <string name="origin_japanese">Japanese</string>
+    <string name="origin_korean">Korean</string>
+    <string name="origin_lebanese">Lebanese</string>
+    <string name="origin_mexican">Mexican</string>
+    <string name="origin_moroccan">Moroccan</string>
+    <string name="origin_none">None</string>
+    <string name="origin_peruvian">Peruvian</string>
+    <string name="origin_portuguese">Portuguese</string>
+    <string name="origin_south_african">South African</string>
+    <string name="origin_spanish">Spanish</string>
+    <string name="origin_swedish">Swedish</string>
+    <string name="origin_swiss">Swiss</string>
+    <string name="origin_thai">Thai</string>
+    <string name="origin_turkish">Turkish</string>
+    <string name="origin_vietnamese">Vietnamese</string>
+
+    <string name="tag_appetizer">Appetizer</string>
+    <string name="tag_dessert">Dessert</string>
+    <string name="tag_long_prep_time">Long prep time</string>
+    <string name="tag_main_dish">Main dish</string>
+    <string name="tag_none">None</string>
+    <string name="tag_one_pot">One-pot</string>
+    <string name="tag_quick_meal">Quick meal</string>
+    <string name="tag_savory_snack">Savory snack</string>
+    <string name="tag_side_dish">Side dish</string>
+    <string name="tag_starter">Starter</string>
+    <string name="tag_sweet_snack">Sweet snack</string>
 
     <string name="title_about">About</string>
     <string name="title_account">Account</string>
@@ -74,6 +118,7 @@
     <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
     <string name="txt_noRecipes">There are no recipes on the app for now!</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
+    <string name="txt_recipeCreator">Created by %1$s</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>

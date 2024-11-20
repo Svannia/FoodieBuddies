@@ -72,6 +72,7 @@ import androidx.compose.ui.focus.FocusState
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
@@ -312,6 +313,30 @@ fun RoundImage(size: Dp, picture: Uri, contentDescription: String) {
         modifier = Modifier
             .size(size)
             .clip(CircleShape)
+            .background(Color.Transparent)
+    ) {
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = rememberAsyncImagePainter(picture),
+            contentDescription = contentDescription,
+            contentScale = ContentScale.FillBounds
+        )
+    }
+}
+
+/**
+ * Crops an image into a square (e.g for recipe pictures).
+ *
+ * @param size length of the square image
+ * @param picture Uri of the picture to be cropped
+ * @param contentDescription image description
+ */
+@Composable
+fun SquareImage(size: Dp, picture: Uri, contentDescription: String) {
+    Box(
+        modifier = Modifier
+            .size(size)
+            .clip(RectangleShape)
             .background(Color.Transparent)
     ) {
         Image(
