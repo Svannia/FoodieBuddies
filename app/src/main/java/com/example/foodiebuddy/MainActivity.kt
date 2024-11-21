@@ -61,11 +61,16 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val navigationActions = NavigationActions(navController)
 
+                    var userVM: UserViewModel = viewModel()
+
                     NavHost(navController, startDestination) {
                         composable(Route.START) {
                             val currentUser = remember { auth.currentUser }
                             // if there currently exists an authenticated user ->
                             if (currentUser != null) {
+                                userVM = viewModel {
+                                    UserViewModel(currentUser.uid)
+                                }
                                 Log.d("Login", "Logging in with user ${currentUser.uid}")
                                 // check if the user profile exists ->
                                 db.userExists(
@@ -97,13 +102,14 @@ class MainActivity : ComponentActivity() {
 
                         // Composables for account-related routes
                         composable(Route.LOGIN) {
+                            userVM = viewModel()
                             LoginScreen(navigationActions)
                             Log.d("Compose", "Successfully composed screen Login screen")
                         }
                         composable(Route.CREATE_ACCOUNT) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
+                                userVM = viewModel {
                                     UserViewModel(currentUser.uid)
                                 }
                                 CreateAccount(userVM, navigationActions)
@@ -113,9 +119,6 @@ class MainActivity : ComponentActivity() {
                         composable(Route.PROFILE) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 Profile(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Profile")
                             }
@@ -127,9 +130,6 @@ class MainActivity : ComponentActivity() {
                             val userID =
                                 backStackEntry.arguments?.getString("userID")
                             if (userID != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(userID)
-                                }
                                 Profile(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Profile of user $userID")
                             }
@@ -137,9 +137,6 @@ class MainActivity : ComponentActivity() {
                         composable(Route.ACCOUNT_SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 AccountSettings(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Account Settings")
                             }
@@ -147,9 +144,6 @@ class MainActivity : ComponentActivity() {
                         composable(Route.BUDDIES) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 Buddies(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Buddies")
                             }
@@ -160,7 +154,7 @@ class MainActivity : ComponentActivity() {
                         composable(Route.RECIPES_HOME) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
+                                if (userVM.getVmUid().isEmpty()) userVM = viewModel {
                                     UserViewModel(currentUser.uid)
                                 }
                                 RecipesHome(userVM, navigationActions)
@@ -187,9 +181,6 @@ class MainActivity : ComponentActivity() {
                         composable(Route.GROCERIES) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 GroceriesHome(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Groceries Home")
                             }
@@ -199,9 +190,6 @@ class MainActivity : ComponentActivity() {
                         composable(Route.FRIDGE) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 FridgeHome(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Groceries Home")
                             }
@@ -212,9 +200,6 @@ class MainActivity : ComponentActivity() {
                         composable(Route.SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                val userVM: UserViewModel = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 Settings(userVM, offlinePrefViewModel,  navigationActions)
                                 Log.d("Compose", "Successfully composed screen Settings")
                             }

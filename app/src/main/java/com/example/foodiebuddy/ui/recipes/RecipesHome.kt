@@ -78,8 +78,8 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
     val allRecipesData by userViewModel.allRecipes.collectAsState()
     val allRecipes = remember { mutableStateOf(allRecipesData) }
 
-    val filters = remember { mutableStateOf(RecipeFilters.empty()) }
-    val filteredRecipes = remember { mutableStateOf(allRecipes.value) }
+    val filters by userViewModel.filters.collectAsState()
+    val filteredRecipes by userViewModel.filteredRecipes.collectAsState()
     val keywords = remember { mutableStateOf("") }
 
 
@@ -104,22 +104,22 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
             loading.value = false
         }
     }
-    LaunchedEffect(filters.value, allRecipes.value) {
+    LaunchedEffect(filters, allRecipes.value) {
         // when the list of recipes or the filters are updated -> update the filtered recipes list
         loading.value = true
-        if (filters.value.requireOwnedIngredients) {
+        if (filters.requireOwnedIngredients) {
             userViewModel.recipesWithOwnedIngredients(allRecipes.value.toMutableList(), { if(it) {
                 handleError(context, "Could not filter recipes with owned ingredients")
             } }) { recipes ->
-                filteredRecipes.value = filterRecipes(recipes, filters.value, userViewModel)
+                userViewModel.updateFilteredRecipes(filterRecipes(recipes, filters, userViewModel))
                 loading.value = false
             }
         } else {
-            filteredRecipes.value = filterRecipes(allRecipes.value, filters.value, userViewModel)
+            userViewModel.updateFilteredRecipes(filterRecipes(allRecipes.value, filters, userViewModel))
             loading.value = false
         }
-        Log.d("Debug", "after filtering, filter is ${filters.value}")
-        Log.d("Debug", "after filtering, recipes are ${filteredRecipes.value}")
+        Log.d("Debug", "after filtering, filter is $filters")
+        Log.d("Debug", "after filtering, recipes are $filteredRecipes")
     }
 
     if (!showFilters.value) {
@@ -163,8 +163,8 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                     textAlign = TextAlign.Center
                                 )
                             }
-                        // if there are no recipes corresponding to the set of filters
-                        } else if (filteredRecipes.value.isEmpty()) {
+                            // if there are no recipes corresponding to the set of filters
+                        } else if (filteredRecipes.isEmpty()) {
                             item {
                                 Text(
                                     modifier = Modifier
@@ -178,7 +178,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         }
                         // display filtered recipes (shows all recipes if filters are empty)
                         else {
-                            filteredRecipes.value.forEach { recipe ->
+                            filteredRecipes.forEach { recipe ->
                                 item {
                                     Box(
                                         modifier = Modifier
@@ -252,7 +252,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                 }
             }
         )
-    // if the filters are showing
+        // if the filters are showing
     } else {
         Scaffold(
             modifier = Modifier.fillMaxSize(),
@@ -280,7 +280,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                 modifier = Modifier
                                     .padding(end = 16.dp)
                                     .clickable {
-                                        filters.value = RecipeFilters.empty()
+                                        userViewModel.updateFilters(RecipeFilters.empty())
                                         keywords.value = ""
                                         showFilters.value = false
                                     },
@@ -298,7 +298,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                     showFilters.value = false
                 }
             },
-            content = { paddingValues ->  
+            content = { paddingValues ->
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize()
@@ -317,7 +317,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                 onValueChange = {
                                     keywords.value = it
                                     val splitKeywords = it.split(" ")
-                                    filters.value = filters.value.copy(keywords = splitKeywords)
+                                    userViewModel.updateFilters(filters.copy(keywords = splitKeywords))
                                 },
                                 icon = R.drawable.search,
                                 placeHolder = stringResource(R.string.field_keywords),
@@ -338,9 +338,9 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         ) {
                             Checkbox(
                                 modifier = Modifier.size(20.dp),
-                                checked = filters.value.requireFavourite,
+                                checked = filters.requireFavourite,
                                 onCheckedChange = {
-                                    filters.value = filters.value.copy(requireFavourite = it)
+                                    userViewModel.updateFilters(filters.copy(requireFavourite = it))
                                 },
                                 colors = CheckboxDefaults.colors(checkmarkColor = MaterialTheme.colorScheme.secondary)
                             )
@@ -360,9 +360,9 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         ) {
                             Checkbox(
                                 modifier = Modifier.size(20.dp),
-                                checked = filters.value.requireOwnedIngredients,
+                                checked = filters.requireOwnedIngredients,
                                 onCheckedChange = {
-                                    filters.value = filters.value.copy(requireOwnedIngredients = it)
+                                    userViewModel.updateFilters(filters.copy(requireOwnedIngredients = it))
                                 },
                                 colors = CheckboxDefaults.colors(checkmarkColor = MaterialTheme.colorScheme.secondary)
                             )

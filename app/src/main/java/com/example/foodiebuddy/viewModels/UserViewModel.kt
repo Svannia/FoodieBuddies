@@ -6,6 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
+import com.example.foodiebuddy.data.RecipeFilters
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.database.DatabaseConnection
@@ -40,6 +41,20 @@ constructor(private val userID: String ?= null) : ViewModel() {
     private val _allRecipes = MutableStateFlow(emptyList<Recipe>())
     val allRecipes: StateFlow<List<Recipe>> = _allRecipes
 
+    // filters contains all the filters that the user has currently activated
+    private val _filters = MutableStateFlow(RecipeFilters.empty())
+    val filters: StateFlow<RecipeFilters> = _filters
+
+    // filtered recipes contain the current filters applied on the list of all recipes
+    private val _filteredRecipes = MutableStateFlow<List<Recipe>>(emptyList())
+    val filteredRecipes: StateFlow<List<Recipe>> = _filteredRecipes
+
+    /**
+     * Fetches this UserViewModel's UID.
+     *
+     * @return the UserViewModel's UID if it is non-null, an empty string otherwise
+     */
+    fun getVmUid(): String { return userID ?: "" }
 
     // user profile
     /**
@@ -176,7 +191,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    // all recipes
+    // recipes and filters
     /**
      * Fetches all recipes' data.
      *
@@ -190,6 +205,14 @@ constructor(private val userID: String ?= null) : ViewModel() {
             Log.d("RecipeVM", "Fetched all recipes $allRecipes")
             callBack()
         }
+    }
+
+    fun updateFilters(newFilters: RecipeFilters) {
+        _filters.value = newFilters
+    }
+
+    fun updateFilteredRecipes(newFilteredRecipeFilters: List<Recipe>) {
+        _filteredRecipes.value = newFilteredRecipeFilters
     }
 
 
