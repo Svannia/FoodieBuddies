@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.ui.ingredients
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -67,7 +66,10 @@ enum class ScreenState { LOADING, VIEWING, EDITING }
  * @param onSave block that runs when the user is in Editing mode and saves their modifications
  */
 @Composable
-fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
+fun FloatingButton(
+    screenState: MutableState<ScreenState>,
+    onSave: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxSize()
@@ -116,7 +118,12 @@ fun FloatingButton(screenState: MutableState<ScreenState>, onSave: () -> Unit) {
  * @param context used to display Toast
  */
 @Composable
-fun AddCategory(newCategoryName: MutableState<String>, newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>, unavailableCategoryNames: SnapshotStateList<String>, context: Context) {
+fun AddCategory(
+    newCategoryName: MutableState<String>,
+    newCategories: MutableState<Map<String, MutableList<OwnedIngredient>>>,
+    unavailableCategoryNames: SnapshotStateList<String>,
+    context: Context
+) {
     val focusRequester = remember { FocusRequester() }
     val isFocused = remember { mutableStateOf(false) }
 
@@ -550,9 +557,6 @@ private fun IngredientItemEdit(
     }
 }
 
-
-
-
 /**
  * Element that allows the user to enter a new ingredient name.
  *
@@ -634,7 +638,7 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
  * Element that creates an icon button that opens a drop-down menu of options when pressed.
  *
  * @param options non-exhaustive number of pairs.
- * Each pair contains a string the name of the action appearing in the drop-down menu,
+ * Each pair contains a string for the name of the action appearing in the drop-down menu,
  * and a block to run when that button is pressed.
  */
 @Composable

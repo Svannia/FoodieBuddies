@@ -437,6 +437,14 @@ private fun computeMinScale(context: Context, picture: Uri, radius: Float, scree
     }
 }
 
+/**
+ * This gives information about an image to manipulate it for profile pictures
+ *
+ * @property minScale float representing the minimum size of the image so it fits the mask
+ * @property width of the image
+ * @property height of the image
+ * @property orientation as used by ExifInterface
+ */
 data class ImageInfo(val minScale: Float, val width: Float, val height: Float, val orientation: Int?)
 
 /**

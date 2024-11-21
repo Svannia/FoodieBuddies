@@ -1,6 +1,5 @@
 package com.example.foodiebuddy.ui.ingredients
 
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth

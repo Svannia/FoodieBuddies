@@ -18,7 +18,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.ui.account.LoginScreen
 import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.handleError
@@ -35,7 +34,6 @@ import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
 import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
-import com.example.foodiebuddy.viewModels.RecipeListViewModel
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -165,10 +163,7 @@ class MainActivity : ComponentActivity() {
                                 val userVM: UserViewModel = viewModel {
                                     UserViewModel(currentUser.uid)
                                 }
-                                val recipesListVM: RecipeListViewModel = viewModel {
-                                    RecipeListViewModel()
-                                }
-                                RecipesHome(userVM, recipesListVM, navigationActions)
+                                RecipesHome(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipes Home")
                             }
                         }

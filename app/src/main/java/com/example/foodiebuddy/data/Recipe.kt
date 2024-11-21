@@ -9,6 +9,15 @@ import com.example.foodiebuddy.R
  *
  * @property uid of the recipe
  * @property owner UID of the user who created the recipe
+ * @property ownerName username of the recipe author
+ * @property name title of the recipe
+ * @property picture optional picture of the recipe
+ * @property recipe full recipe text
+ * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+ * @property origin origin tag from Origin enum
+ * @property diet diet tag from Diet enum
+ * @property tags list of tags from Tag enum
+ * @property favouriteOf list of UID from all the users who have this recipe in their favourites
  */
 data class Recipe(
     val uid: String,
@@ -117,7 +126,7 @@ val tagMap = mapOf(
     Tag.QUICK_MEAL to R.string.tag_quick_meal,
     Tag.LONG_PREP_TIME to R.string.tag_long_prep_time,
     Tag.ONE_POT to R.string.tag_one_pot,
-    Tag.MAIN_DISH to R.string.tag_none,
+    Tag.MAIN_DISH to R.string.tag_main_dish,
     Tag.SIDE_DISH to R.string.tag_side_dish,
     Tag.SWEET_SNACK to R.string.tag_sweet_snack,
     Tag.SAVORY_SNACK to R.string.tag_savory_snack,
@@ -134,6 +143,17 @@ val tagMap = mapOf(
     return context.getString(tagMap[this] ?: R.string.tag_none)
 }
 
+/**
+ * Contains all the different filters that can be applied on the list of recipes.
+ *
+ * @property keywords list of words that are looked for in the recipe title
+ * @property authors set of UIDs from recipe authors to filter
+ * @property origins set of Origin enum elements to filter
+ * @property diets set of Diet enum elements to filter
+ * @property tags set of Tag enum elements to filter
+ * @property requireOwnedIngredients whether or not to filter recipes that only require owned ingredients
+ * @property requireFavourite whether or not to filter recipes that are in the user's favourites
+ */
 data class RecipeFilters(
     val keywords: List<String>,
     val authors: Set<String>,
@@ -146,18 +166,21 @@ data class RecipeFilters(
 
     companion object {
         /**
-         * Creates an empty Recipe data object.
+         * Creates an empty RecipeFilter data object.
          *
-         * @return empty Recipe data object.
+         * @return empty RecipeFilter data object.
          */
         fun empty(): RecipeFilters {
-            return RecipeFilters(emptyList(), emptySet(), emptySet(), emptySet(), emptySet(), false, false)
+            return RecipeFilters(emptyList(), emptySet(), emptySet(), emptySet(), emptySet(),
+                requireOwnedIngredients = false,
+                requireFavourite = false
+            )
         }
     }
     /**
-     * Checks if this Recipe data object is empty.
+     * Checks if this RecipeFilter data object is empty.
      *
-     * @return true if the Recipe data object is empty.
+     * @return true if the RecipeFilter data object is empty.
      */
     fun isEmpty(): Boolean {
         return this == empty()

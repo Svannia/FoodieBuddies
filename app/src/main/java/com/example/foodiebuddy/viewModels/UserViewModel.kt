@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
-import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.database.DatabaseConnection
@@ -36,6 +35,11 @@ constructor(private val userID: String ?= null) : ViewModel() {
     // userPersonal contains the user's private data (can only be seen by its owner)
     private val _userPersonal = MutableStateFlow(UserPersonal.empty())
     val userPersonal: StateFlow<UserPersonal> = _userPersonal
+
+    // allRecipes contains a list of all recipes on the app
+    private val _allRecipes = MutableStateFlow(emptyList<Recipe>())
+    val allRecipes: StateFlow<List<Recipe>> = _allRecipes
+
 
     // user profile
     /**
@@ -169,6 +173,22 @@ constructor(private val userID: String ?= null) : ViewModel() {
                     Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
+        }
+    }
+
+    // all recipes
+    /**
+     * Fetches all recipes' data.
+     *
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after all data was retrieved
+     */
+    fun fetchAllRecipes(isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        viewModelScope.launch {
+            val allRecipes = db.fetchAllRecipes { isError(it) }
+            _allRecipes.value = allRecipes
+            Log.d("RecipeVM", "Fetched all recipes $allRecipes")
+            callBack()
         }
     }
 
@@ -462,6 +482,13 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+    /**
+     * Filters a list of ingredients to only keep those for which a user owns all the ingredients.
+     *
+     * @param allRecipes mutable list of Recipe objects to be filtered
+     * @param isError block that runs if there is an error executing the function
+     * @param onResult block that runs with the new list of recipes after they were filtered
+     */
     fun recipesWithOwnedIngredients(allRecipes: MutableList<Recipe>, isError: (Boolean) -> Unit, onResult: (List<Recipe>) -> Unit) {
         if (userID != null) {
             // only fetches data if user exists

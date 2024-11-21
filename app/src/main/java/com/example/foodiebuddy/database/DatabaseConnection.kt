@@ -14,7 +14,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
@@ -47,6 +46,7 @@ private const val FAVOURITE = "favouriteOf"
 
 private const val defaultPicturePath = "userData/default.jpg"
 
+@Suppress("UNCHECKED_CAST")
 class DatabaseConnection {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -275,7 +275,7 @@ class DatabaseConnection {
      */
     private fun createPersonal(userID: String, isError: (Boolean) -> Unit) {
         // the initial document only contains empty lists or maps
-        val user = hashMapOf(GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap<String, List<String>>())
+        val user = hashMapOf(GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap())
         // add the new document to userPersonal, setting its reference to be the user UID
         userPersonalCollection
             .document(userID)
@@ -386,7 +386,7 @@ class DatabaseConnection {
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after DB was updated
      */
-     suspend fun addCategory(owner: String, category: String, ingredients: List<OwnedIngredient>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
+    fun addCategory(owner: String, category: String, ingredients: List<OwnedIngredient>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
          // if the ingredients list is empty ->
          if (ingredients.isEmpty()) {
             userPersonalCollection
@@ -452,7 +452,7 @@ class DatabaseConnection {
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to udpate category of ingredient $ref with error $e")
+                                Log.d("MyDB", "Failed to update category of ingredient $ref with error $e")
                             }
                     }
 
@@ -583,7 +583,7 @@ class DatabaseConnection {
      */
     fun ingredientExistsInCategory(userID: String, category: String, ingredientName: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
         userPersonalCollection.document(userID).get()
-            .addOnSuccessListener { document ->
+            .addOnSuccessListener outerListener@{ document ->
                 if (document != null && document.exists()) {
                     val groceriesMap = document.get(GROCERIES) as? Map<*, *>
                     val ingredientRefs = groceriesMap?.get(category) as? List<DocumentReference>
@@ -593,16 +593,18 @@ class DatabaseConnection {
                         if (ingredientRefs.isEmpty()) {
                             Log.d("MyDB", "Successfully found that ingredient does not exist")
                             onSuccess(false)
-                            return@addOnSuccessListener
+                            return@outerListener
                         }
+                        var found = false
                         ingredientRefs.forEach { ref ->
                             ref.get()
                                 .addOnSuccessListener { ingredient ->
+                                    if (found) return@addOnSuccessListener
                                     val displayName = ingredient.getString(DISPLAY_NAME)
                                     if (displayName == ingredientName) {
                                         Log.d("MyDB", "Successfully found that ingredient exists")
                                         onSuccess(true)
-                                        return@addOnSuccessListener
+                                        found = true
                                     }
                                     remaining--
                                     if (remaining <= 0) {
@@ -631,6 +633,14 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Filters a list of ingredients to only keep those for which a user owns all the ingredients.
+     *
+     * @param userID ID of the user
+     * @param allRecipes mutable list of Recipe objects to be filtered
+     * @param onSuccess block that runs if the check succeeds (whether or not the ingredient exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
     fun recipesWithOwnedIngredients(userID: String, allRecipes: MutableList<Recipe>, onSuccess: (List<Recipe>) -> Unit, onFailure: (Exception) -> Unit) {
         // check that the list is recipes isn't empty
         if (allRecipes.isEmpty()) {
@@ -644,7 +654,6 @@ class DatabaseConnection {
                         // put together all the referenced owned ingredients
                         val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>>
                         val ingredientRefs = fridgeMap?.values?.flatten() ?: emptyList()
-                        Log.d("MyDB", "ingredientsRefs contains $ingredientRefs")
 
                         // if user doesn't own any ingredients -> filter recipes that don't have any ingredients
                         if (ingredientRefs.isEmpty()) {
@@ -664,12 +673,10 @@ class DatabaseConnection {
                                         ownedIngredients.add(standName)
                                         remainingIngredients--
                                         if (remainingIngredients <= 0) {
-                                            Log.d("Debug", "ownedIngredients are $ownedIngredients")
                                             // once the list of ingredients is created -> loop over recipes
                                             val filteredRecipes = allRecipes.filter { recipe ->
                                                 recipe.ingredients.all { ingredient ->
-                                                    val standName = ingredient.standName
-                                                    standName in ownedIngredients
+                                                    ingredient.standName in ownedIngredients
                                                 }
                                             }
                                             onSuccess(filteredRecipes)
@@ -812,7 +819,7 @@ class DatabaseConnection {
                 ref.delete()
                     .addOnSuccessListener {
                         isError(false)
-                        Log.d("MyDB", "Sucessfully deleted ingredient $uid")
+                        Log.d("MyDB", "Successfully deleted ingredient $uid")
                         callBack()
                     }
                     .addOnFailureListener { e ->
@@ -930,8 +937,8 @@ class DatabaseConnection {
             .get()
             .addOnSuccessListener { document ->
                 if (document.exists()) {
-                    val groceries = document[GROCERIES] as Map<String, List<DocumentReference>> ?: emptyMap()
-                    val fridge = document[FRIDGE] as Map<String, List<DocumentReference>> ?: emptyMap()
+                    val groceries = document[GROCERIES] as? Map<String, List<DocumentReference>> ?: emptyMap()
+                    val fridge = document[FRIDGE] as? Map<String, List<DocumentReference>> ?: emptyMap()
                     val newGroceries = groceries.toMutableMap()
                     val newFridge = fridge.toMutableMap()
 
@@ -999,6 +1006,12 @@ class DatabaseConnection {
 
     // recipes
 
+    /**
+     * Fetches all Recipes from entire database.
+     *
+     * @param isError block that runs if there is an error executing the function
+     * @return list of Recipe objects with all recipes' data
+     */
     suspend fun fetchAllRecipes(isError: (Boolean) -> Unit): List<Recipe> {
         return try {
             val query = recipesCollection.get().await()
@@ -1165,6 +1178,7 @@ class DatabaseConnection {
      *
      * @param picture that is added in Storage for tests
      */
+    @Suppress("unused")
     fun addExamplePictureToStorage(picture: Uri) {
         val ref = storage.child("tests/test.jpg")
         ref.putFile(picture)

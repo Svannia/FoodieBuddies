@@ -12,6 +12,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.ui.theme.MyTypography
 
+/**
+ * Oval background look for tags.
+ *
+ * @param tagName name of the tag to be displayed inside
+ */
 @Composable
 fun TagLabel(tagName: String) {
     Box(

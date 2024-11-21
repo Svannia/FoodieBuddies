@@ -12,22 +12,11 @@ import javax.inject.Inject
 /**
  * ViewModel for viewing and filtering all recipes in the Database.
  *
+ * @property recipeID of the recipe (can be null if the recipe has not been created yet)
  */
 class RecipeViewModel
 @Inject
 constructor(private val recipeID: String ?= null) : ViewModel() {
     private val db = DatabaseConnection()
-
-    // allRecipes contains a list of all recipes on the app
-    private val _allRecipes = MutableStateFlow(emptyList<Recipe>())
-    val allRecipes: StateFlow<List<Recipe>> = _allRecipes
-
-    fun fetchAllRecipes(isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        viewModelScope.launch {
-            val allRecipes = db.fetchAllRecipes { isError(it) }
-            _allRecipes.value = allRecipes
-            callBack()
-        }
-    }
 
 }

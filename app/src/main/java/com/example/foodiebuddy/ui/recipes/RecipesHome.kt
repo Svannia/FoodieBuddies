@@ -1,6 +1,5 @@
 package com.example.foodiebuddy.ui.recipes
 
-import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
@@ -17,7 +16,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -61,13 +60,12 @@ import com.example.foodiebuddy.ui.MiniLoading
 import com.example.foodiebuddy.ui.PrimaryScreen
 import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
-import com.example.foodiebuddy.viewModels.RecipeListViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel, navigationActions: NavigationActions) {
+fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
 
     // pressing the Android back button on this screen does not change it
     BackHandler {
@@ -77,7 +75,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
     val loading = remember { mutableStateOf(false) }
     val showFilters = remember { mutableStateOf(false) }
 
-    val allRecipesData by recipesListVM.allRecipes.collectAsState()
+    val allRecipesData by userViewModel.allRecipes.collectAsState()
     val allRecipes = remember { mutableStateOf(allRecipesData) }
 
     val filters = remember { mutableStateOf(RecipeFilters.empty()) }
@@ -90,7 +88,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
         userViewModel.fetchUserData({
             if (it) { handleError(context, "Could not fetch user data") }
         }){}
-        recipesListVM.fetchAllRecipes({
+        userViewModel.fetchAllRecipes({
             if (it) { handleError(context, "Could not fetch all recipes") }
         }){
             allRecipes.value = allRecipesData
@@ -99,7 +97,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
     }
     LaunchedEffect(allRecipesData) {
         loading.value = true
-        recipesListVM.fetchAllRecipes({
+        userViewModel.fetchAllRecipes({
             if (it) { handleError(context, "Could not fetch all recipes") }
         }){
             allRecipes.value = allRecipesData
@@ -107,12 +105,12 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
         }
     }
     LaunchedEffect(filters.value, allRecipes.value) {
+        // when the list of recipes or the filters are updated -> update the filtered recipes list
         loading.value = true
         if (filters.value.requireOwnedIngredients) {
             userViewModel.recipesWithOwnedIngredients(allRecipes.value.toMutableList(), { if(it) {
                 handleError(context, "Could not filter recipes with owned ingredients")
             } }) { recipes ->
-                Log.d("Debug", "recipes contain $recipes")
                 filteredRecipes.value = filterRecipes(recipes, filters.value, userViewModel)
                 loading.value = false
             }
@@ -122,10 +120,10 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
         }
         Log.d("Debug", "after filtering, filter is ${filters.value}")
         Log.d("Debug", "after filtering, recipes are ${filteredRecipes.value}")
-
     }
 
     if (!showFilters.value) {
+        // main app screen with a list of all recipes
         PrimaryScreen(
             navigationActions = navigationActions,
             title = stringResource(R.string.title_recipes),
@@ -153,6 +151,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                             .fillMaxSize()
                             .padding(paddingValues)
                     ) {
+                        // if there are no recipes on the app
                         if (allRecipes.value.isEmpty()) {
                             item {
                                 Text(
@@ -164,6 +163,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                                     textAlign = TextAlign.Center
                                 )
                             }
+                        // if there are no recipes corresponding to the set of filters
                         } else if (filteredRecipes.value.isEmpty()) {
                             item {
                                 Text(
@@ -176,6 +176,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                                 )
                             }
                         }
+                        // display filtered recipes (shows all recipes if filters are empty)
                         else {
                             filteredRecipes.value.forEach { recipe ->
                                 item {
@@ -192,7 +193,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                                             verticalArrangement = Arrangement.spacedBy(16.dp),
                                             horizontalAlignment = Alignment.Start
                                         ) {
-                                            // first a row with first the picture
+                                            // first a row, with first the picture ->
                                             Row(
                                                 modifier = Modifier.fillMaxWidth(),
                                                 horizontalArrangement = Arrangement.spacedBy(16.dp),
@@ -262,7 +263,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                             text = stringResource(R.string.title_filters),
                             style = MyTypography.titleMedium)
                         },
-                        // "go back button" that simple hides the filters
+                        // "go back button" that simply hides the filters
                         navigationIcon = {
                             IconButton(
                                 onClick = { showFilters.value = false }
@@ -317,7 +318,6 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                                     keywords.value = it
                                     val splitKeywords = it.split(" ")
                                     filters.value = filters.value.copy(keywords = splitKeywords)
-                                    Log.d("Debug", "after typing, filter is ${filters.value}")
                                 },
                                 icon = R.drawable.search,
                                 placeHolder = stringResource(R.string.field_keywords),
@@ -372,7 +372,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                             )
                         }
                     }
-                    item { Divider(modifier = Modifier.size(3.dp), color = MaterialTheme.colorScheme.outline) }
+                    item { Divider(modifier = Modifier.width(3.dp), color = MaterialTheme.colorScheme.outline) }
                     // menu with all the origin tags
                     item {
 
@@ -383,6 +383,12 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
     }
 }
 
+/**
+ * Save button for filters that always stays at the bottom of the screen.
+ *
+ * @param saveText text to be displayed in the button
+ * @param onSave block to run when pressing the button
+ */
 @Composable
 private fun BottomSaveBar(
     saveText: String,
@@ -409,6 +415,15 @@ private fun BottomSaveBar(
         }
     }
 }
+
+/**
+ * Filters all recipes that correspond to a given set of filters.
+ *
+ * @param allRecipes list of Recipe objects to be filtered through
+ * @param filters RecipeFilter object with all filters
+ * @param userViewModel used to find the current user's favourite recipes
+ * @return a new list of filtered Recipe objects
+ */
 private fun filterRecipes(allRecipes: List<Recipe>, filters: RecipeFilters, userViewModel: UserViewModel): List<Recipe> {
     val userID = userViewModel.getCurrentUserID()
     return allRecipes.filter { recipe ->
