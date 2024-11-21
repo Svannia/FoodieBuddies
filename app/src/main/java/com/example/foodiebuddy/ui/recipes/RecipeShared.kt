@@ -31,7 +31,7 @@ fun TagLabel(tagName: String) {
         Text(
             text = tagName,
             style = MyTypography.bodySmall,
-            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, start = 8.dp, end = 8.dp)
+            modifier = Modifier.padding(vertical = 4.dp, horizontal = 8.dp)
         )
     }
 }

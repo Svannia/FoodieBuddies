@@ -3,6 +3,9 @@ package com.example.foodiebuddy.ui.recipes
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,8 +21,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -34,6 +40,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -372,11 +379,22 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                             )
                         }
                     }
-                    item { Divider(modifier = Modifier.width(3.dp), color = MaterialTheme.colorScheme.outline) }
+                    item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
                     // menu with all the origin tags
                     item {
-
+                        TagDropDown(
+                            title = "Origin",
+                            tags = Origin.entries.drop(1).toTypedArray(),
+                            filtersSet = filters.origins,
+                            getString = { origin -> origin.getString(context) }
+                        ) { origin ->
+                            val origins = filters.origins.toMutableSet()
+                            if (origins.contains(origin)) origins.remove(origin)
+                            else origins.add(origin)
+                            userViewModel.updateFilters(filters.copy(origins = origins))
+                        }
                     }
+                    item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
                 }
             }
         )
@@ -413,6 +431,127 @@ private fun BottomSaveBar(
                 textAlign = TextAlign.Center
             )
         }
+    }
+}
+
+/**
+ * Menu to display all filters of a same tag family.
+ * When minimized, the tags lay on a single line that can be swiped,
+ * and when expanded they are all displayed on the screen.
+ *
+ * @param title name of the tag family
+ * @param tags all entries of a tag enum
+ * @param filtersSet the current set of filters for this tag family
+ * @param getString the getString function that belongs to this enum of tags
+ * @param onClick block that runs with the tag that got pressed
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun <T : Enum<T>> TagDropDown(
+    title: String,
+    tags: Array<T>,
+    filtersSet: Set<T>,
+    getString: (T) -> String,
+    onClick: (T) -> Unit
+) {
+    val expanded = remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Menu header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 0.dp, horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // name of the tag family
+            Text(
+                text = title,
+                style = MyTypography.titleSmall
+            )
+            // button to expand or minimize the menu of tags
+            IconButton(onClick = { expanded.value = !expanded.value }) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    painter = if (expanded.value) painterResource(R.drawable.up)
+                        else painterResource(R.drawable.down),
+                    contentDescription = stringResource(R.string.desc_dropDownMenu)
+                )
+            }
+        }
+        // if expanded -> show all tags at once
+        if (expanded.value) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                tags.forEach { tag ->
+                    TagButton(getString(tag) , filtersSet.contains(tag)) {
+                        onClick(tag)
+                    }
+                }
+            }
+        // if not expanded -> collapsed lazy row view
+        } else {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(tags) { tag ->
+                    TagButton(getString(tag) , filtersSet.contains(tag)) {
+                        onClick(tag)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Oval button with a similar look to the TagLabel.
+ *
+ * @param tagName name of the tag on the button
+ * @param enabled whether this button is initially selected (among filters)
+ * @param onClick block to run when clicking the button
+ * (change of look already implemented inside this function)
+ */
+@Composable
+private fun TagButton(
+    tagName: String,
+    enabled: Boolean,
+    onClick: () -> Unit
+) {
+    val selected = remember { mutableStateOf(enabled) }
+    Box(
+        modifier = Modifier
+            .background(
+                color = if (selected.value) MaterialTheme.colorScheme.inversePrimary
+                else Color.Transparent,
+                shape = RoundedCornerShape(50)
+            )
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.inversePrimary,
+                shape = RoundedCornerShape(50)
+            )
+            .clickable {
+                selected.value = !selected.value
+                onClick()
+            }
+    ) {
+        Text(
+            text = tagName,
+            style = MyTypography.bodySmall,
+            color = if (selected.value) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.inversePrimary,
+            modifier = Modifier.padding(vertical = 6.dp, horizontal = 12.dp)
+        )
     }
 }
 

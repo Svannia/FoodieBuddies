@@ -37,6 +37,7 @@
     <string name="desc_appLogo">logo app</string>
     <string name="desc_burgerMenu">menu</string>
     <string name="desc_delete">bouton supprime</string>
+    <string name="desc_dropDownMenu">menu déroulant</string>
     <string name="desc_dstIcon">icone de destination</string>
     <string name="desc_edit">bouton modification</string>
     <string name="desc_filters">filtres</string>
