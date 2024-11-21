@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.OwnedIngredient
+import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.database.DatabaseConnection
@@ -457,6 +458,15 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.groceriesToFridge(userID, {isError(it)}) { callBack() }
         } else {
             Log.d("UserVM", "Failed to transfer items to fridge: ID is null")
+        }
+    }
+
+    fun ingredientExistsInFridge(recipe: RecipeIngredient): Boolean {
+        if (userID != null) {
+            return db.ingredientExistsInFridge(userID, recipe)
+        } else {
+            Log.d("UserVM", "Failed to transfer items to fridge: ID is null")
+            return false
         }
     }
 }

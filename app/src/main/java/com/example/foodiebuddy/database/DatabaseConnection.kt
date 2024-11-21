@@ -6,6 +6,7 @@ import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
+import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
@@ -39,6 +40,7 @@ private const val OWNER_NAME = "ownerName"
 private const val NAME = "name"
 private const val RECIPE = "recipe"
 private const val INGREDIENTS = "ingredients"
+private const val QUANTITY = "quantity"
 private const val ORIGIN = "origin"
 private const val DIET = "diet"
 private const val TAGS = "tags"
@@ -652,6 +654,43 @@ class DatabaseConnection {
             }
     }
 
+    fun ingredientExistsInFridge(userID: String, ingredient: RecipeIngredient): Boolean {
+        var ingredientExists = false
+        userPersonalCollection.document(userID).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>>
+                    val ingredientRefs = fridgeMap?.values?.flatten() ?: emptyList()
+
+                    if (ingredientRefs.isNotEmpty()) {
+                        var remaining = ingredientRefs.size
+                        ingredientRefs.forEach { ref ->
+                            ref.get()
+                                .addOnSuccessListener { document ->
+                                    val standName = document.getString(STAND_NAME)
+                                    if (standName == ingredient.standName) {
+                                        ingredientExists = true
+                                    }
+                                }
+                                .addOnFailureListener { e ->
+                                    Log.d("MyDB", "Failed to fetch ref $ref with error $e")
+                                }
+                        }
+                    } else {
+                        ingredientExists = false
+                    }
+
+                } else {
+                    Log.d("MyDB", "Failed to check for ingredient existence: document does not exist or is null")
+                }
+            }
+            .addOnFailureListener { e ->
+                Log.d("MyDB", "Failed to check for ingredient existence: couldn't get document with error $e")
+                ingredientExists = false
+            }
+        return ingredientExists
+    }
+
     /**
      * Creates a new ingredient document and adds the necessary references.
      *
@@ -968,7 +1007,13 @@ class DatabaseConnection {
                     val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
                     val recipe = document.getString(RECIPE) ?: ""
                     val formattedRecipe = recipe.replace("\\n", "\n")
-                    val ingredients = document.get(INGREDIENTS) as? List<Pair<String, String>> ?: emptyList()
+                    val ingredients = (document.get(INGREDIENTS) as? List<Map<String, String>>)?.map { map ->
+                        RecipeIngredient(
+                            displayedName = map[DISPLAY_NAME] ?: "",
+                            standName = map[STAND_NAME] ?: "",
+                            quantity = map[QUANTITY] ?: ""
+                        )
+                    } ?: emptyList()
                     val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
                     val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
                     val tagsList = document.get(TAGS) as? List<String> ?: emptyList()

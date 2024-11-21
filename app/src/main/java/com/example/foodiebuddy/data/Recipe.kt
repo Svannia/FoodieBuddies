@@ -17,7 +17,7 @@ data class Recipe(
     val name: String,
     val picture: Uri,
     val recipe: String,
-    val ingredients: List<Pair<String, String>>,
+    val ingredients: List<RecipeIngredient>,
     val origin: Origin,
     val diet: Diet,
     val tags: List<Tag>
@@ -132,4 +132,35 @@ val tagMap = mapOf(
  */fun Tag.getString(context: Context): String {
     return context.getString(tagMap[this] ?: R.string.tag_none)
 }
+
+data class RecipeFilters(
+    val keywords: List<String>,
+    val authors: Set<String>,
+    val origins: Set<Origin>,
+    val diets: Set<Diet>,
+    val tags: Set<Tag>,
+    val requireOwnedIngredients: Boolean
+) {
+
+    companion object {
+        /**
+         * Creates an empty Recipe data object.
+         *
+         * @return empty Recipe data object.
+         */
+        fun empty(): RecipeFilters {
+            return RecipeFilters(emptyList(), emptySet(), emptySet(), emptySet(), emptySet(), false)
+        }
+    }
+    /**
+     * Checks if this Recipe data object is empty.
+     *
+     * @return true if the Recipe data object is empty.
+     */
+    fun isEmpty(): Boolean {
+        return this == empty()
+    }
+
+}
+
 
