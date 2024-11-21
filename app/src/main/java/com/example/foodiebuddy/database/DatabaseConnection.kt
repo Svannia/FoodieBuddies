@@ -26,7 +26,6 @@ private const val PICTURE = "picture"
 private const val BIO = "bio"
 private const val NUMBER_RECIPES = "numberRecipes"
 
-private const val FAV_RECIPES = "favouriteRecipes"
 private const val GROCERIES = "groceryList"
 private const val FRIDGE = "fridge"
 
@@ -44,6 +43,7 @@ private const val QUANTITY = "quantity"
 private const val ORIGIN = "origin"
 private const val DIET = "diet"
 private const val TAGS = "tags"
+private const val FAVOURITE = "favouriteOf"
 
 private const val defaultPicturePath = "userData/default.jpg"
 
@@ -275,7 +275,7 @@ class DatabaseConnection {
      */
     private fun createPersonal(userID: String, isError: (Boolean) -> Unit) {
         // the initial document only contains empty lists or maps
-        val user = hashMapOf(FAV_RECIPES to emptyList<String>(), GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap<String, List<String>>())
+        val user = hashMapOf(GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap<String, List<String>>())
         // add the new document to userPersonal, setting its reference to be the user UID
         userPersonalCollection
             .document(userID)
@@ -308,11 +308,6 @@ class DatabaseConnection {
         // fetches the userPersonal document
         val document = userPersonalCollection.document(userID).get().await()
         return if (document.exists()) {
-            // TODO: fetch list of favourite recipes
-           /* val favouriteRecipesRefs = document.get(FAV_RECIPES) as? List<DocumentReference> ?: emptyList()
-            val favouriteRecipes = favouriteRecipesRefs.mapNotNull { ref ->
-                ref.get().await().toObject(Recipe::class.java)
-            }*/
             // fetch each ingredient from the groceries map
             val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val groceryList = groceryListRefs.mapValues { entry ->
@@ -330,7 +325,7 @@ class DatabaseConnection {
             // Create and return the UserPersonal object
             isError(false)
             Log.d("MyDB", "Successfully fetched user personal")
-            UserPersonal(userID, emptyList(), groceryList, fridgeList)
+            UserPersonal(userID, groceryList, fridgeList)
         } else {
             isError(true)
             Log.d("MyDB", "Failed to fetch user personal for userID $userID")
@@ -574,24 +569,6 @@ class DatabaseConnection {
             }
     }
 
-    fun updateFavourites(userID: String, favourite: Recipe, adding: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        val recipeRef = recipesCollection.document(favourite.uid)
-        val updateOperation =
-            if (adding) { FieldValue.arrayUnion(recipeRef) }
-            else { FieldValue.arrayRemove(recipeRef) }
-        userPersonalCollection.document(userID)
-            .update(FAV_RECIPES, updateOperation)
-            .addOnSuccessListener {
-                isError(false)
-                callBack()
-                Log.d("MyDB", "Successfully updated favourites")
-            }
-            .addOnFailureListener { e ->
-                isError(true)
-                Log.d("MyDB", "Failed to update favourites with error $e")
-            }
-    }
-
 
     // ingredients
 
@@ -600,7 +577,7 @@ class DatabaseConnection {
      *
      * @param userID ID of the user
      * @param category category the ingredient should be in
-     * @param ingredient displayed name of the ingredient looked for
+     * @param ingredientName displayed name of the ingredient looked for
      * @param onSuccess block that runs if the check succeeds (whether or not the ingredient exists)
      * @param onFailure block that runs if there is an error executing the function
      */
@@ -644,7 +621,7 @@ class DatabaseConnection {
                         Log.d("MyDB", "Failed to check ingredient existence because ingredient references are null")
                     }
                 } else {
-                    onSuccess(false)
+                    onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
                     Log.d("MyDB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
                 }
             }
@@ -654,41 +631,67 @@ class DatabaseConnection {
             }
     }
 
-    fun ingredientExistsInFridge(userID: String, ingredient: RecipeIngredient): Boolean {
-        var ingredientExists = false
-        userPersonalCollection.document(userID).get()
-            .addOnSuccessListener { document ->
-                if (document != null && document.exists()) {
-                    val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>>
-                    val ingredientRefs = fridgeMap?.values?.flatten() ?: emptyList()
+    fun recipesWithOwnedIngredients(userID: String, allRecipes: MutableList<Recipe>, onSuccess: (List<Recipe>) -> Unit, onFailure: (Exception) -> Unit) {
+        // check that the list is recipes isn't empty
+        if (allRecipes.isEmpty()) {
+            Log.d("MyDB", "Successfully found that list of recipes is empty")
+            onSuccess(allRecipes)
+        } else {
+            // access the user personal data
+            userPersonalCollection.document(userID).get()
+                .addOnSuccessListener { document ->
+                    if (document != null && document.exists()) {
+                        // put together all the referenced owned ingredients
+                        val fridgeMap = document.get(FRIDGE) as? Map<String, List<DocumentReference>>
+                        val ingredientRefs = fridgeMap?.values?.flatten() ?: emptyList()
+                        Log.d("MyDB", "ingredientsRefs contains $ingredientRefs")
 
-                    if (ingredientRefs.isNotEmpty()) {
-                        var remaining = ingredientRefs.size
-                        ingredientRefs.forEach { ref ->
-                            ref.get()
-                                .addOnSuccessListener { document ->
-                                    val standName = document.getString(STAND_NAME)
-                                    if (standName == ingredient.standName) {
-                                        ingredientExists = true
+                        // if user doesn't own any ingredients -> filter recipes that don't have any ingredients
+                        if (ingredientRefs.isEmpty()) {
+                            Log.d("MyDB", "Successfully found that user does not own any ingredients")
+                            val filteredRecipes = allRecipes.filter { recipe ->
+                                recipe.ingredients.isEmpty()
+                            }
+                            onSuccess(filteredRecipes)
+                        } else {
+                            // create a list with standName of all owned ingredients
+                            val ownedIngredients = mutableListOf<String>()
+                            var remainingIngredients = ingredientRefs.size
+                            ingredientRefs.forEach { ref ->
+                                ref.get()
+                                    .addOnSuccessListener { document ->
+                                        val standName = document.getString(STAND_NAME) ?: ""
+                                        ownedIngredients.add(standName)
+                                        remainingIngredients--
+                                        if (remainingIngredients <= 0) {
+                                            Log.d("Debug", "ownedIngredients are $ownedIngredients")
+                                            // once the list of ingredients is created -> loop over recipes
+                                            val filteredRecipes = allRecipes.filter { recipe ->
+                                                recipe.ingredients.all { ingredient ->
+                                                    val standName = ingredient.standName
+                                                    standName in ownedIngredients
+                                                }
+                                            }
+                                            onSuccess(filteredRecipes)
+                                        }
                                     }
-                                }
-                                .addOnFailureListener { e ->
-                                    Log.d("MyDB", "Failed to fetch ref $ref with error $e")
-                                }
+                                    .addOnFailureListener { e ->
+                                        Log.d("MyDB", "Failed to fetch ingredient $ref with error $e")
+                                        onFailure(e)
+                                        remainingIngredients--
+                                    }
+                            }
                         }
                     } else {
-                        ingredientExists = false
+                        Log.d("MyDB", "Failed to filter recipes by owned ingredients: userPersonal document is null")
+                        onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
                     }
-
-                } else {
-                    Log.d("MyDB", "Failed to check for ingredient existence: document does not exist or is null")
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.d("MyDB", "Failed to check for ingredient existence: couldn't get document with error $e")
-                ingredientExists = false
-            }
-        return ingredientExists
+                .addOnFailureListener { e ->
+                    Log.d("MyDB", "Failed to filter recipes by owned ingredients: couldn't get document with error $e")
+                    onFailure(e)
+                }
+        }
     }
 
     /**
@@ -1018,8 +1021,9 @@ class DatabaseConnection {
                     val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
                     val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
                     val tags = tagsList.map { Tag.valueOf(it) }
+                    val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
                     isError(false)
-                    Recipe(document.id, owner, ownerName, name, picture, formattedRecipe, ingredients, origin, diet, tags)
+                    Recipe(document.id, owner, ownerName, name, picture, formattedRecipe, ingredients, origin, diet, tags, favouriteOf)
                 }
         } catch (e: Exception) {
             isError(true)

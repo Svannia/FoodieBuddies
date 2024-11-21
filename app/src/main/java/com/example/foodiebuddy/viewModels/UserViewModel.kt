@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.OwnedIngredient
+import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
@@ -461,12 +462,22 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
-    fun ingredientExistsInFridge(recipe: RecipeIngredient): Boolean {
+    fun recipesWithOwnedIngredients(allRecipes: MutableList<Recipe>, isError: (Boolean) -> Unit, onResult: (List<Recipe>) -> Unit) {
         if (userID != null) {
-            return db.ingredientExistsInFridge(userID, recipe)
+            // only fetches data if user exists
+            db.recipesWithOwnedIngredients(userID, allRecipes,
+                onSuccess = { recipes ->
+                    isError(false)
+                    onResult(recipes)
+                },
+                onFailure = { e ->
+                    isError(true)
+                    Log.d("UserVM", "Failed to check ingredient existence with error $e")
+                }
+            )
         } else {
-            Log.d("UserVM", "Failed to transfer items to fridge: ID is null")
-            return false
+            isError(true)
+            Log.d("UserVM", "Failed to check ingredient existence: ID is null")
         }
     }
 }

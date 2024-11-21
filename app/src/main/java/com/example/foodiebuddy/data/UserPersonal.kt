@@ -6,13 +6,11 @@ import android.net.Uri
  * Describes a user's personal, private data.
  *
  * @property uid of the user
- * @property favouriteRecipes list of the recipes the user has marked as "favourite"
  * @property groceryList maps a user's grocery list: entry keys are categories, values are lists of ingredients
  * @property fridge maps a user's "my fridge": entry keys are categories, values are lists of ingredients
  */
 data class UserPersonal(
     val uid: String,
-    val favouriteRecipes: List<Recipe>,
     val groceryList: Map<String, List<OwnedIngredient>>,
     val fridge: Map<String, List<OwnedIngredient>>
 ) {
@@ -23,7 +21,7 @@ data class UserPersonal(
          * @return empty UserPersonal object.
          */
         fun empty(): UserPersonal {
-            return UserPersonal("", emptyList<Recipe>(), emptyMap<String, List<OwnedIngredient>>(), emptyMap<String, List<OwnedIngredient>>())
+            return UserPersonal("", emptyMap(), emptyMap())
         }
     }
     /**

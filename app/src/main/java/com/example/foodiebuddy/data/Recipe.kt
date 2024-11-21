@@ -20,7 +20,8 @@ data class Recipe(
     val ingredients: List<RecipeIngredient>,
     val origin: Origin,
     val diet: Diet,
-    val tags: List<Tag>
+    val tags: List<Tag>,
+    val favouriteOf: List<String>
 ) {
 
     companion object {
@@ -30,7 +31,7 @@ data class Recipe(
          * @return empty Recipe data object.
          */
         fun empty(): Recipe {
-            return Recipe("", "", "", "", Uri.EMPTY, "", emptyList(), Origin.NONE, Diet.NONE, emptyList())
+            return Recipe("", "", "", "", Uri.EMPTY, "", emptyList(), Origin.NONE, Diet.NONE, emptyList(), emptyList())
         }
     }
     /**
@@ -139,7 +140,8 @@ data class RecipeFilters(
     val origins: Set<Origin>,
     val diets: Set<Diet>,
     val tags: Set<Tag>,
-    val requireOwnedIngredients: Boolean
+    val requireOwnedIngredients: Boolean,
+    val requireFavourite: Boolean
 ) {
 
     companion object {
@@ -149,7 +151,7 @@ data class RecipeFilters(
          * @return empty Recipe data object.
          */
         fun empty(): RecipeFilters {
-            return RecipeFilters(emptyList(), emptySet(), emptySet(), emptySet(), emptySet(), false)
+            return RecipeFilters(emptyList(), emptySet(), emptySet(), emptySet(), emptySet(), false, false)
         }
     }
     /**

@@ -24,7 +24,9 @@
     <string name="button_edit">Modifier</string>
     <string name="button_modifyProfilePicture">Modifier la photo de profil</string>
     <string name="button_options">options</string>
+    <string name="button_reset">Réinitialiser</string>
     <string name="button_save">Sauvegarder</string>
+    <string name="button_seeResults">Voir les résulats</string>
     <string name="button_sendToFridge">Envoyer les courses dans le Frigo</string>
     <string name="button_signIn">S\'enregistrer</string>
     <string name="button_signOut">Se déconnecter</string>
@@ -37,6 +39,7 @@
     <string name="desc_delete">bouton supprime</string>
     <string name="desc_dstIcon">icone de destination</string>
     <string name="desc_edit">bouton modification</string>
+    <string name="desc_filters">filtres</string>
     <string name="desc_goBack">retour</string>
     <string name="desc_googleLogo">logo google</string>
     <string name="desc_loading">chargement</string>
@@ -58,6 +61,7 @@
     <string name="dst_settings">Paramètres</string>
 
     <string name="field_bio">Bio</string>
+    <string name="field_keywords">Qu\'est-ce que tu cherches ?</string>
     <string name="field_maxChar">max. %1$s caractères</string>
     <string name="field_username">Nom d\'utilisateur</string>
 
@@ -101,6 +105,7 @@
 
     <string name="title_about">À propos</string>
     <string name="title_account">Compte</string>
+    <string name="title_filters">Filtres</string>
     <string name="title_fridge">Mon Frigo</string>
     <string name="title_groceries">Liste de courses</string>
     <string name="title_language">Langue</string>
@@ -114,10 +119,13 @@
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
+    <string name="txt_allIngredientsOnly">Uniquement si j\'ai les ingrédients</string>
     <string name="txt_emptyFridge">Ton frigo est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_emptyGroceries">Ta liste de courses est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
+    <string name="txt_favouriteOnly">Uniquement recettes préférées</string>
     <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>
     <string name="txt_noRecipes">Il n\'y a pas encore de recettes sur l\'app!</string>
+    <string name="txt_noResults">Il n\'y a aucune recette correspondant à ces filtres.</string>
     <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
     <string name="txt_recipeCreator">Créée par %1$s</string>
     <string name="txt_systemDark">Sombre</string>

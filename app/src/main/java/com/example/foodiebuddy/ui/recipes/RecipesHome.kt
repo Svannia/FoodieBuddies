@@ -1,6 +1,8 @@
 package com.example.foodiebuddy.ui.recipes
 
+import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,13 +11,28 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,7 +41,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -37,16 +56,16 @@ import com.example.foodiebuddy.data.getString
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.MiniLoading
 import com.example.foodiebuddy.ui.PrimaryScreen
-import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.RecipeListViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel, navigationActions: NavigationActions) {
 
@@ -63,6 +82,7 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
 
     val filters = remember { mutableStateOf(RecipeFilters.empty()) }
     val filteredRecipes = remember { mutableStateOf(allRecipes.value) }
+    val keywords = remember { mutableStateOf("") }
 
 
     LaunchedEffect(Unit) {
@@ -87,7 +107,22 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
         }
     }
     LaunchedEffect(filters.value, allRecipes.value) {
-        filteredRecipes.value = filterRecipes(allRecipes.value, filters.value, userViewModel)
+        loading.value = true
+        if (filters.value.requireOwnedIngredients) {
+            userViewModel.recipesWithOwnedIngredients(allRecipes.value.toMutableList(), { if(it) {
+                handleError(context, "Could not filter recipes with owned ingredients")
+            } }) { recipes ->
+                Log.d("Debug", "recipes contain $recipes")
+                filteredRecipes.value = filterRecipes(recipes, filters.value, userViewModel)
+                loading.value = false
+            }
+        } else {
+            filteredRecipes.value = filterRecipes(allRecipes.value, filters.value, userViewModel)
+            loading.value = false
+        }
+        Log.d("Debug", "after filtering, filter is ${filters.value}")
+        Log.d("Debug", "after filtering, recipes are ${filteredRecipes.value}")
+
     }
 
     if (!showFilters.value) {
@@ -95,7 +130,18 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
             navigationActions = navigationActions,
             title = stringResource(R.string.title_recipes),
             navigationIndex = 0,
-            topBarIcons = {},
+            topBarIcons = {
+                IconButton(
+                    onClick = { showFilters.value = !showFilters.value }
+                ) {
+                    Icon(
+                        painterResource(R.drawable.filter),
+                        modifier = Modifier.size(28.dp),
+                        contentDescription = stringResource(R.string.desc_filters)
+                    )
+                }
+
+            },
             userViewModel = userViewModel,
             floatingButton = {},
             content = { paddingValues ->
@@ -118,8 +164,20 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                                     textAlign = TextAlign.Center
                                 )
                             }
-                        } else {
-                            allRecipes.value.forEach { recipe ->
+                        } else if (filteredRecipes.value.isEmpty()) {
+                            item {
+                                Text(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(top = 16.dp),
+                                    text = stringResource(R.string.txt_noResults),
+                                    style = MyTypography.bodyMedium,
+                                    textAlign = TextAlign.Center
+                                )
+                            }
+                        }
+                        else {
+                            filteredRecipes.value.forEach { recipe ->
                                 item {
                                     Box(
                                         modifier = Modifier
@@ -193,21 +251,169 @@ fun RecipesHome(userViewModel: UserViewModel, recipesListVM: RecipeListViewModel
                 }
             }
         )
+    // if the filters are showing
     } else {
-        SecondaryScreen(
-            title = "Filters",
-            navigationActions = navigationActions,
-            navExtraActions = {},
-            topBarIcons = {}) {
+        Scaffold(
+            modifier = Modifier.fillMaxSize(),
+            topBar = {
+                Box {
+                    CenterAlignedTopAppBar(
+                        title = { Text(
+                            text = stringResource(R.string.title_filters),
+                            style = MyTypography.titleMedium)
+                        },
+                        // "go back button" that simple hides the filters
+                        navigationIcon = {
+                            IconButton(
+                                onClick = { showFilters.value = false }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.go_back),
+                                    contentDescription = stringResource(R.string.desc_goBack)
+                                )
+                            }
+                        },
+                        // reset button to emtpy the filters
+                        actions = {
+                            Text(
+                                modifier = Modifier
+                                    .padding(end = 16.dp)
+                                    .clickable {
+                                        filters.value = RecipeFilters.empty()
+                                        keywords.value = ""
+                                        showFilters.value = false
+                                    },
+                                text = stringResource(R.string.button_reset),
+                                style = MyTypography.bodySmall
+                            )
+                        },
+                        colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background, scrolledContainerColor = MaterialTheme.colorScheme.background)
+                    )
+                }
+            },
+            // save button always shown at the bottom
+            bottomBar = {
+                BottomSaveBar(stringResource(R.string.button_seeResults)) {
+                    showFilters.value = false
+                }
+            },
+            content = { paddingValues ->  
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    // text field to input keywords looked for in the recipes names
+                    item {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center
+                        ) {
+                            CustomTextField(
+                                value = keywords.value,
+                                onValueChange = {
+                                    keywords.value = it
+                                    val splitKeywords = it.split(" ")
+                                    filters.value = filters.value.copy(keywords = splitKeywords)
+                                    Log.d("Debug", "after typing, filter is ${filters.value}")
+                                },
+                                icon = R.drawable.search,
+                                placeHolder = stringResource(R.string.field_keywords),
+                                singleLine = true,
+                                maxLength = 25,
+                                width = 300.dp
+                            )
+                        }
+                    }
+                    item { Spacer(modifier = Modifier.size(16.dp)) }
+                    // checkbox to only show favourite recipes
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Checkbox(
+                                modifier = Modifier.size(20.dp),
+                                checked = filters.value.requireFavourite,
+                                onCheckedChange = {
+                                    filters.value = filters.value.copy(requireFavourite = it)
+                                },
+                                colors = CheckboxDefaults.colors(checkmarkColor = MaterialTheme.colorScheme.secondary)
+                            )
+                            Text(
+                                text = stringResource(R.string.txt_favouriteOnly),
+                                style = MyTypography.bodyMedium
+                            )
+                        }
+                    }
+                    // checkbox to only show recipes for which user has all ingredients
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 16.dp),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Checkbox(
+                                modifier = Modifier.size(20.dp),
+                                checked = filters.value.requireOwnedIngredients,
+                                onCheckedChange = {
+                                    filters.value = filters.value.copy(requireOwnedIngredients = it)
+                                },
+                                colors = CheckboxDefaults.colors(checkmarkColor = MaterialTheme.colorScheme.secondary)
+                            )
+                            Text(
+                                text = stringResource(R.string.txt_allIngredientsOnly),
+                                style = MyTypography.bodyMedium
+                            )
+                        }
+                    }
+                    item { Divider(modifier = Modifier.size(3.dp), color = MaterialTheme.colorScheme.outline) }
+                    // menu with all the origin tags
+                    item {
 
-        }
+                    }
+                }
+            }
+        )
     }
 }
 
+@Composable
+private fun BottomSaveBar(
+    saveText: String,
+    onSave: () -> Unit
+) {
+    NavigationBar(
+        modifier = Modifier
+            .height(65.dp)
+            .fillMaxWidth()
+            .padding(top = 0.dp, bottom = 16.dp, start = 16.dp, end = 16.dp),
+        tonalElevation = 0.dp,
+        containerColor = Color.Transparent
+    ) {
+        Button(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = { onSave() },
+            shape = RoundedCornerShape(50)
+        ) {
+            Text(
+                text = saveText,
+                style = MyTypography.bodyMedium,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 private fun filterRecipes(allRecipes: List<Recipe>, filters: RecipeFilters, userViewModel: UserViewModel): List<Recipe> {
+    val userID = userViewModel.getCurrentUserID()
     return allRecipes.filter { recipe ->
         // recipe names that contain the input keywords
-        (filters.keywords.isEmpty() || filters.keywords.any { keyword -> recipe.name.contains(keyword, ignoreCase = true) }) &&
+        (filters.keywords.isEmpty() || filters.keywords.all { keyword -> recipe.name.contains(keyword, ignoreCase = true) }) &&
                 // recipes creators selected
                 (filters.authors.isEmpty() || recipe.ownerName in filters.authors) &&
                 // recipe origin tags selected
@@ -216,9 +422,7 @@ private fun filterRecipes(allRecipes: List<Recipe>, filters: RecipeFilters, user
                 (filters.diets.isEmpty() || recipe.diet in filters.diets) &&
                 // recipe tags selected
                 (filters.tags.isEmpty() || filters.tags.intersect(recipe.tags.toSet()).isNotEmpty()) &&
-                // only recipes with all ingredients in fridge
-                (!filters.requireOwnedIngredients || recipe.ingredients.all { ingredient ->
-                    userViewModel.ingredientExistsInFridge(ingredient)
-                })
+                // only recipes that this user has in their favourites
+                (!filters.requireFavourite || recipe.favouriteOf.contains(userID))
     }
 }
