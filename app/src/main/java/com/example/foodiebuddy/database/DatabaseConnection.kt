@@ -220,7 +220,10 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 // if document deletion was successful -> also delete the profile picture
                 deleteProfilePicture(userID, { isError(it) }) {
-                    deleteUserPersonal(userID, {isError(it)}) { callBack() }
+                    // once those deletions are successful -> delete the userPersonal document
+                    deleteUserPersonal(userID, {isError(it)}) {
+                        removeUserFromAllFavourites(userID, { isError(it) }) { callBack() }
+                    }
                 }
                 isError(false)
                 Log.d("MyDB", "Successfully deleted user $userID")
@@ -1043,6 +1046,56 @@ class DatabaseConnection {
             Log.d("MyDB", "Failed to fetch all recipes with error $e")
             emptyList()
         }
+    }
+
+    private fun removeUserFromAllFavourites(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        recipesCollection
+            .whereArrayContains(FAVOURITE, userID)
+            .get()
+            .addOnSuccessListener { query ->
+                val recipes = query.documents
+                // if there are no recipes with this user in their favouritesOf -> all good
+                if (recipes.isEmpty()) {
+                    isError(false)
+                    callBack()
+                    Log.d("MyDB", "Successfully found that user had no favourites")
+                    return@addOnSuccessListener
+                }
+
+                var remaining = recipes.size
+
+                // loop over recipes to remove user from their favouritesOf
+                recipes.forEach { recipe ->
+                    val id = recipe.id
+                    removeUserFromFavourites(id, userID, { isError(it) }) {
+                        remaining--
+                        if (remaining == 0) {
+                            isError(false)
+                            callBack()
+                            Log.d("MyDB","Successfully removed user from recipe favourites")
+                        }
+                    }
+
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to query all recipes with $userID in their favourites with error $e")
+            }
+    }
+    fun removeUserFromFavourites(uid: String, userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        recipesCollection
+            .document(uid)
+            .update(FAVOURITE, FieldValue.arrayRemove(userID))
+            .addOnSuccessListener {
+                isError(false)
+                callBack()
+                Log.d("MyDB", "Successfully removed user from recipe favouritesOf")
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to remove user from favourites with error $e")
+            }
     }
 
 
