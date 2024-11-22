@@ -1,9 +1,9 @@
 package com.example.foodiebuddy.ui.recipes
 
+import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -19,13 +19,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -40,7 +38,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +55,8 @@ import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.RecipeFilters
+import com.example.foodiebuddy.data.Tag
+import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.getString
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
@@ -89,12 +88,20 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
     val filteredRecipes by userViewModel.filteredRecipes.collectAsState()
     val keywords = remember { mutableStateOf("") }
 
+    val userData by userViewModel.userData.collectAsState()
+    val allCreators = remember { mutableStateOf(emptyList<Pair<String, String>>()) }
 
     LaunchedEffect(Unit) {
         loading.value = true
         userViewModel.fetchUserData({
             if (it) { handleError(context, "Could not fetch user data") }
-        }){}
+        }){
+            userViewModel.fetchAllUsers({
+                if (it) { handleError(context, "Could not fetch all users") }
+            }){
+                allCreators.value = buildCreatorsList(context, userData, userViewModel.allUsers.value)
+            }
+        }
         userViewModel.fetchAllRecipes({
             if (it) { handleError(context, "Could not fetch all recipes") }
         }){
@@ -380,11 +387,26 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         }
                     }
                     item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
+                    // menu with all the tags
+                    item {
+                        TagDropDown(
+                            title = stringResource(R.string.title_tag),
+                            tags = Tag.entries.drop(1).toList(),
+                            filtersSet = filters.tags,
+                            getString = { tag -> tag.getString(context) }
+                        ) { tag ->
+                            val tags = filters.tags.toMutableSet()
+                            if (tags.contains(tag)) tags.remove(tag)
+                            else tags.add(tag)
+                            userViewModel.updateFilters(filters.copy(tags = tags))
+                        }
+                    }
+                    item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
                     // menu with all the origin tags
                     item {
                         TagDropDown(
-                            title = "Origin",
-                            tags = Origin.entries.drop(1).toTypedArray(),
+                            title = stringResource(R.string.title_origin),
+                            tags = Origin.entries.drop(1).toList(),
                             filtersSet = filters.origins,
                             getString = { origin -> origin.getString(context) }
                         ) { origin ->
@@ -392,6 +414,38 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                             if (origins.contains(origin)) origins.remove(origin)
                             else origins.add(origin)
                             userViewModel.updateFilters(filters.copy(origins = origins))
+                        }
+                    }
+                    item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
+                    // menu with all the diet tags
+                    item {
+                        TagDropDown(
+                            title = stringResource(R.string.title_diet),
+                            tags = Diet.entries.drop(1).toList(),
+                            filtersSet = filters.diets,
+                            getString = { diet -> diet.getString(context) }
+                        ) { diet ->
+                            val diets = filters.diets.toMutableSet()
+                            if (diets.contains(diet)) diets.remove(diet)
+                            else diets.add(diet)
+                            userViewModel.updateFilters(filters.copy(diets = diets))
+                        }
+                    }
+                    item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
+                    // menu with all the creators
+                    item {
+                        TagDropDown(
+                            title = stringResource(R.string.title_creator),
+                            tags = allCreators.value.map { it.first },
+                            filtersSet = filters.authors,
+                            getString = { authorUID ->
+                                allCreators.value.find { it.first == authorUID }?.second ?: ""
+                            }
+                        ) { authorUID ->
+                            val authors = filters.authors.toMutableSet()
+                            if (authors.contains(authorUID)) authors.remove(authorUID)
+                            else authors.add(authorUID)
+                            userViewModel.updateFilters(filters.copy(authors = authors))
                         }
                     }
                     item { Divider(thickness = 3.dp, color = MaterialTheme.colorScheme.outline) }
@@ -447,9 +501,9 @@ private fun BottomSaveBar(
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun <T : Enum<T>> TagDropDown(
+private fun <T> TagDropDown(
     title: String,
-    tags: Array<T>,
+    tags: List<T>,
     filtersSet: Set<T>,
     getString: (T) -> String,
     onClick: (T) -> Unit
@@ -486,7 +540,9 @@ private fun <T : Enum<T>> TagDropDown(
         // if expanded -> show all tags at once
         if (expanded.value) {
             FlowRow(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -569,7 +625,7 @@ private fun filterRecipes(allRecipes: List<Recipe>, filters: RecipeFilters, user
         // recipe names that contain the input keywords
         (filters.keywords.isEmpty() || filters.keywords.all { keyword -> recipe.name.contains(keyword, ignoreCase = true) }) &&
                 // recipes creators selected
-                (filters.authors.isEmpty() || recipe.ownerName in filters.authors) &&
+                (filters.authors.isEmpty() || recipe.owner in filters.authors) &&
                 // recipe origin tags selected
                 (filters.origins.isEmpty() || recipe.origin in filters.origins) &&
                 // recipe diet tags selected
@@ -579,4 +635,12 @@ private fun filterRecipes(allRecipes: List<Recipe>, filters: RecipeFilters, user
                 // only recipes that this user has in their favourites
                 (!filters.requireFavourite || recipe.favouriteOf.contains(userID))
     }
+}
+
+private fun buildCreatorsList(context: Context, userData: User, allUsersData: List<User>): List<Pair<String, String>> {
+    val list = mutableListOf(Pair(userData.uid, context.getString(R.string.txt_me)))
+    allUsersData.forEach { user ->
+        list.add(Pair(user.uid, user.username))
+    }
+    return list
 }

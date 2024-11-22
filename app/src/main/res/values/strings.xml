@@ -106,13 +106,17 @@
 
     <string name="title_about">À propos</string>
     <string name="title_account">Compte</string>
+    <string name="title_creator">Créateur</string>
+    <string name="title_diet">Régime</string>
     <string name="title_filters">Filtres</string>
     <string name="title_fridge">Mon Frigo</string>
     <string name="title_groceries">Liste de courses</string>
     <string name="title_language">Langue</string>
     <string name="title_notifications">Notifications</string>
+    <string name="title_origin">Origine</string>
     <string name="title_recipes">Recettes</string>
     <string name="title_settings">Paramètres</string>
+    <string name="title_tag">Tags</string>
     <string name="title_theme">Thème</string>
 
     <string name="toast_categoryName">Cette catégorie existe déjà. Sauvegarde d\'abord tes modifications.</string>
@@ -124,6 +128,7 @@
     <string name="txt_emptyFridge">Ton frigo est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_emptyGroceries">Ta liste de courses est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_favouriteOnly">Uniquement recettes préférées</string>
+    <string name="txt_me">Moi</string>
     <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>
     <string name="txt_noRecipes">Il n\'y a pas encore de recettes sur l\'app!</string>
     <string name="txt_noResults">Il n\'y a aucune recette correspondant à ces filtres.</string>
