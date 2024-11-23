@@ -1051,30 +1051,43 @@ class DatabaseConnection {
                                         ingredientExistsInCategory(owner, category, ingredient.getString(DISPLAY_NAME) ?: "", true,
                                             onSuccess = { exists ->
                                                 if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
+                                                Log.d("Debug", "ingredient exists in fridge: $exists")
+                                                Log.d("Debug", "new fridge has $newFridge")
+                                                // decrease counter
+                                                remainingItems--
+                                                if (remainingItems <= 0) {
+                                                    // bring changes to Database
+                                                    userPersonalCollection
+                                                        .document(owner).update(
+                                                            GROCERIES, newGroceries,
+                                                            FRIDGE, newFridge
+                                                        )
+                                                    Log.d("Debug", "new fridge personal should have ${newFridge}")
+                                                    isError(errorOccurred)
+                                                    if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
+                                                    else {
+                                                        callBack()
+                                                        Log.d("MyDB", "Successfully finished transferring items")
+                                                    }
+                                                }
                                             },
                                             onFailure = { e ->
                                                 errorOccurred = true
+                                                // decrease counter
+                                                remainingItems--
+                                                if (remainingItems <= 0) {
+                                                    // bring changes to Database
+                                                    userPersonalCollection
+                                                        .document(owner).update(
+                                                            GROCERIES, newGroceries,
+                                                            FRIDGE, newFridge
+                                                        )
+                                                    isError(true)
+                                                }
                                                 Log.d("MyDB", "Failed to check if ingredient already exists in fridge with error $e")
                                             }
                                         )
                                     }
-                                    // decrease counter
-                                    remainingItems--
-                                    if (remainingItems <= 0) {
-                                        // bring changes to Database
-                                        userPersonalCollection
-                                            .document(owner).update(
-                                                GROCERIES, newGroceries,
-                                                FRIDGE, newFridge
-                                            )
-                                        isError(errorOccurred)
-                                        if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
-                                        else {
-                                            callBack()
-                                            Log.d("MyDB", "Successfully finished transferring items")
-                                        }
-                                    }
-
                                 }
                                 .addOnFailureListener { e ->
                                     errorOccurred = true
