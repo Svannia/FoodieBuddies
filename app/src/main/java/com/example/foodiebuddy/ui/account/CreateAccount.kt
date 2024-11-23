@@ -62,10 +62,9 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             onEditPicture = { editingPicture.value = true },
             acceptTerms = true
         ) {
-            userViewModel.createUser(nameState.value, pictureState.value, bioState.value) {
+            userViewModel.createUser(nameState.value, pictureState.value, bioState.value, {
                 if (it) { handleError(context, "Could not create user") }
-            }
-            navigationActions.navigateTo(Route.RECIPES_HOME, true)
+            }) { navigationActions.navigateTo(Route.RECIPES_HOME, true) }
         }
         BackHandler {
             navigationActions.navigateTo(Route.LOGIN, true)

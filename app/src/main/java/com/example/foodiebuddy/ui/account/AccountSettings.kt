@@ -89,7 +89,10 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
             ) {
                 loadingData.value = true
                 userViewModel.updateUser(nameState.value, pictureState.value, bioState.value, pictureEdited.value, {
-                    if (it) { handleError(context, "Could not update user data") }
+                    if (it) {
+                        handleError(context, "Could not update user data")
+                        loadingData.value = false
+                    }
                 }) {
                     navigationActions.goBack()
                     loadingData.value = false

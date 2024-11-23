@@ -45,7 +45,10 @@ fun Buddies(userViewModel: UserViewModel, navigationActions: NavigationActions) 
     LaunchedEffect(Unit) {
         loading.value = true
         userViewModel.fetchAllUsers({
-            if (it) { handleError(context, "Could not fetch all users") }
+            if (it) {
+                handleError(context, "Could not fetch all users")
+                loading.value = false
+            }
         }) {
             allUsers.value = allUsersData
             loading.value = false
@@ -54,7 +57,10 @@ fun Buddies(userViewModel: UserViewModel, navigationActions: NavigationActions) 
     LaunchedEffect(allUsersData) {
         loading.value = true
         userViewModel.fetchAllUsers({
-            if (it) { handleError(context, "Could not fetch all users") }
+            if (it) {
+                handleError(context, "Could not fetch all users")
+                loading.value = false
+            }
         }) {
             allUsers.value = allUsersData
             loading.value = false

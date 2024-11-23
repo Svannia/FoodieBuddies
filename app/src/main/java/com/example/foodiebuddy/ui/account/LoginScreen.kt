@@ -124,7 +124,7 @@ private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: 
             // check if the user already exists
             db.userExists(
                 userID,
-                onSuccess = {userExists ->
+                onSuccess = { userExists ->
                     // if the user already exists -> navigate to home page
                     if (userExists) {
                         navigationActions.navigateTo(Route.RECIPES_HOME)

@@ -69,7 +69,10 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             if (it) { handleError(context, "Could not fetch user data") }
         }){}
         userViewModel.fetchUserPersonal({
-            if (it) { handleError(context, "Could not fetch user personal") }
+            if (it) {
+                handleError(context, "Could not fetch user personal")
+                screenState.value = ScreenState.VIEWING
+            }
         }){
             screenState.value = ScreenState.VIEWING
         }
@@ -91,10 +94,16 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                 stringResource(R.string.button_sendToFridge) to {
                     loading.value = true
                     userViewModel.groceriesToFridge({
-                        if (it) { handleError(context, "Failed to send grocery items to fridge") }
+                        if (it) {
+                            handleError(context, "Failed to send grocery items to fridge")
+                            loading.value = false
+                        }
                     }) {
                         userViewModel.fetchUserPersonal({
-                            if (it) { handleError(context, "Could not fetch user personal") }
+                            if (it) {
+                                handleError(context, "Could not fetch user personal")
+                                loading.value = false
+                            }
                         }) {
                             loading.value = false
                         }
@@ -125,7 +134,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                     if (groceries.value[category]?.isNotEmpty() == true) {
                                         IngredientCategoryView(category, groceries.value[category] ?: mutableListOf(), true) { ingredient, isTicked ->
                                             userViewModel.updateIngredientTick(ingredient.uid, isTicked, {
-                                                if (it) { handleError(context, "Could not update ingredient") }
+                                                if (it) { handleError(context, "Could not update ingredient tick") }
                                             }) {}
                                         }
                                     }
@@ -229,10 +238,16 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                         showDeleteAlert.value = false
                         loading.value = true
                         userViewModel.clearIngredients(false, {
-                            if (it) { handleError(context, "Failed to clear fridge") }
+                            if (it) {
+                                handleError(context, "Failed to clear fridge")
+                                loading.value = false
+                            }
                         }) {
                             userViewModel.fetchUserPersonal({
-                                if (it) { handleError(context, "Could not fetch user personal") }
+                                if (it) {
+                                    handleError(context, "Could not fetch user personal")
+                                    loading.value = false
+                                }
                             }) {
                                 loading.value = false
                             }

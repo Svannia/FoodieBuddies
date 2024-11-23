@@ -69,7 +69,10 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             if (it) { handleError(context, "Could not fetch user data") }
         }){}
         userViewModel.fetchUserPersonal({
-            if (it) { handleError(context, "Could not fetch user personal") }
+            if (it) {
+                handleError(context, "Could not fetch user personal")
+                screenState.value = ScreenState.VIEWING
+            }
         }){
             screenState.value = ScreenState.VIEWING
         }
@@ -221,10 +224,16 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                         showDeleteAlert.value = false
                         loading.value = true
                         userViewModel.clearIngredients(true, {
-                            if (it) { handleError(context, "Failed to clear fridge") }
+                            if (it) {
+                                handleError(context, "Failed to clear fridge")
+                                loading.value = false
+                            }
                         }) {
                             userViewModel.fetchUserPersonal({
-                                if (it) { handleError(context, "Could not fetch user personal") }
+                                if (it) {
+                                    handleError(context, "Could not fetch user personal")
+                                    loading.value = false
+                                }
                             }) {
                                 loading.value = false
                             }

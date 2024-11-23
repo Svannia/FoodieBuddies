@@ -103,7 +103,10 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
             }
         }
         userViewModel.fetchAllRecipes({
-            if (it) { handleError(context, "Could not fetch all recipes") }
+            if (it) {
+                handleError(context, "Could not fetch all recipes")
+                loading.value = false
+            }
         }){
             allRecipes.value = allRecipesData
             loading.value = false
@@ -112,7 +115,10 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
     LaunchedEffect(allRecipesData) {
         loading.value = true
         userViewModel.fetchAllRecipes({
-            if (it) { handleError(context, "Could not fetch all recipes") }
+            if (it) {
+                handleError(context, "Could not fetch all recipes")
+                loading.value = false
+            }
         }){
             allRecipes.value = allRecipesData
             loading.value = false
@@ -122,9 +128,12 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
         // when the list of recipes or the filters are updated -> update the filtered recipes list
         loading.value = true
         if (filters.requireOwnedIngredients) {
-            userViewModel.recipesWithOwnedIngredients(allRecipes.value.toMutableList(), { if(it) {
-                handleError(context, "Could not filter recipes with owned ingredients")
-            } }) { recipes ->
+            userViewModel.recipesWithOwnedIngredients(allRecipes.value.toMutableList(), {
+                if(it) {
+                    handleError(context, "Could not filter recipes with owned ingredients")
+                    loading.value = false
+                }
+            }) { recipes ->
                 userViewModel.updateFilteredRecipes(filterRecipes(recipes, filters, userViewModel))
                 loading.value = false
             }

@@ -509,8 +509,8 @@ private fun IngredientItemEdit(
                         onClick = {
                             if (canShop.value) {
                                 // check that this ingredient hasn't already been added to the grocery list
-                                userViewModel.ingredientExistsInCategory(ingredient.category, ingredient.displayedName,
-                                    { error -> if (error) { handleError(context, "Could not check ingredient existence") }})
+                                userViewModel.ingredientExistsInCategory(ingredient.category, ingredient.displayedName, false,
+                                    { if (it) { handleError(context, "Could not check ingredient existence") }})
                                 { exists ->
                                     if (exists) {
                                         Toast.makeText(context, context.getString(R.string.toast_ingredientExists), Toast.LENGTH_SHORT).show()
@@ -739,24 +739,33 @@ fun loadModifications(
     removedCategories: SnapshotStateList<String>
 ) {
     userViewModel.deleteIngredients(removedItems, isInFridge, {
-        if (it) handleError(context, "Could not remove ingredient")
+        if (it) {
+            handleError(context, "Could not remove ingredient")
+            loading.value = false
+        }
     }) {
         userViewModel.addIngredients(newItems, isInFridge, {
-            if (it) handleError(context, "Could not update owned ingredients list")
+            if (it) {
+                handleError(context, "Could not update owned ingredients list")
+                loading.value = false
+            }
         }) {
             userViewModel.updateCategories(newCategories.value, editedCategories, isInFridge, {
                 if (it) {
                     handleError(context, "Could not update category names")
+                    loading.value = false
                 }
             }) {
                 userViewModel.deleteCategories(removedCategories, {
                     if (it) {
                         handleError(context, "Could not delete categories")
+                        loading.value = false
                     }
                 }) {
                     userViewModel.fetchUserPersonal({
                         if (it) {
                             handleError(context, "Could not fetch user personal")
+                            loading.value = false
                         }
                     }) {
                         list.value = fieldToRead(userPersonal)

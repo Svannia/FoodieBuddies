@@ -115,8 +115,11 @@ class DatabaseConnection {
      * @param picture Uri of the new user's picture or default picture
      * @param bio of the new user
      * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
      */
-    suspend fun createUser(userID: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
+    suspend fun createUser(userID: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // fetch default user picture
+        val defaultPicture = getDefaultPicture()
         // process the input data to create a document
         val formattedBio = bio.replace("\n", "\\n")
         val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
@@ -127,21 +130,31 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 Log.d("MyDB", "Successfully created user")
+
+                // if the user input their own profile picture -> add it to the storage (the new path is automatically created)
+                if (picture != defaultPicture) {
+                    updateUserPicture(userID, picture, { isError(it) }) {
+                        // create a document for the new user's personal data
+                        createPersonal(userID, { isError(it) }) {
+                            callBack()
+                            Log.d("MyDB", "Successfully finished user creation process")
+                        }
+                    }
+                // else -> copy the default profile picture in the new user's storage path
+                } else {
+                    copyDefaultPicture(userID, { isError(it) }) {
+                        // create a document for the new user's personal data
+                        createPersonal(userID,{ isError(it) }) {
+                            callBack()
+                            Log.d("MyDB", "Successfully finished user creation process")
+                        }
+                    }
+                }
             }
-            .addOnFailureListener {e ->
+            .addOnFailureListener { e ->
                 isError(true)
                 Log.d("MyDB", "Failed to create user with error $e")
-                return@addOnFailureListener
             }
-        // if the user input their own profile picture -> add it to the storage (the new path is automatically created)
-        if (picture != getDefaultPicture()) {
-            updateUserPicture(userID, picture, { isError(it) }) {}
-        // else -> copy the default profile picture in the new user's storage path
-        } else {
-            copyDefaultPicture(userID) { isError(it) }
-        }
-        // create a document for the new user's personal data
-        createPersonal(userID, isError)
     }
 
     /**
@@ -165,6 +178,7 @@ class DatabaseConnection {
             val bio = document.getString(BIO) ?: ""
             val formattedBio = bio.replace("\\n", "\n")
             isError(false)
+            Log.d("MyDB", "Successfully fetched user data")
             User(userID, username, picture, numberRecipes, formattedBio)
         } else {
             isError(true)
@@ -194,10 +208,17 @@ class DatabaseConnection {
             .update(task as Map<String, Any>)
             .addOnSuccessListener {
                 // if the modification was successful -> check if picture also needs to be updated
-                if (updatePicture) { updateUserPicture(userID, picture, { isError(it) }, callBack) }
-                else { callBack() }
-                isError(false)
-                Log.d("MyDB", "Successfully update user data")
+                if (updatePicture) {
+                    updateUserPicture(userID, picture, { isError(it) }) {
+                        callBack()
+                        Log.d("MyDB", "Successfully updated user data with new picture")
+                    }
+                }
+                else {
+                    isError(false)
+                    callBack()
+                    Log.d("MyDB", "Successfully updated user data without new picture")
+                }
             }
             .addOnFailureListener { e ->
                 isError(true)
@@ -221,12 +242,13 @@ class DatabaseConnection {
                 // if document deletion was successful -> also delete the profile picture
                 deleteProfilePicture(userID, { isError(it) }) {
                     // once those deletions are successful -> delete the userPersonal document
-                    deleteUserPersonal(userID, {isError(it)}) {
-                        removeUserFromAllFavourites(userID, { isError(it) }) { callBack() }
+                    deleteUserPersonal(userID, { isError(it) }) {
+                        removeUserFromAllFavourites(userID, { isError(it) }) {
+                            callBack()
+                            Log.d("MyDB", "Successfully deleted user $userID")
+                        }
                     }
                 }
-                isError(false)
-                Log.d("MyDB", "Successfully deleted user $userID")
             }
             .addOnFailureListener { e ->
                 isError(true)
@@ -243,7 +265,7 @@ class DatabaseConnection {
     suspend fun fetchAllUsers(userID: String, isError: (Boolean) -> Unit): List<User> {
         if (userID.isEmpty()) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch all users because userID $userID is empty")
+            Log.d("MyDB", "Failed to fetch all users because userID is empty")
             return emptyList()
         }
 
@@ -258,11 +280,12 @@ class DatabaseConnection {
                     val bio = document.getString(BIO) ?: ""
                     val formattedBio = bio.replace("\\n", "\n")
                     isError(false)
+                    Log.d("MyDB", "Successfully fetched all user data")
                     User(document.id, username, picture, numberRecipes, formattedBio)
                 }
         } catch (e: Exception) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch all users data for userID $userID")
+            Log.d("MyDB", "Failed to fetch all users data")
             emptyList()
         }
     }
@@ -275,8 +298,10 @@ class DatabaseConnection {
      *
      * @param userID ID of the user
      * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     *
      */
-    private fun createPersonal(userID: String, isError: (Boolean) -> Unit) {
+    private fun createPersonal(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // the initial document only contains empty lists or maps
         val user = hashMapOf(GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap())
         // add the new document to userPersonal, setting its reference to be the user UID
@@ -285,12 +310,12 @@ class DatabaseConnection {
             .set(user)
             .addOnSuccessListener {
                 isError(false)
+                callBack()
                 Log.d("MyDB", "Successfully created user personal")
             }
             .addOnFailureListener {e ->
                 isError(true)
                 Log.d("MyDB", "Failed to create user personal with error $e")
-                return@addOnFailureListener
             }
     }
 
@@ -304,34 +329,41 @@ class DatabaseConnection {
         // check that a correct userID was given
         if (userID.isEmpty()) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch user personal because userID $userID is empty")
+            Log.d("MyDB", "Failed to fetch user personal because userID is empty")
             return UserPersonal.empty()
         }
 
         // fetches the userPersonal document
         val document = userPersonalCollection.document(userID).get().await()
         return if (document.exists()) {
+            var errorOccurred = false
+
             // fetch each ingredient from the groceries map
             val groceryListRefs = document.get(GROCERIES) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val groceryList = groceryListRefs.mapValues { entry ->
                 entry.value.map { ref ->
-                    fetchIngredient(ref) { isError(it) }
+                    fetchIngredient(ref) { if (it) errorOccurred = true }
                 }
             }
             // fetch each ingredient from the fridge map
             val fridgeListRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val fridgeList = fridgeListRefs.mapValues { entry ->
                 entry.value.map { ref ->
-                    fetchIngredient(ref) { isError(it) }
+                    fetchIngredient(ref) { if (it) errorOccurred = true }
                 }
             }
             // Create and return the UserPersonal object
-            isError(false)
-            Log.d("MyDB", "Successfully fetched user personal")
-            UserPersonal(userID, groceryList, fridgeList)
+            isError(errorOccurred)
+            if (!errorOccurred) {
+                Log.d("MyDB", "Successfully fetched user personal")
+                UserPersonal(userID, groceryList, fridgeList)
+            } else {
+                Log.d("MyDB", "Failed to fetch user personal: failed to fetch some ingredient")
+                UserPersonal.empty()
+            }
         } else {
             isError(true)
-            Log.d("MyDB", "Failed to fetch user personal for userID $userID")
+            Log.d("MyDB", "Failed to fetch user personal: document does not exist")
             UserPersonal.empty()
         }
     }
@@ -353,11 +385,10 @@ class DatabaseConnection {
                 for (document in query.documents) {
                     batch.delete(document.reference)
                 }
-
                 // once all ingredients deletion is complete ->
                 batch.commit()
                     .addOnSuccessListener {
-                        Log.d("MyDB", "Successfully deleted ingredients for user $userID")
+                        Log.d("MyDB", "Successfully deleted ingredients owned by user")
                         // delete the userPersonal document of the user to be deleted
                         userPersonalCollection
                             .document(userID)
@@ -365,17 +396,20 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 callBack()
                                 isError(false)
-                                Log.d("MyDB", "Successfully deleted user personal for $userID")
+                                Log.d("MyDB", "Successfully deleted user personal")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to delete user personal for $userID with error $e")
+                                Log.d("MyDB", "Failed to delete user personal with error $e")
                             }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to delete ingredients for user $userID with error $e")
+                        Log.d("MyDB", "Failed to delete ingredients owned by user with error $e")
                     }
+            }.addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to fetch ingredients owned by user with error $e")
             }
     }
 
@@ -390,7 +424,7 @@ class DatabaseConnection {
      * @param callBack block that runs after DB was updated
      */
     fun addCategory(owner: String, category: String, ingredients: List<OwnedIngredient>, isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit ) {
-         // if the ingredients list is empty ->
+         // if the ingredients list is empty -> only add new map entry with empty value
          if (ingredients.isEmpty()) {
             userPersonalCollection
                 .document(owner)
@@ -409,16 +443,31 @@ class DatabaseConnection {
                     Log.d("MyDB", "Failed to add empty category $category with error $e")
                 }
          // if there are new ingredients to be added ->
-        } else {
-            // check how many ingredients are left to update before callBack
-            var remaining = ingredients.size
-            for (ingredient in ingredients) {
-                // add new ingredient
-                createIngredient(owner, ingredient, isInFridge, { isError(it) }) {
-                    remaining--
-                    if (remaining <= 0) {
-                        callBack()
-                    }
+         } else {
+             // check how many ingredients are left to update before callBack
+             var remaining = ingredients.size
+             var errorOccurred = false
+             for (ingredient in ingredients) {
+                 // add new ingredient (category name automatically added)
+                 createIngredient(owner, ingredient, isInFridge, {
+                     if (it) {
+                         errorOccurred = true
+                         remaining--
+                         if (remaining <= 0) {
+                             isError(true)
+                             Log.d("MyDB", "Failed to add new category $category")
+                         }
+                     }
+                 }) {
+                     remaining--
+                     if (remaining <= 0) {
+                         isError(errorOccurred)
+                         if (errorOccurred) Log.d("MyDB", "Failed to add new category $category")
+                         else {
+                             callBack()
+                             Log.d("MyDB", "Successfully added new category $category")
+                         }
+                     }
                 }
             }
         }
@@ -481,7 +530,13 @@ class DatabaseConnection {
                         isError(true)
                         Log.d("MyDB", "Failed to update category with error: $e")
                     }
+                } else {
+                    isError(true)
+                    Log.d("MyDB", "Failed to update category: user personal document does not exist")
                 }
+            }.addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to get user personal document with error $e")
             }
     }
 
@@ -513,33 +568,41 @@ class DatabaseConnection {
                     if (ingredientsToDelete.isNotEmpty()) {
                         // check how many ingredients are left to delete before next steps
                         var remaining = ingredientsToDelete.size
+                        var errorOccurred = false
                         ingredientsToDelete.forEach { ref ->
                             ref.delete()
                                 .addOnSuccessListener {
                                     remaining--
                                     if (remaining <= 0) {
-                                        // if all ingredients have been deleted ->
-                                        userPersonalCollection
-                                            .document(owner)
-                                            // delete the category entry from groceries and fridge maps
-                                            .update(
-                                                "$GROCERIES.$category",FieldValue.delete(),
-                                                "$FRIDGE.$category", FieldValue.delete()
-                                            )
-                                            .addOnSuccessListener {
-                                                Log.d("MyDB", "Successfully deleted category $category")
-                                                isError(false)
-                                                callBack()
-                                            }
-                                            .addOnFailureListener { e ->
-                                                Log.d("MyDB", "Failed to delete category $category with $e")
-                                                isError(true)
-                                            }
+                                        if (errorOccurred) isError(true)
+                                        else {
+                                            // if all ingredients have been deleted ->
+                                            userPersonalCollection
+                                                .document(owner)
+                                                // delete the category entry from groceries and fridge maps
+                                                .update(
+                                                    "$GROCERIES.$category",FieldValue.delete(),
+                                                    "$FRIDGE.$category", FieldValue.delete()
+                                                )
+                                                .addOnSuccessListener {
+                                                    isError(false)
+                                                    callBack()
+                                                    Log.d("MyDB", "Successfully deleted category $category")
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    isError(true)
+                                                    Log.d("MyDB", "Failed to delete category $category with $e")
+                                                }
+                                        }
                                     }
                                 }
                                 .addOnFailureListener { e ->
-                                    Log.d("MyDB", "Failed to delete ingredient $ref with error $e")
-                                    isError(true)
+                                    remaining--
+                                    errorOccurred = true
+                                    if (remaining <= 0) {
+                                        isError(true)
+                                    }
+                                    Log.d("MyDB", "Failed to delete ingredient with error $e")
                                 }
                         }
                     // if there are no ingredients to delete ->
@@ -552,23 +615,23 @@ class DatabaseConnection {
                                 "$FRIDGE.$category", FieldValue.delete()
                             )
                             .addOnSuccessListener {
-                                Log.d("MyDB", "Successfully deleted category $category")
                                 isError(false)
                                 callBack()
+                                Log.d("MyDB", "Successfully deleted category $category")
                             }
                             .addOnFailureListener { e ->
-                                Log.d("MyDB", "Failed to delete category $category with $e")
                                 isError(true)
+                                Log.d("MyDB", "Failed to delete category $category with $e")
                             }
                     }
                 } else {
-                    Log.d("MyDB", "Failed to delete category $category because it does not exist")
                     isError(true)
+                    Log.d("MyDB", "Failed to delete category $category because it does not exist")
                 }
             }
             .addOnFailureListener { e ->
-                Log.d("MyDB", "Failed to retrieve userPersonal for $owner with error $e")
                 isError(true)
+                Log.d("MyDB", "Failed to retrieve userPersonal for $owner with error $e")
             }
     }
 
@@ -581,23 +644,28 @@ class DatabaseConnection {
      * @param userID ID of the user
      * @param category category the ingredient should be in
      * @param ingredientName displayed name of the ingredient looked for
+     * @param isInFridge whether or not to check for ingredient existence in the fridge or in groceries
      * @param onSuccess block that runs if the check succeeds (whether or not the ingredient exists)
      * @param onFailure block that runs if there is an error executing the function
      */
-    fun ingredientExistsInCategory(userID: String, category: String, ingredientName: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+    fun ingredientExistsInCategory(userID: String, category: String, ingredientName: String, isInFridge: Boolean, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
         userPersonalCollection.document(userID).get()
             .addOnSuccessListener outerListener@{ document ->
                 if (document != null && document.exists()) {
-                    val groceriesMap = document.get(GROCERIES) as? Map<*, *>
-                    val ingredientRefs = groceriesMap?.get(category) as? List<DocumentReference>
+                    val targetField = if (isInFridge) FRIDGE else GROCERIES
+                    val map = document.get(targetField) as? Map<*, *>
+                    val ingredientRefs = map?.get(category) as? List<DocumentReference>
 
                     if (ingredientRefs != null) {
-                        var remaining = ingredientRefs.size
+                        // if the there are no ingredients in this category -> ingredient does not exist
                         if (ingredientRefs.isEmpty()) {
-                            Log.d("MyDB", "Successfully found that ingredient does not exist")
                             onSuccess(false)
+                            Log.d("MyDB", "Successfully found that ingredient does not exist")
                             return@outerListener
                         }
+                        // else loop over ingredient until it is found or none is found
+                        var remaining = ingredientRefs.size
+                        var errorOccurred = false
                         var found = false
                         ingredientRefs.forEach { ref ->
                             ref.get()
@@ -611,18 +679,26 @@ class DatabaseConnection {
                                     }
                                     remaining--
                                     if (remaining <= 0) {
-                                        Log.d("MyDB", "Successfully found that ingredient does not exist")
-                                        onSuccess(false)
+                                        if (errorOccurred) {
+                                            onFailure(IllegalStateException("Checking some ingredient failed"))
+                                            Log.d("MyDB", "Failed to check ingredient existence because fetching some ingredient ref failed")
+                                        } else {
+                                            onSuccess(false)
+                                            Log.d("MyDB", "Successfully found that ingredient does not exist")
+                                        }
                                     }
                                 }
                                 .addOnFailureListener { e ->
                                     remaining--
-                                    Log.d("MyDB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
-                                    onFailure(e)
+                                    errorOccurred = true
+                                    if (remaining <= 0) {
+                                        onFailure(e)
+                                        Log.d("MyDB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
+                                    }
                                 }
                         }
                     } else {
-                        onSuccess(false)
+                        onFailure(IllegalStateException("List of ingredient references is null"))
                         Log.d("MyDB", "Failed to check ingredient existence because ingredient references are null")
                     }
                 } else {
@@ -631,8 +707,8 @@ class DatabaseConnection {
                 }
             }
             .addOnFailureListener { e ->
-                Log.d("MyDB", "Failed to check ingredient existence because could not access userPersonal with error $e")
                 onFailure(e)
+                Log.d("MyDB", "Failed to check ingredient existence because could not access userPersonal with error $e")
             }
     }
 
@@ -645,7 +721,7 @@ class DatabaseConnection {
      * @param onFailure block that runs if there is an error executing the function
      */
     fun recipesWithOwnedIngredients(userID: String, allRecipes: MutableList<Recipe>, onSuccess: (List<Recipe>) -> Unit, onFailure: (Exception) -> Unit) {
-        // check that the list is recipes isn't empty
+        // check that the list of recipes isn't empty
         if (allRecipes.isEmpty()) {
             Log.d("MyDB", "Successfully found that list of recipes is empty")
             onSuccess(allRecipes)
@@ -665,47 +741,49 @@ class DatabaseConnection {
                                 recipe.ingredients.isEmpty()
                             }
                             onSuccess(filteredRecipes)
-                        } else {
-                            // create a list with standName of all owned ingredients
-                            val ownedIngredients = mutableListOf<String>()
-                            var remainingIngredients = ingredientRefs.size
-                            ingredientRefs.forEach { ref ->
-                                ref.get()
-                                    .addOnSuccessListener { document ->
-                                        val standName = document.getString(STAND_NAME) ?: ""
-                                        ownedIngredients.add(standName)
-                                        remainingIngredients--
-                                        if (remainingIngredients <= 0) {
-                                            // once the list of ingredients is created -> loop over recipes
-                                            val filteredRecipes = allRecipes.filter { recipe ->
-                                                recipe.ingredients.all { ingredient ->
-                                                    ingredient.standName in ownedIngredients
-                                                }
+                            return@addOnSuccessListener
+                        }
+
+                        // create a list with standName of all owned ingredients
+                        val ownedIngredients = mutableListOf<String>()
+                        var remainingIngredients = ingredientRefs.size
+                        ingredientRefs.forEach { ref ->
+                            ref.get()
+                                .addOnSuccessListener { document ->
+                                    val standName = document.getString(STAND_NAME) ?: ""
+                                    ownedIngredients.add(standName)
+                                    remainingIngredients--
+                                    if (remainingIngredients <= 0) {
+                                        // once the list of ingredients is created -> loop over recipes
+                                        val filteredRecipes = allRecipes.filter { recipe ->
+                                            recipe.ingredients.all { ingredient ->
+                                                ingredient.standName in ownedIngredients
                                             }
-                                            onSuccess(filteredRecipes)
                                         }
+                                        onSuccess(filteredRecipes)
                                     }
-                                    .addOnFailureListener { e ->
-                                        Log.d("MyDB", "Failed to fetch ingredient $ref with error $e")
-                                        onFailure(e)
-                                        remainingIngredients--
-                                    }
-                            }
+                                }
+                                .addOnFailureListener { e ->
+                                    // don't keep on filtering other ingredients -> fail function
+                                    onFailure(e)
+                                    Log.d("MyDB", "Failed to fetch ingredient with error $e")
+                                }
                         }
                     } else {
-                        Log.d("MyDB", "Failed to filter recipes by owned ingredients: userPersonal document is null")
                         onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
+                        Log.d("MyDB", "Failed to filter recipes by owned ingredients: userPersonal document is null")
                     }
                 }
                 .addOnFailureListener { e ->
-                    Log.d("MyDB", "Failed to filter recipes by owned ingredients: couldn't get document with error $e")
                     onFailure(e)
+                    Log.d("MyDB", "Failed to filter recipes by owned ingredients: couldn't get document with error $e")
                 }
         }
     }
 
     /**
      * Creates a new ingredient document and adds the necessary references.
+     * The category map entry key is automatically added if it does not exist yet.
      *
      * @param owner ID of the user
      * @param newItem OwnedIngredient object representing the new ingredient
@@ -724,7 +802,7 @@ class DatabaseConnection {
         ingredientsCollection
             .add(ingredient)
             .addOnSuccessListener {
-                Log.d("MyDB", "Successfully created user ingredient")
+                Log.d("MyDB", "Successfully created ingredient")
                 // if the new ingredient was correctly added ->
                 userPersonalCollection
                     .document(owner)
@@ -744,7 +822,7 @@ class DatabaseConnection {
                         Log.d("MyDB", "Failed to add ingredient reference with error $e")
                     }
             }
-            .addOnFailureListener {e ->
+            .addOnFailureListener { e ->
                 isError(true)
                 Log.d("MyDB", "Failed to create ingredient with error $e")
             }
@@ -763,8 +841,8 @@ class DatabaseConnection {
             val standName = document.getString(STAND_NAME) ?: ""
             val category = document.getString(CATEGORY) ?: ""
             val isTicked = document.getBoolean(IS_TICKED) ?: false
-            Log.d("MyDB", "Successfully fetched ingredient")
             isError(false)
+            Log.d("MyDB", "Successfully fetched ingredient")
             OwnedIngredient(ref.id, displayName, standName, category, isTicked)
         } else {
             isError(true)
@@ -789,11 +867,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("MyDB", "Successfully updated ingredient")
+                Log.d("MyDB", "Successfully updated ingredient tick")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to update ingredient with error $e")
+                Log.d("MyDB", "Failed to update ingredient tick with error $e")
             }
     }
 
@@ -816,18 +894,18 @@ class DatabaseConnection {
             .update(targetField, FieldValue.arrayRemove(ref))
             .addOnSuccessListener {
                 isError(false)
-                Log.d("MyDB", "Successfully deleted ingredient ref from user $owner")
+                Log.d("MyDB", "Successfully deleted ingredient ref")
 
                 // if the reference was correctly removed -> delete the ingredient document
                 ref.delete()
                     .addOnSuccessListener {
                         isError(false)
-                        Log.d("MyDB", "Successfully deleted ingredient $uid")
+                        Log.d("MyDB", "Successfully deleted ingredient")
                         callBack()
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to delete ingredient $uid with error $e")
+                        Log.d("MyDB", "Failed to delete ingredient with error $e")
                     }
             }
             .addOnFailureListener { e ->
@@ -855,70 +933,74 @@ class DatabaseConnection {
                     // get the map that needs to be cleared (fridge or groceries)
                     val targetMap = document[targetField] as? Map<String, List<DocumentReference>> ?: emptyMap()
 
-                    // if the map is already no empty -> no ingredients to clear
+                    // if the map is already empty -> no ingredients to clear
                     if (targetMap.isEmpty()) {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Map $targetField is already empty")
+                        Log.d("MyDB", "Successfully cleared ingredients: map $targetField is already empty")
+                        return@addOnSuccessListener
                     }
 
                     // if the map is not empty -> clear it
-                    else {
-                        var remainingCat = targetMap.size
-                        targetMap.forEach { (category, refs) ->
-                            var remainingRefs = refs.size
+                    var remainingCat = targetMap.size
+                    var errorOccurred = false
+                    targetMap.forEach { (category, refs) ->
+                        var remainingRefs = refs.size
 
-                            // if this category does not contain any reference -> just increase counter
-                            if (refs.isEmpty()) {
-                                remainingCat--
-                                if (remainingCat <= 0) {
-                                    isError(false)
+                        // if this category does not contain any reference -> just increase counter
+                        if (refs.isEmpty()) {
+                            remainingCat--
+                            if (remainingCat <= 0) {
+                                isError(errorOccurred)
+                                if (errorOccurred) Log.d("MyDB", "Failed to clear all ingredients")
+                                else {
                                     callBack()
                                     Log.d("MyDB", "Successfully cleared all ingredients for $targetField")
                                 }
-                            } else {
-                                refs.forEach { ref ->
-                                    ref.delete()
-                                        .addOnSuccessListener {
-                                            remainingRefs--
-                                            if (remainingRefs <= 0) {
-                                                // once all references items have been deleted -> empty the references list
-                                                userPersonalCollection.document(owner)
-                                                    .update("$targetField.$category", emptyList<DocumentReference>())
-                                                    .addOnSuccessListener {
-                                                        remainingCat--
-                                                        if (remainingCat <= 0) {
-                                                            isError(false)
+                            }
+                        } else {
+                            refs.forEach { ref ->
+                                ref.delete()
+                                    .addOnSuccessListener {
+                                        remainingRefs--
+                                        if (remainingRefs <= 0) {
+                                            // once all referenced items have been deleted -> empty the references list
+                                            userPersonalCollection.document(owner)
+                                                .update("$targetField.$category", emptyList<DocumentReference>())
+                                                .addOnSuccessListener {
+                                                    remainingCat--
+                                                    if (remainingCat <= 0) {
+                                                        isError(errorOccurred)
+                                                        if (errorOccurred) Log.d("MyDB", "Failed to clear all ingredients")
+                                                        else {
                                                             callBack()
                                                             Log.d("MyDB", "Successfully cleared all ingredients for $targetField")
                                                         }
                                                     }
-                                                    .addOnFailureListener { e ->
-                                                        isError(true)
-                                                        Log.d(
-                                                            "DB",
-                                                            "Failed to delete references in category $category with error $e"
-                                                        )
-                                                    }
+                                                }
+                                                .addOnFailureListener { e ->
+                                                    isError(true)
+                                                    Log.d("MyDB", "Failed to delete references in category $category with error $e")
+                                                }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        errorOccurred = true
+                                        remainingRefs--
+                                        if (remainingRefs <= 0) {
+                                            remainingCat--
+                                            if (remainingCat <= 0) {
+                                                isError(true)
+                                                Log.d("MyDB", "Failed to delete ingredient with error $e")
                                             }
                                         }
-                                        .addOnFailureListener { e ->
-                                            isError(true)
-                                            Log.d(
-                                                "DB",
-                                                "Failed to delete ingredient $ref with error $e"
-                                            )
-                                        }
-                                }
+                                    }
                             }
-
-
                         }
                     }
-
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to clear ingredients for user $owner: document does not exist")
+                    Log.d("MyDB", "Failed to clear ingredients: user personal document does not exist")
                 }
             }
             .addOnFailureListener { e ->
@@ -952,57 +1034,71 @@ class DatabaseConnection {
                         isError(false)
                         callBack()
                         Log.d("MyDB", "Successfully completed transfer: groceries list is empty")
+                        return@addOnSuccessListener
+                    }
+
                     // if there are groceries items to check -> go through them
-                    } else {
-                        groceries.forEach { (category, refs) ->
-                            refs.forEach { ref ->
-                                ref.get()
-                                    .addOnSuccessListener { ingredient ->
-                                        // if the ingredient is ticked ->
-                                        if (ingredient.exists() && ingredient.getBoolean(IS_TICKED) == true) {
-                                            // remove ref from groceries
-                                            newGroceries[category] = newGroceries[category]?.filter { it != ref } ?: emptyList()
-                                            // add ref to fridge if it doesn't already exist
-                                            ingredientExistsInCategory(owner, category, ingredient.getString(DISPLAY_NAME) ?: "",
-                                                onSuccess = { exists ->
-                                                    if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
-                                                },
-                                                onFailure = { e ->
-                                                    isError(true)
-                                                    Log.d("MyDB", "Failed to check if ingredient already exists in fridge with error $e")
-                                                }
+                    var errorOccurred = false
+                    groceries.forEach { (category, refs) ->
+                        refs.forEach { ref ->
+                            ref.get()
+                                .addOnSuccessListener { ingredient ->
+                                    // if the ingredient is ticked ->
+                                    if (ingredient.exists() && ingredient.getBoolean(IS_TICKED) == true) {
+                                        // remove ref from groceries
+                                        newGroceries[category] = newGroceries[category]?.filter { it != ref } ?: emptyList()
+                                        // add ref to fridge if it doesn't already exist
+                                        ingredientExistsInCategory(owner, category, ingredient.getString(DISPLAY_NAME) ?: "", true,
+                                            onSuccess = { exists ->
+                                                if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
+                                            },
+                                            onFailure = { e ->
+                                                errorOccurred = true
+                                                Log.d("MyDB", "Failed to check if ingredient already exists in fridge with error $e")
+                                            }
+                                        )
+                                    }
+                                    // decrease counter
+                                    remainingItems--
+                                    if (remainingItems <= 0) {
+                                        // bring changes to Database
+                                        userPersonalCollection
+                                            .document(owner).update(
+                                                GROCERIES, newGroceries,
+                                                FRIDGE, newFridge
                                             )
-                                        }
-                                        // increase counter
-                                        remainingItems--
-                                        if (remainingItems <= 0) {
-                                            // bring changes to Database
-                                            userPersonalCollection
-                                                .document(owner).update(
-                                                    GROCERIES, newGroceries,
-                                                    FRIDGE, newFridge
-                                                )
-                                            isError(false)
+                                        isError(errorOccurred)
+                                        if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
+                                        else {
                                             callBack()
                                             Log.d("MyDB", "Successfully finished transferring items")
                                         }
+                                    }
 
-                                    }
-                                    .addOnFailureListener { e ->
+                                }
+                                .addOnFailureListener { e ->
+                                    errorOccurred = true
+                                    remainingItems--
+                                    if (remainingItems <= 0) {
+                                        userPersonalCollection
+                                            .document(owner).update(
+                                                GROCERIES, newGroceries,
+                                                FRIDGE, newFridge
+                                            )
                                         isError(true)
-                                        Log.d("MyDB", "Failed to transfer items because $ref does not exist with error $e")
                                     }
-                            }
+                                    Log.d("MyDB", "Failed to transfer items because $ref does not exist with error $e")
+                                }
                         }
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to transfer items for user $owner: document does not exist")
+                    Log.d("MyDB", "Failed to transfer items to fridge: user personal document does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to transfer items with error $e")
+                Log.d("MyDB", "Failed to transfer items to fridge with error $e")
             }
     }
 
@@ -1048,6 +1144,13 @@ class DatabaseConnection {
         }
     }
 
+    /**
+     * Removes a user's reference in all recipes that they have as "favourite".
+     *
+     * @param userID ID of the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated.
+     */
     private fun removeUserFromAllFavourites(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         recipesCollection
             .whereArrayContains(FAVOURITE, userID)
@@ -1063,26 +1166,47 @@ class DatabaseConnection {
                 }
 
                 var remaining = recipes.size
-
+                var errorOccurred = false
                 // loop over recipes to remove user from their favouritesOf
                 recipes.forEach { recipe ->
                     val id = recipe.id
-                    removeUserFromFavourites(id, userID, { isError(it) }) {
+                    removeUserFromFavourites(id, userID, {
+                        if (it) {
+                            errorOccurred = true
+                            remaining--
+                            if (remaining <= 0) {
+                                isError(true)
+                                Log.d("MyDB", "Failed to remove user from recipe $id")
+                            }
+                        }
+                    }) {
                         remaining--
-                        if (remaining == 0) {
-                            isError(false)
-                            callBack()
-                            Log.d("MyDB","Successfully removed user from recipe favourites")
+                        if (remaining <= 0) {
+                            isError(errorOccurred)
+                            if (errorOccurred) {
+                                Log.d("MyDB", "Failed to remove user from some recipe")
+                            } else {
+                                callBack()
+                                Log.d("MyDB","Successfully removed user from recipe favourites")
+                            }
                         }
                     }
-
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to query all recipes with $userID in their favourites with error $e")
+                Log.d("MyDB", "Failed to query all recipes with user in their favourites with error $e")
             }
     }
+
+    /**
+     * Removes a user's favourite by removing their reference from the recipe.
+     *
+     * @param uid of the recipe
+     * @param userID of the user removing the favourite
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
     fun removeUserFromFavourites(uid: String, userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         recipesCollection
             .document(uid)
@@ -1115,8 +1239,9 @@ class DatabaseConnection {
      *
      * @param userID ID of the user
      * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
      */
-    private fun copyDefaultPicture(userID: String, isError: (Boolean) -> Unit) {
+    private fun copyDefaultPicture(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val defaultRef = storage.child(defaultPicturePath)
         val pictureRef = storage.child(userPicturePath(userID))
 
@@ -1129,17 +1254,33 @@ class DatabaseConnection {
                     .putBytes(defaultData)
                     .addOnSuccessListener {
                         // if the picture was correctly copied -> fetch its URL
-                        pictureRef.downloadUrl.addOnSuccessListener { uri ->
-                            // add the new URI as the picture field in the new user's userData document
-                            userDataCollection.document(userID).update(PICTURE, uri.toString())
-                            isError(false)
-                            Log.d("MyDB", "Successfully added user profile picture")
-                        }
+                        pictureRef.downloadUrl
+                            .addOnSuccessListener { uri ->
+                                // add the new URI as the picture field in the new user's userData document
+                                userDataCollection.document(userID).update(PICTURE, uri.toString())
+                                    .addOnSuccessListener {
+                                        isError(false)
+                                        callBack()
+                                        Log.d("MyDB", "Successfully added user profile picture")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        isError(true)
+                                        Log.d("MyDB", "Failed to update user profile picture with error $e")
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("MyDB", "Failed to add user profile picture with error $e")
+                            }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
                         Log.d("MyDB", "Failed to add user profile picture with error: $e")
                     }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to copy default picture bytes with error $e")
             }
     }
 
@@ -1158,13 +1299,24 @@ class DatabaseConnection {
             .putFile(picture)
             .addOnSuccessListener {
                 // if the picture was correctly added -> fetch its URL
-                pictureRef.downloadUrl.addOnSuccessListener { uri ->
-                    // add the new URI as the picture field in the userData document
-                    userDataCollection.document(userID).update(PICTURE, uri.toString())
-                        isError(false)
-                        callBack()
-                }
-                Log.d("MyDB", "Successfully updated user profile picture")
+                pictureRef.downloadUrl
+                    .addOnSuccessListener { uri ->
+                        // add the new URI as the picture field in the userData document
+                        userDataCollection.document(userID).update(PICTURE, uri.toString())
+                            .addOnSuccessListener {
+                                isError(false)
+                                callBack()
+                                Log.d("MyDB", "Successfully updated user profile picture")
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("MyDB", "Failed to update user profile picture with error $e")
+                            }
+                    }
+                    .addOnFailureListener { e ->
+                        isError(true)
+                        Log.d("MyDB", "Failed to download picture URI with error $e")
+                    }
             }
             .addOnFailureListener { e ->
                 val errorCode = (e as? StorageException)?.errorCode
@@ -1203,25 +1355,36 @@ class DatabaseConnection {
     private fun deleteProfilePicture(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // deletes all items in the user's storage data path
         val folderRef = storage.child(userPath(userID))
-        folderRef.listAll().addOnSuccessListener { result ->
-            // check how many items are left to be deleted before callBack
-            var deletedCount = 0
-            val totalCount = result.items.size
-            result.items.forEach { item ->
-                item.delete().addOnSuccessListener {
-                    deletedCount++
-                    isError(false)
-                    Log.d("MyDB", "Successfully deleted stored files from user $userID")
-                    if (deletedCount == totalCount) { callBack() }
-                }.addOnFailureListener { e ->
-                    isError(true)
-                    Log.d("MyDB", "Failed to delete stored files from user $userID with error $e")
+        folderRef.listAll()
+            .addOnSuccessListener { result ->
+                // check how many items are left to be deleted before callBack
+                var remaining = result.items.size
+                var errorOccurred = false
+                result.items.forEach { item ->
+                    item.delete().addOnSuccessListener {
+                        remaining--
+                        if (remaining <= 0) {
+                            isError(errorOccurred)
+                            if (errorOccurred) {
+                                Log.d("MyDB", "Failed to delete stored files")
+                            } else {
+                                callBack()
+                                Log.d("MyDB", "Successfully deleted stored files")
+                            }
+                        }
+                    }.addOnFailureListener { e ->
+                        remaining--
+                        errorOccurred = true
+                        if (remaining <= 0) {
+                            isError(true)
+                            Log.d("MyDB", "Failed to delete stored files with error $e")
+                        }
+                    }
                 }
+            }.addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to list stored files with error $e")
             }
-        }.addOnFailureListener { e ->
-            isError(true)
-            Log.d("MyDB", "Failed to list stored files from user $userID with error $e")
-        }
     }
 
 

@@ -167,7 +167,10 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                     {
                         loading.value = true
                         userViewModel.deleteUser({
-                            if (it) { handleError(context, "Could not delete user data") }
+                            if (it) {
+                                handleError(context, "Could not delete user data")
+                                loading.value = false
+                            }
                         }) {
                             signOut(context)
                             deleteAuthentication(context)

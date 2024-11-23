@@ -64,13 +64,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
      * @param picture Uri for the profile picture
      * @param bio input by user (can be empty)
      * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after data was created
      */
-    fun createUser(username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit) {
+    fun createUser(username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
-                db.createUser(userID, username, picture, bio) {
-                    isError(it)
-                }
+                db.createUser(userID, username, picture, bio, { isError(it) }) { callBack() }
             } else {
                 isError(true)
                 Log.d("UserVM", "Failed to create user: ID is null")
@@ -92,19 +91,25 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
-                            val newUser = db.fetchUserData(userID) { isError(it) }
-                            isError(false)
+                            var errorOccurred = false
+                            val newUser = db.fetchUserData(userID) { if (it) errorOccurred = true }
                             _userData.value = newUser
-                            callBack()
+                            isError(errorOccurred)
+                            if (!errorOccurred) callBack()
                         }
                     } else {
+                        isError(true)
                         Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
                     }
                 },
                 onFailure = { e ->
+                    isError(true)
                     Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
+        } else {
+            isError(true)
+            Log.d("UserVM", "Failed to fetch user data: ID is null")
         }
     }
 
@@ -130,9 +135,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun updateUser(username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.updateUser(userID, username, picture, bio, updatePicture, { isError(it) }) {
-                fetchUserData({ isError(it) }) {callBack()}
+                fetchUserData({ isError(it) }) { callBack() }
             }
         }  else {
+            isError(true)
             Log.d("UserVM", "Failed to update user: ID is null")
         }
     }
@@ -154,8 +160,9 @@ constructor(private val userID: String ?= null) : ViewModel() {
      */
     fun deleteUser(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
-            db.deleteUser(userID, { isError(it) }, callBack)
+            db.deleteUser(userID, { isError(it) }) { callBack() }
         } else {
+            isError(true)
             Log.d("UserVM", "Failed to delete user: ID is null")
         }
     }
@@ -176,20 +183,28 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
-                            val allUsers = db.fetchAllUsers(userID) { isError(it) }
+                            var errorOccurred = false
+                            val allUsers = db.fetchAllUsers(userID) { if (it) errorOccurred = true }
                             _allUsers.value = allUsers
-                            callBack()
+                            isError(errorOccurred)
+                            if (!errorOccurred) callBack()
                         }
                     } else {
+                        isError(true)
                         Log.d("UserVM", "Failed to retrieve all users: user does not exist.")
                     }
                 },
                 onFailure = { e ->
+                    isError(true)
                     Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
+        } else {
+            isError(true)
+            Log.d("UserVM", "Failed to fetch all users data: ID is null")
         }
     }
+
 
     // recipes and filters
     /**
@@ -200,17 +215,28 @@ constructor(private val userID: String ?= null) : ViewModel() {
      */
     fun fetchAllRecipes(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
-            val allRecipes = db.fetchAllRecipes { isError(it) }
+            var errorOccurred = false
+            val allRecipes = db.fetchAllRecipes { if (it) errorOccurred = true }
             _allRecipes.value = allRecipes
-            Log.d("RecipeVM", "Fetched all recipes $allRecipes")
-            callBack()
+            isError(errorOccurred)
+            if (!errorOccurred) callBack()
         }
     }
 
+    /**
+     * Updates the ViewModel's filters with new ones.
+     *
+     * @param newFilters RecipeFilters object for new filters
+     */
     fun updateFilters(newFilters: RecipeFilters) {
         _filters.value = newFilters
     }
 
+    /**
+     * Updates the filtered recipes with new ones.
+     *
+     * @param newFilteredRecipeFilters list of Recipe objects for new filtered recipes
+     */
     fun updateFilteredRecipes(newFilteredRecipeFilters: List<Recipe>) {
         _filteredRecipes.value = newFilteredRecipeFilters
     }
@@ -231,21 +257,25 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 onSuccess = { userExists ->
                     if (userExists) {
                         viewModelScope.launch {
-                            val newUserPersonal = db.fetchUserPersonal(userID) { isError(it) }
-                            isError(false)
+                            var errorOccurred = false
+                            val newUserPersonal = db.fetchUserPersonal(userID) { if (it) errorOccurred = true }
                             _userPersonal.value = newUserPersonal
-                            callBack()
+                            isError(errorOccurred)
+                            if (!errorOccurred) callBack()
                         }
                     } else {
+                        isError(true)
                         Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
                     }
                 },
                 onFailure = { e ->
+                    isError(true)
                     Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         } else {
-            Log.d("UserVM", "userID is null")
+            isError(true)
+            Log.d("UserVM", "Failed to fetch user personal: ID is null")
         }
     }
 
@@ -265,21 +295,39 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 if (newCategories.isNotEmpty()) {
                     // check how many newCategories are left to add before callBack
                     var remaining = newCategories.size
+                    var errorOccurred = false
                     // for each new category, create it (also adds the potential new ingredients)
                     newCategories.forEach { (category, ingredients) ->
-                        db.addCategory(userID, category, ingredients, isInFridge, {isError(it)}) {
+                        db.addCategory(userID, category, ingredients, isInFridge, {
+                            if (it) {
+                                errorOccurred = true
+                                remaining--
+                                if (remaining <= 0) {
+                                    editCategoryNames(editedCategories, { isError(true) }) {
+                                        isError(true)
+                                        Log.d("UserVM", "Failed to update categories: error in DB")
+                                    }
+                                }
+                            }
+                        }) {
                             remaining--
-                            // if all categories have been added, process the name changes
-                            if (remaining <= 0) { editCategoryNames(editedCategories, {isError(it)}) { callBack() }
+                            // if all categories have been added -> process the name changes
+                            if (remaining <= 0) {
+                                editCategoryNames(editedCategories, { if (it) errorOccurred = true }) {
+                                    isError(errorOccurred)
+                                    if (errorOccurred) Log.d("UserVM", "Failed to update categories: error in DB")
+                                    else callBack()
+                                }
                             }
                         }
                     }
                 // if there are no categories to add -> process name changes
                 } else {
-                    editCategoryNames(editedCategories, {isError(it)}) { callBack() }
+                    editCategoryNames(editedCategories, { isError(it) }) { callBack() }
                 }
             } else {
-                Log.d("UserVM", "Could not update categories, userID is null")
+                isError(true)
+                Log.d("UserVM", "Failed to update categories: userID is null")
             }
         }
     }
@@ -297,18 +345,39 @@ constructor(private val userID: String ?= null) : ViewModel() {
             if (removedCategories.isNotEmpty()) {
                 // check how many categories left to delete before callBack
                 var remaining = removedCategories.size
+                var errorOccurred = false
                 removedCategories.forEach { category ->
-                    db.deleteCategory(userID, category, { isError(it) }) {
+                    db.deleteCategory(userID, category, {
+                        if (it) {
+                            errorOccurred = true
+                            remaining--
+                            if (remaining <= 0) {
+                                isError(true)
+                                Log.d("UserVM", "Failed to delete categories")
+                                fetchUserPersonal({}, {})
+                            }
+                        }
+                    }) {
                         remaining--
-                        if (remaining <= 0) { fetchUserPersonal( { isError(it) } ) { callBack() } }
+                        if (remaining <= 0) {
+                            if (errorOccurred) {
+                                isError(true)
+                                Log.d("UserVM", "Failed to delete categories")
+                                fetchUserPersonal({}, {})
+                            } else {
+                                fetchUserPersonal( { isError(it) } ) { callBack() }
+                            }
+                        }
                     }
                 }
             // if there are no categories to delete -> directly callBack
             } else {
+                isError(false)
                 callBack()
             }
         } else {
-            Log.d("UserVM", "Could not delete categories, userID is null")
+            isError(true)
+            Log.d("UserVM", "Could not delete categories: userID is null")
         }
     }
 
@@ -317,16 +386,18 @@ constructor(private val userID: String ?= null) : ViewModel() {
      *
      * @param category category the ingredient should be in
      * @param ingredient displayed name of the ingredient looked for
+     * @param isInFridge whether or not to check for ingredient existence in the fridge or in groceries
      * @param isError block that runs if there is an error executing the function
      * @param onResult block that runs if the function succeeded, with the existence result
      */
-    fun ingredientExistsInCategory(category: String, ingredient: String, isError: (Boolean) -> Unit, onResult: (Boolean) -> Unit) {
+    fun ingredientExistsInCategory(category: String, ingredient: String, isInFridge: Boolean, isError: (Boolean) -> Unit, onResult: (Boolean) -> Unit) {
         if (userID != null) {
             // only fetches data if user exists
             db.ingredientExistsInCategory(
                 userID = userID,
                 category = category,
                 ingredientName = ingredient,
+                isInFridge = isInFridge,
                 onSuccess = { ingredientExists ->
                     isError(false)
                     onResult(ingredientExists)
@@ -355,20 +426,33 @@ constructor(private val userID: String ?= null) : ViewModel() {
             if (userID != null) {
                 // if the map is not empty ->
                 if (newItems.isNotEmpty()) {
-                    // check how many categories still have ingredients left to add before callBack
                     var remainingItems = newItems.size
+                    var errorOccurred = false
                     // for each category, if there are new ingredients to add ->
                     newItems.forEach { (_, ingredients) ->
                         if (ingredients.isNotEmpty()) {
                             // check how many ingredients are left to add before decreasing category counter
                             var remaining = ingredients.size
                             ingredients.forEach { ingredient ->
-                                db.createIngredient(userID, ingredient, isInFridge, {isError(it) }) {
+                                db.createIngredient(userID, ingredient, isInFridge, {
+                                    if (it) {
+                                        errorOccurred = true
+                                        remaining--
+                                        if (remaining <= 0) {
+                                            remainingItems--
+                                            if (remainingItems <= 0) {
+                                                isError(true)
+                                                Log.d("UserVM", "Failed to add ingredient")
+                                            }
+                                        }
+                                    }
+                                }) {
                                     remaining--
                                     if (remaining <= 0) {
                                         remainingItems--
                                         if (remainingItems <= 0) {
-                                            callBack()
+                                            if (errorOccurred) Log.d("UserVM", "Failed to add ingredient")
+                                            else callBack()
                                         }
                                     }
                                 }
@@ -376,15 +460,20 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         // if this category does not have any new ingredients -> decrease category counter
                         } else { remainingItems--
                             if (remainingItems <= 0) {
-                                callBack()
+                                isError(errorOccurred)
+                                if (errorOccurred) Log.d("UserVM", "Failed to add ingredients")
+                                else callBack()
                             }
                         }
                     }
                 // if the map is empty -> callBack
-                } else { callBack() }
+                } else {
+                    isError(false)
+                    callBack()
+                }
             } else {
                 isError(true)
-                Log.d("UserVM", "Failed to add ingredients: ID is null")
+                Log.d("UserVM", "Failed to add ingredients: userID is null")
             }
         }
     }
@@ -400,9 +489,11 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun updateIngredientTick(uid: String, ticked: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
             db.updateIngredientTick(uid, ticked, { isError(it) }) {
-                fetchUserPersonal({ isError(it) }) { callBack()} }
-        }  else {
-            Log.d("UserVM", "Failed to update user: ID is null")
+                fetchUserPersonal({ isError(it) }) { callBack()}
+            }
+        } else {
+            isError(true)
+            Log.d("UserVM", "Failed to update ingredient tick: userID is null")
         }
     }
 
@@ -417,35 +508,55 @@ constructor(private val userID: String ?= null) : ViewModel() {
         if (userID != null) {
             // if the map is not empty
             if (removedItems.isNotEmpty()) {
-                // check how many categories are left with ingredients to delete before callBack
                 var remainingItems = removedItems.size
+                var errorOccurred = false
                 removedItems.forEach { (category, ingredients) ->
                     // if this category has ingredients to delete ->
                     if (ingredients.isNotEmpty()) {
-                        // check how ingredients are left to delete before decreasing category counter
                         var remaining = ingredients.size
                         ingredients.forEach { ingredient ->
-                            db.deleteIngredient(ingredient, userID, category, isInFridge, { isError(it) }){
+                            db.deleteIngredient(ingredient, userID, category, isInFridge, {
+                                if (it) {
+                                    errorOccurred = true
+                                    remaining--
+                                    if (remaining <= 0) {
+                                        remainingItems--
+                                        if (remainingItems <= 0) {
+                                            isError(true)
+                                            Log.d("UserVM", "Failed to delete ingredient")
+                                        }
+                                    }
+                                }
+                            }){
                                 remaining--
                                 if (remaining <= 0) {
                                     remainingItems--
                                     if (remainingItems <= 0) {
-                                        callBack()
+                                        isError(errorOccurred)
+                                        if (errorOccurred) Log.d("UserVM", "Failed to delete ingredient")
+                                        else callBack()
                                     }
                                 }
                             }
                         }
                     // if this category does not have any ingredient to delete -> decrease category counter
-                    } else { remainingItems--
+                    } else {
+                        remainingItems--
                         if (remainingItems <= 0) {
-                            callBack()
+                            isError(errorOccurred)
+                            if (errorOccurred) Log.d("UserVM", "Failed to delete ingredient")
+                            else callBack()
                         }
                     }
                 }
             // if the map is empty -> callBack
-            } else { callBack() }
+            } else {
+                isError(false)
+                callBack()
+            }
         } else {
-            Log.d("UserVM", "Failed to delete ingredient: ID is null")
+            isError(true)
+            Log.d("UserVM", "Failed to delete ingredient: userID is null")
         }
     }
 
@@ -462,17 +573,35 @@ constructor(private val userID: String ?= null) : ViewModel() {
             if (editedCategories.isNotEmpty()) {
                 // check how many categories are left to update before callBack
                 var remaining = editedCategories.size
+                var errorOccurred = false
                 editedCategories.forEach { (old, new) ->
-                    db.updateCategory(userID, old, new, {isError(it)})
+                    db.updateCategory(userID, old, new, {
+                        if (it) {
+                            errorOccurred = true
+                            remaining--
+                            if (remaining <= 0) {
+                                isError(true)
+                                Log.d("UserVM", "Failed to edit category names")
+                            }
+                        }
+                    })
                     {
                         remaining--
-                        if (remaining <= 0) { callBack() }
+                        if (remaining <= 0) {
+                            isError(errorOccurred)
+                            if (errorOccurred) Log.d("UserVM", "Failed to edit category names")
+                            else callBack()
+                        }
                     }
                 }
             // if the map is empty -> callBack
-            } else { callBack() }
+            } else {
+                isError(false)
+                callBack()
+            }
         } else {
-            Log.d("UserVM", "Failed to edit category name: ID is null")
+            isError(true)
+            Log.d("UserVM", "Failed to edit category name: userID is null")
         }
     }
 
@@ -485,9 +614,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
      */
     fun clearIngredients(isInFridge: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
-            db.clearIngredients(userID, isInFridge, {isError(it)}) { callBack() }
+            db.clearIngredients(userID, isInFridge, { isError(it) }) { callBack() }
         } else {
-            Log.d("UserVM", "Failed to clear fridge: ID is null")
+            isError(true)
+            Log.d("UserVM", "Failed to clear all ingredients: userID is null")
         }
     }
 
@@ -499,9 +629,10 @@ constructor(private val userID: String ?= null) : ViewModel() {
      */
     fun groceriesToFridge(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
-            db.groceriesToFridge(userID, {isError(it)}) { callBack() }
+            db.groceriesToFridge(userID, { isError(it) }) { callBack() }
         } else {
-            Log.d("UserVM", "Failed to transfer items to fridge: ID is null")
+            isError(true)
+            Log.d("UserVM", "Failed to transfer items to fridge: userID is null")
         }
     }
 
@@ -527,7 +658,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to check ingredient existence: ID is null")
+            Log.d("UserVM", "Failed to check ingredient existence: userID is null")
         }
     }
 }
