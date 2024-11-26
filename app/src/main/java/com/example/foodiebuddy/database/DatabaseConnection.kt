@@ -693,8 +693,8 @@ class DatabaseConnection {
                                     errorOccurred = true
                                     if (remaining <= 0) {
                                         onFailure(e)
-                                        Log.d("MyDB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
                                     }
+                                    Log.d("MyDB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
                                 }
                         }
                     } else {
@@ -991,9 +991,9 @@ class DatabaseConnection {
                                             remainingCat--
                                             if (remainingCat <= 0) {
                                                 isError(true)
-                                                Log.d("MyDB", "Failed to delete ingredient with error $e")
                                             }
                                         }
+                                        Log.d("MyDB", "Failed to delete ingredient with error $e")
                                     }
                             }
                         }
@@ -1189,8 +1189,8 @@ class DatabaseConnection {
                             remaining--
                             if (remaining <= 0) {
                                 isError(true)
-                                Log.d("MyDB", "Failed to remove user from recipe $id")
                             }
+                            Log.d("MyDB", "Failed to remove user from recipe $id")
                         }
                     }) {
                         remaining--
@@ -1390,8 +1390,8 @@ class DatabaseConnection {
                         errorOccurred = true
                         if (remaining <= 0) {
                             isError(true)
-                            Log.d("MyDB", "Failed to delete stored files with error $e")
                         }
+                        Log.d("MyDB", "Failed to delete stored files with error $e")
                     }
                 }
             }.addOnFailureListener { e ->

@@ -305,9 +305,9 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                 if (remaining <= 0) {
                                     editCategoryNames(editedCategories, { isError(true) }) {
                                         isError(true)
-                                        Log.d("UserVM", "Failed to update categories: error in DB")
                                     }
                                 }
+                                Log.d("UserVM", "Failed to update categories: error in DB")
                             }
                         }) {
                             remaining--
@@ -353,9 +353,9 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             remaining--
                             if (remaining <= 0) {
                                 isError(true)
-                                Log.d("UserVM", "Failed to delete categories")
                                 fetchUserPersonal({}, {})
                             }
+                            Log.d("UserVM", "Failed to delete categories")
                         }
                     }) {
                         remaining--
@@ -442,9 +442,9 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                             remainingItems--
                                             if (remainingItems <= 0) {
                                                 isError(true)
-                                                Log.d("UserVM", "Failed to add ingredient")
                                             }
                                         }
+                                        Log.d("UserVM", "Failed to add ingredient")
                                     }
                                 }) {
                                     remaining--
@@ -523,9 +523,9 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                         remainingItems--
                                         if (remainingItems <= 0) {
                                             isError(true)
-                                            Log.d("UserVM", "Failed to delete ingredient")
                                         }
                                     }
+                                    Log.d("UserVM", "Failed to delete ingredient")
                                 }
                             }){
                                 remaining--
@@ -581,8 +581,8 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             remaining--
                             if (remaining <= 0) {
                                 isError(true)
-                                Log.d("UserVM", "Failed to edit category names")
                             }
+                            Log.d("UserVM", "Failed to edit category names")
                         }
                     })
                     {
