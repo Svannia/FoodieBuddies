@@ -1051,8 +1051,6 @@ class DatabaseConnection {
                                         ingredientExistsInCategory(owner, category, ingredient.getString(DISPLAY_NAME) ?: "", true,
                                             onSuccess = { exists ->
                                                 if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
-                                                Log.d("Debug", "ingredient exists in fridge: $exists")
-                                                Log.d("Debug", "new fridge has $newFridge")
                                                 // decrease counter
                                                 remainingItems--
                                                 if (remainingItems <= 0) {
@@ -1062,7 +1060,6 @@ class DatabaseConnection {
                                                             GROCERIES, newGroceries,
                                                             FRIDGE, newFridge
                                                         )
-                                                    Log.d("Debug", "new fridge personal should have ${newFridge}")
                                                     isError(errorOccurred)
                                                     if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
                                                     else {
@@ -1233,6 +1230,63 @@ class DatabaseConnection {
                 isError(true)
                 Log.d("MyDB", "Failed to remove user from favourites with error $e")
             }
+    }
+
+    /**
+     * Checks if a recipe exists in the DB.
+     *
+     * @param recipeID ID of the recipe whose existence to check
+     * @param onSuccess block that runs if the check succeeds (whether or not the recipe exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun recipeExists(recipeID: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        recipesCollection
+            .document(recipeID)
+            .get()
+            .addOnSuccessListener { document -> onSuccess(document.exists()) }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
+    /**
+     * Fetches all of a recipe's data.
+     *
+     * @param recipeID ID of the recipe whose data to retrieve
+     * @return Recipe data object with all recipe data
+     */
+    suspend fun fetchRecipeData(recipeID: String, isError: (Boolean) -> Unit): Recipe {
+        if (recipeID.isEmpty()) {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch recipe data because recipeID is empty")
+            return Recipe.empty()
+        }
+
+        val document = recipesCollection.document(recipeID).get().await()
+        return if (document.exists()) {
+            val owner = document.getString(OWNER) ?: ""
+            val ownerName = document.getString(OWNER_NAME) ?: ""
+            val name = document.getString(NAME) ?: ""
+            val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
+            val recipe = document.getString(RECIPE) ?: ""
+            val formattedRecipe = recipe.replace("\\n", "\n")
+            val ingredients = (document.get(INGREDIENTS) as? List<Map<String, String>>)?.map { map ->
+                RecipeIngredient(
+                    displayedName = map[DISPLAY_NAME] ?: "",
+                    standName = map[STAND_NAME] ?: "",
+                    quantity = map[QUANTITY] ?: ""
+                )
+            } ?: emptyList()
+            val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
+            val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
+            val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
+            val tags = tagsList.map { Tag.valueOf(it) }
+            val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
+            isError(false)
+            Recipe(document.id, owner, ownerName, name, picture, formattedRecipe, ingredients, origin, diet, tags, favouriteOf)
+        } else {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch recipe data")
+            Recipe.empty()
+        }
     }
 
 

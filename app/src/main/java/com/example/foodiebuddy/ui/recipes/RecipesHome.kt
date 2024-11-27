@@ -2,7 +2,6 @@ package com.example.foodiebuddy.ui.recipes
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -45,6 +45,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.motionEventSpy
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -63,6 +64,7 @@ import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.MiniLoading
+import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.PrimaryScreen
 import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
@@ -141,8 +143,6 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
             userViewModel.updateFilteredRecipes(filterRecipes(allRecipes.value, filters, userViewModel))
             loading.value = false
         }
-        Log.d("Debug", "after filtering, filter is $filters")
-        Log.d("Debug", "after filtering, recipes are $filteredRecipes")
     }
 
     if (!showFilters.value) {
@@ -152,13 +152,25 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
             title = stringResource(R.string.title_recipes),
             navigationIndex = 0,
             topBarIcons = {
-                IconButton(
-                    onClick = { showFilters.value = !showFilters.value }
+                Row(
+                    modifier = Modifier.padding(0.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painterResource(R.drawable.filter),
-                        modifier = Modifier.size(28.dp),
-                        contentDescription = stringResource(R.string.desc_filters)
+                    // filters button
+                    IconButton(
+                        onClick = { showFilters.value = !showFilters.value }
+                    ) {
+                        Icon(
+                            painterResource(R.drawable.filter),
+                            modifier = Modifier.size(28.dp),
+                            contentDescription = stringResource(R.string.desc_filters)
+                        )
+                    }
+                    // options menu
+                    OptionsMenu(
+                        stringResource(R.string.button_newRecipe) to { navigationActions.navigateTo("${Route.RECIPE_EDIT}/") },
+                        stringResource(R.string.button_drafts) to {}
                     )
                 }
 
@@ -346,6 +358,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                 placeHolder = stringResource(R.string.field_keywords),
                                 singleLine = true,
                                 maxLength = 25,
+                                showMaxChara = false,
                                 width = 300.dp
                             )
                         }

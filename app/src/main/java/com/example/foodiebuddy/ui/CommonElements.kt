@@ -37,6 +37,8 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerState
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -523,6 +525,44 @@ fun DialogWindow(
             }
         }
     )
+}
+
+/**
+ * Element that creates an icon button that opens a drop-down menu of options when pressed.
+ *
+ * @param options non-exhaustive number of pairs.
+ * Each pair contains a string for the name of the action appearing in the drop-down menu,
+ * and a block to run when that button is pressed.
+ */
+@Composable
+fun OptionsMenu(vararg options: Pair<String, () -> Unit>) {
+    val menuExpanded = remember { mutableStateOf(false) }
+
+    Row{
+        IconButton(
+            onClick = { menuExpanded.value = !menuExpanded.value }
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.options),
+                modifier = Modifier.size(28.dp),
+                contentDescription = stringResource(R.string.button_options)
+            )
+        }
+        DropdownMenu(
+            expanded = menuExpanded.value,
+            onDismissRequest = { menuExpanded.value = false }
+        ) {
+            for ((text, block) in options) {
+                DropdownMenuItem(
+                    text = { Text(text) },
+                    onClick = {
+                        menuExpanded.value = false
+                        block()
+                    }
+                )
+            }
+        }
+    }
 }
 
 /**

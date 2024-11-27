@@ -634,43 +634,6 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
     }
 }
 
-/**
- * Element that creates an icon button that opens a drop-down menu of options when pressed.
- *
- * @param options non-exhaustive number of pairs.
- * Each pair contains a string for the name of the action appearing in the drop-down menu,
- * and a block to run when that button is pressed.
- */
-@Composable
-fun OptionsMenu(vararg options: Pair<String, () -> Unit>) {
-    val menuExpanded = remember { mutableStateOf(false) }
-
-    Row{
-        IconButton(
-            onClick = { menuExpanded.value = !menuExpanded.value }
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.options),
-                contentDescription = stringResource(R.string.button_options)
-            )
-        }
-        DropdownMenu(
-            expanded = menuExpanded.value,
-            onDismissRequest = { menuExpanded.value = false }
-        ) {
-            for ((text, block) in options) {
-                DropdownMenuItem(
-                    text = { Text(text) },
-                    onClick = {
-                        menuExpanded.value = false
-                        block()
-                    }
-                )
-            }
-        }
-    }
-}
-
 // shared functionalities
 
 /**

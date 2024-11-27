@@ -4,6 +4,7 @@
     <string name="alert_deleteAccount">Are you sure you want to delete your account?\nThis cannot be undone.</string>
     <string name="alert_deleteCatFridge">Warning: this action will also delete this category and all its elements in \"Groceries list\"</string>
     <string name="alert_deleteCatGroceries">Warning: this action will also delete this category and all its elements in \"My Fridge\"</string>
+    <string name="alert_exitRecipe">If you exit now, this recipe will be lost.\nYou can save it to your drafts to get back on it later.</string>
     <string name="alert_termsConditions">
         This app is strictly for private use: only install it if you received it from Alice.\n
         \nDo not share the installation file without Alice\'s approval. If she finds an unauthorized account, she will delete it immediately.\n
@@ -20,9 +21,12 @@
     <string name="button_clearList">Clear entire list</string>
     <string name="button_delete">Delete</string>
     <string name="button_deleteAccount">Delete account</string>
+    <string name="button_drafts">My Drafts</string>
     <string name="button_edit">Edit</string>
     <string name="button_modifyProfilePicture">Edit your profile picture</string>
+    <string name="button_newRecipe">New Recipe</string>
     <string name="button_options">options</string>
+    <string name="button_quit">Leave</string>
     <string name="button_reset">Reset</string>
     <string name="button_save">Save</string>
     <string name="button_seeResults">Show results</string>

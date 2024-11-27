@@ -29,6 +29,7 @@ import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.ingredients.FridgeHome
 import com.example.foodiebuddy.ui.ingredients.GroceriesHome
+import com.example.foodiebuddy.ui.recipes.RecipeEdit
 import com.example.foodiebuddy.ui.recipes.RecipeView
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
@@ -173,6 +174,20 @@ class MainActivity : ComponentActivity() {
                                 }
                                 RecipeView(recipeVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipe of recipe $recipeID")
+                            }
+                        }
+                        composable(
+                            route = "${Route.RECIPE_EDIT}/?recipeID={recipeID}",
+                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType; nullable = true })
+                        ) { backStackEntry ->
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val recipeID = backStackEntry.arguments?.getString("recipeID")
+                                val recipeVM: RecipeViewModel = if (!recipeID.isNullOrBlank()) {
+                                    viewModel { RecipeViewModel(recipeID) }
+                                } else viewModel { RecipeViewModel() }
+                                RecipeEdit(userVM, recipeVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Recipe Edit for recipeID $recipeID")
                             }
                         }
 

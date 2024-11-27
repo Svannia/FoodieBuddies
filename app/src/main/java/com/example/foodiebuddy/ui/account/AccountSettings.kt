@@ -33,8 +33,12 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
     val pictureEdited = rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        loadingData.value = true
         userViewModel.fetchUserData({
-            if (it) { handleError(context, "Could not fetch user data") }
+            if (it) {
+                handleError(context, "Could not fetch user data")
+                loadingData.value = false
+            }
         }){
             if (userData != User.empty()) {
                 nameState.value = userData.username
@@ -42,6 +46,7 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                 currentPicture.value = userData.picture
                 bioState.value = userData.bio
             }
+            loadingData.value = false
         }
     }
     LaunchedEffect(userData) {
@@ -63,7 +68,8 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                 onCancel = {
                     editingPicture.value = false
                     pictureState.value = currentPicture.value
-                }) {uri ->
+                }
+            ) {uri ->
                 pictureState.value = uri
                 currentPicture.value = uri
                 editingPicture.value = false
@@ -98,9 +104,6 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                     loadingData.value = false
                 }
 
-            }
-            BackHandler {
-                navigationActions.navigateTo(Route.LOGIN, true)
             }
         }
     }

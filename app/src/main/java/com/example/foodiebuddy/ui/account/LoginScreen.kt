@@ -127,7 +127,7 @@ private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: 
                 onSuccess = { userExists ->
                     // if the user already exists -> navigate to home page
                     if (userExists) {
-                        navigationActions.navigateTo(Route.RECIPES_HOME)
+                        navigationActions.navigateTo(Route.RECIPES_HOME, true)
                         Log.d("Login", "Successfully logged in app for user $userID")
                     // if the user does not exist yet -> navigate to account creation
                     } else {

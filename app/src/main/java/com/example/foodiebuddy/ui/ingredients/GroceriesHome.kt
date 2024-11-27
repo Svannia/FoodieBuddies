@@ -29,6 +29,7 @@ import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.MiniLoading
+import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.PrimaryScreen
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
