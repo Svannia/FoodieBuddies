@@ -17,6 +17,7 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationActions) {
     val context = LocalContext.current
     val editingPicture = rememberSaveable { mutableStateOf(false) }
+    val showPictureOptions = remember { mutableStateOf(false) }
 
     // userViewModel
     val currentPicture = rememberSaveable { mutableStateOf(Uri.EMPTY) }
@@ -59,6 +60,7 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             nameState,
             pictureState,
             bioState,
+            showPictureOptions,
             onEditPicture = { editingPicture.value = true },
             acceptTerms = true
         ) {
@@ -68,6 +70,8 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
         }
         BackHandler {
             navigationActions.navigateTo(Route.LOGIN, true)
+            signOut(context)
+            deleteAuthentication(context)
         }
     }
 

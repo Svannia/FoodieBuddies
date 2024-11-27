@@ -1053,6 +1053,7 @@ class DatabaseConnection {
                                                 if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
                                                 // decrease counter
                                                 remainingItems--
+                                                Log.d("Debug", "remaining $remainingItems")
                                                 if (remainingItems <= 0) {
                                                     // bring changes to Database
                                                     userPersonalCollection
@@ -1084,6 +1085,23 @@ class DatabaseConnection {
                                                 Log.d("MyDB", "Failed to check if ingredient already exists in fridge with error $e")
                                             }
                                         )
+                                    } else {
+                                        remainingItems--
+                                        Log.d("Debug", "remaining $remainingItems")
+                                        if (remainingItems <= 0) {
+                                            // bring changes to Database
+                                            userPersonalCollection
+                                                .document(owner).update(
+                                                    GROCERIES, newGroceries,
+                                                    FRIDGE, newFridge
+                                                )
+                                            isError(errorOccurred)
+                                            if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
+                                            else {
+                                                callBack()
+                                                Log.d("MyDB", "Successfully finished transferring items")
+                                            }
+                                        }
                                     }
                                 }
                                 .addOnFailureListener { e ->

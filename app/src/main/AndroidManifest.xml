@@ -26,6 +26,7 @@
             android:launchMode="singleTask"
             android:theme="@style/Theme.FoodieBuddy"
             android:screenOrientation="portrait"
+            android:windowSoftInputMode="adjustResize"
             tools:ignore="LockedOrientationActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

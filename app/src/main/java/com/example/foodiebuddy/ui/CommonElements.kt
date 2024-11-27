@@ -15,17 +15,23 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredWidth
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -620,11 +626,11 @@ private fun BottomNavBar(
     var selectedItemIndex by rememberSaveable { mutableIntStateOf(navigationIndex) }
 
     NavigationBar(
+        tonalElevation = 0.dp,
         modifier = Modifier
-            .height(85.dp)
             .fillMaxWidth()
-            .padding(0.dp),
-        tonalElevation = 0.dp
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .height(100.dp)
     ) {
         destinations.forEachIndexed { index, item ->
             NavigationBarItem(
@@ -634,14 +640,17 @@ private fun BottomNavBar(
                     selectedItemIndex = index
                 },
                 icon = {
-                   Icon(
-                       modifier = Modifier.size(28.dp),
-                       painter = painterResource(item.icon),
-                       contentDescription = stringResource(item.text),
-                   )
+                    Icon(
+                        modifier = Modifier.size(36.dp),
+                        painter = painterResource(item.icon),
+                        contentDescription = stringResource(item.text),
+                    )
                 },
                 label = {
-                    Text(text = stringResource(item.text), style = MyTypography.bodySmall)
+                    Text(
+                        text = stringResource(item.text),
+                        style = MyTypography.bodyMedium
+                    )
                 },
                 alwaysShowLabel = true
             )

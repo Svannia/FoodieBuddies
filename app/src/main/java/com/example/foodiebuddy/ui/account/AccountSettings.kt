@@ -31,6 +31,7 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
 
     val dataEdited = rememberSaveable { mutableStateOf(false) }
     val pictureEdited = rememberSaveable { mutableStateOf(false) }
+    val showPictureOptions = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         loadingData.value = true
@@ -84,12 +85,12 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
             EditAccount(
                 context,
                 navigationActions,
-                navExtraActions = {
-                },
+                navExtraActions = {},
                 nameState,
                 pictureState,
                 bioState,
-                dataEdited,
+                showPictureOptions,
+                dataEdited = dataEdited,
                 onEditPicture = { editingPicture.value = true },
                 acceptTerms = false
             ) {
