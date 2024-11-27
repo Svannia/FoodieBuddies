@@ -129,12 +129,13 @@ constructor(private val userID: String ?= null) : ViewModel() {
      * @param picture new profile picture
      * @param bio new user bio
      * @param updatePicture whether or not the profile picture was changed
+     * @param removePicture whether or not needs to replace profile picture with default
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after the data was updated in the DB
      */
-    fun updateUser(username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    fun updateUser(username: String, picture: Uri, bio: String, updatePicture: Boolean, removePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
-            db.updateUser(userID, username, picture, bio, updatePicture, { isError(it) }) {
+            db.updateUser(userID, username, picture, bio, updatePicture, removePicture, { isError(it) }) {
                 fetchUserData({ isError(it) }) { callBack() }
             }
         }  else {

@@ -19,6 +19,7 @@
     <string name="button_addItem">Ajouter un article</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
     <string name="button_cancel">Annuler</string>
+    <string name="button_changeImage">Gallerie</string>
     <string name="button_clearList">Effacer toute la liste</string>
     <string name="button_delete">Supprimer</string>
     <string name="button_deleteAccount">Supprimer le compte</string>
@@ -28,18 +29,21 @@
     <string name="button_newRecipe">Nouvelle Recette</string>
     <string name="button_options">options</string>
     <string name="button_quit">Quitter</string>
+    <string name="button_removeImage">Retirer</string>
     <string name="button_reset">Réinitialiser</string>
     <string name="button_save">Sauvegarder</string>
     <string name="button_seeResults">Voir les résulats</string>
     <string name="button_sendToFridge">Envoyer les courses dans le Frigo</string>
     <string name="button_signIn">S\'enregistrer</string>
     <string name="button_signOut">Se déconnecter</string>
+    <string name="button_takePicture">Camera</string>
     <string name="button_terms">Termes et Conditions</string>
     <string name="button_termsConditions">Appuie pour accepter les Terms et Conditions (obligatoire)</string>
 
     <string name="desc_add">bouton ajouter</string>
     <string name="desc_appLogo">logo app</string>
     <string name="desc_burgerMenu">menu</string>
+    <string name="desc_changePicture">changer photo</string>
     <string name="desc_delete">bouton supprime</string>
     <string name="desc_dropDownMenu">menu déroulant</string>
     <string name="desc_dstIcon">icone de destination</string>
@@ -50,7 +54,9 @@
     <string name="desc_loading">chargement</string>
     <string name="desc_profilePic">photo de profil</string>
     <string name="desc_recipePicture">photo de la recette</string>
+    <string name="desc_removePicture">retirer photo</string>
     <string name="desc_shop">"bouton "ajouter à la liste de courses"</string>
+    <string name="desc_takePicture">prendre photo</string>
     <string name="desc_textFieldIcon">icone du champ de texte</string>
 
     <string name="diet_fish">Poisson</string>

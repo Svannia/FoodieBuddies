@@ -1,5 +1,7 @@
 package com.example.foodiebuddy.ui.account
 
+import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -29,12 +31,16 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
     val pictureState = remember { mutableStateOf(userData.picture) }
     val bioState = rememberSaveable { mutableStateOf(userData.bio) }
 
+    val defaultPicture = remember { mutableStateOf(Uri.EMPTY) }
+
     val dataEdited = rememberSaveable { mutableStateOf(false) }
     val pictureEdited = rememberSaveable { mutableStateOf(false) }
+    val pictureRemoved = remember { mutableStateOf(false) }
     val showPictureOptions = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         loadingData.value = true
+        defaultPicture.value = userViewModel.getDefaultPicture()
         userViewModel.fetchUserData({
             if (it) {
                 handleError(context, "Could not fetch user data")
@@ -70,7 +76,7 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                     editingPicture.value = false
                     pictureState.value = currentPicture.value
                 }
-            ) {uri ->
+            ) { uri ->
                 pictureState.value = uri
                 currentPicture.value = uri
                 editingPicture.value = false
@@ -88,14 +94,21 @@ fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationA
                 navExtraActions = {},
                 nameState,
                 pictureState,
+                defaultPicture.value,
                 bioState,
                 showPictureOptions,
                 dataEdited = dataEdited,
                 onEditPicture = { editingPicture.value = true },
+                onRemovePicture = {
+                    pictureState.value = defaultPicture.value
+                    currentPicture.value = defaultPicture.value
+                    pictureEdited.value = false
+                    pictureRemoved.value = true
+                },
                 acceptTerms = false
             ) {
                 loadingData.value = true
-                userViewModel.updateUser(nameState.value, pictureState.value, bioState.value, pictureEdited.value, {
+                userViewModel.updateUser(nameState.value, pictureState.value, bioState.value, pictureEdited.value, pictureRemoved.value, {
                     if (it) {
                         handleError(context, "Could not update user data")
                         loadingData.value = false

@@ -194,11 +194,12 @@ class DatabaseConnection {
      * @param username new input by existing user
      * @param picture of the new input profile picture
      * @param bio new input by existing user
-     * @param updatePicture inner function to change profile picture in storage will only be called if new picture was input
+     * @param updatePicture whether the profile picture needs to be updated
+     * @param removePicture whether the profile picture needs to be removed (puts default picture instead)
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after DB was updated
      */
-    fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, removePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // only user and bio text fields can be modified by the user
         val formattedBio = bio.replace("\n", "\\n")
         val task = hashMapOf(USERNAME to username, BIO to formattedBio)
@@ -207,8 +208,14 @@ class DatabaseConnection {
             .document(userID)
             .update(task as Map<String, Any>)
             .addOnSuccessListener {
-                // if the modification was successful -> check if picture also needs to be updated
-                if (updatePicture) {
+                // if the modification was successful -> check if picture also needs to be updated or removed
+                if (removePicture) {
+                    copyDefaultPicture(userID, { isError(it) }) {
+                        callBack()
+                        Log.d("MyDB", "Successfully updated user data with default picture")
+                    }
+                }
+                else if (updatePicture) {
                     updateUserPicture(userID, picture, { isError(it) }) {
                         callBack()
                         Log.d("MyDB", "Successfully updated user data with new picture")
@@ -683,8 +690,8 @@ class DatabaseConnection {
                                             onFailure(IllegalStateException("Checking some ingredient failed"))
                                             Log.d("MyDB", "Failed to check ingredient existence because fetching some ingredient ref failed")
                                         } else {
-                                            onSuccess(false)
-                                            Log.d("MyDB", "Successfully found that ingredient does not exist")
+                                            onSuccess(found)
+                                            Log.d("MyDB", "Successfully finished looking for ingredient existence")
                                         }
                                     }
                                 }
@@ -1053,7 +1060,6 @@ class DatabaseConnection {
                                                 if (!exists) { newFridge[category] = (newFridge[category] ?: emptyList()) + ref }
                                                 // decrease counter
                                                 remainingItems--
-                                                Log.d("Debug", "remaining $remainingItems")
                                                 if (remainingItems <= 0) {
                                                     // bring changes to Database
                                                     userPersonalCollection
@@ -1087,7 +1093,6 @@ class DatabaseConnection {
                                         )
                                     } else {
                                         remainingItems--
-                                        Log.d("Debug", "remaining $remainingItems")
                                         if (remainingItems <= 0) {
                                             // bring changes to Database
                                             userPersonalCollection

@@ -16,7 +16,6 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,14 +25,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContent
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -74,7 +71,6 @@ import com.example.foodiebuddy.R
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.system.checkPermission
-import com.example.foodiebuddy.system.convertNameToTag
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.DialogWindow
@@ -97,10 +93,13 @@ import kotlin.math.abs
  * @param navExtraActions extra actions taken when navigation back
  * @param name state containing the username
  * @param picture state containing an Uri for the profile picture
+ * @param defaultPicture default picture Uri needed for small UI changes
  * @param bio state containing the bio
+ * @param showPictureOptions whether or not to show the modal bottom layout for picture edition options
  * @param dataEdited whether or not any data was edited.
  * This is used by the account edition screen to know if new data needs to saved, so this param can be empty for account creation
  * @param onEditPicture block that runs if profile picture is being edited
+ * @param onRemovePicture block that runs if profile picture is removed
  * @param acceptTerms whether or not this screen needs to display terms and conditions (only account creation screen does)
  * @param onSave block that runs if the Save button is pressed
  */
@@ -111,23 +110,25 @@ fun EditAccount(
     navExtraActions: () -> Unit,
     name: MutableState<String>,
     picture: MutableState<Uri>,
+    defaultPicture: Uri,
     bio: MutableState<String>,
     showPictureOptions: MutableState<Boolean>,
     dataEdited: MutableState<Boolean> ?= null,
     onEditPicture: () -> Unit,
+    onRemovePicture: () -> Unit,
     acceptTerms: Boolean,
     onSave: () -> Unit
 ) {
     // getting image and image permissions
     val imageInput = "image/*"
     val getPicture = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-        uri?.let {pictureUri ->
+        uri?.let { pictureUri ->
             picture.value = pictureUri
             onEditPicture()
         }
     }
     val imagePermission = imagePermissionVersion()
-    val requestPermissionLauncher =
+    val requestMediaPermissionLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 getPicture.launch(imageInput)
@@ -158,10 +159,20 @@ fun EditAccount(
                 item {
                     Text(
                         modifier = Modifier.clickable {
-                            showPictureOptions.value = true
+                            if (picture.value != defaultPicture) {
+                                showPictureOptions.value = true
+                            }
+                            else {
+                                checkPermission(context, imagePermission, requestMediaPermissionLauncher)
+                                { getPicture.launch(imageInput) }
+                            }
+
                         },
-                        // since dataEdited is null for the account creation screen, it can be used to differentiate between the two screens
-                        text = if (dataEdited != null) stringResource(R.string.button_modifyProfilePicture) else {stringResource(R.string.button_addProfilePicture)},
+                        text =
+                            if (picture.value != defaultPicture) {
+                                stringResource(R.string.button_modifyProfilePicture)
+                            }
+                            else stringResource(R.string.button_addProfilePicture),
                         style = MyTypography.labelMedium
                     )
                     Spacer(modifier = Modifier.size(16.dp))
@@ -230,15 +241,18 @@ fun EditAccount(
                     dialogVisible.value = false
                 }
             }
+            // modal bottom layout with picture edition options
             if (showPictureOptions.value) {
                 PictureOptions(
-                    onDismiss = {showPictureOptions.value = false},
-                    onResize = {},
+                    onDismiss = { showPictureOptions.value = false },
                     onChange = {
-                        checkPermission(context, imagePermission, requestPermissionLauncher)
+                        checkPermission(context, imagePermission, requestMediaPermissionLauncher)
                         { getPicture.launch(imageInput) }
                     },
-                    onRemove = {}
+                    onRemove = {
+                        onRemovePicture()
+                        if (dataEdited != null) { dataEdited.value = true }
+                    }
                 )
             }
         }
@@ -297,12 +311,17 @@ fun signOut(context: Context) {
 }
 
 
-
+/**
+ * Modal bottom layout that shows options for editing a picture
+ *
+ * @param onDismiss block that runs when dismissing the layout
+ * @param onChange block that runs when choosing the "change picture" option
+ * @param onRemove block that runs when choosing the "remove picture" option
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PictureOptions(
     onDismiss: () -> Unit,
-    onResize: () -> Unit,
     onChange: () -> Unit,
     onRemove: () -> Unit
 ) {
@@ -318,32 +337,16 @@ fun PictureOptions(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Resize the picture
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxHeight()
-                    .clickable { onResize() }
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceAround
-                ) {
-                    Icon(
-                        painterResource(R.drawable.user),
-                        contentDescription = "resize picture"
-                    )
-                    Spacer(modifier = Modifier.size(16.dp))
-                    Text(text = "Resize image", style = MyTypography.bodySmall)
-                }
-            }
             // Change the picture
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(1.5f)
                     .fillMaxHeight()
-                    .clickable { onChange() }
+                    .clickable {
+                        onChange()
+                        onDismiss()
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -351,19 +354,27 @@ fun PictureOptions(
                     verticalArrangement = Arrangement.SpaceAround
                 ) {
                     Icon(
-                        painterResource(R.drawable.user),
-                        contentDescription = "change picture"
+                        painterResource(R.drawable.gallery),
+                        contentDescription = stringResource(R.string.desc_changePicture)
                     )
                     Spacer(modifier = Modifier.size(16.dp))
-                    Text(text = "Resize image", style = MyTypography.bodySmall)
+                    Text(
+                        text = stringResource(R.string.button_changeImage),
+                        style = MyTypography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
             // Remove the picture
             Box(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(1.5f)
                     .fillMaxHeight()
-                    .clickable { onRemove() }
+                    .clickable {
+                        onRemove()
+                        onDismiss()
+                    },
+                contentAlignment = Alignment.Center
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -371,11 +382,15 @@ fun PictureOptions(
                     verticalArrangement = Arrangement.SpaceAround
                 ) {
                     Icon(
-                        painterResource(R.drawable.user),
-                        contentDescription = "remove picture"
+                        painterResource(R.drawable.remove),
+                        contentDescription = stringResource(R.string.desc_removePicture)
                     )
                     Spacer(modifier = Modifier.size(16.dp))
-                    Text(text = "Resize image", style = MyTypography.bodySmall)
+                    Text(
+                        text = stringResource(R.string.button_removeImage),
+                        style = MyTypography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
@@ -409,7 +424,9 @@ fun SetProfilePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit)
 
     Box(
         contentAlignment = Alignment.TopCenter,
-        modifier = Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.systemBars),
+        modifier = Modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars),
     ) {
         Box(
             contentAlignment = Alignment.Center,

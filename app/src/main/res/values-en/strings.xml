@@ -18,6 +18,7 @@
     <string name="button_addItem">Add an item</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
     <string name="button_cancel">Cancel</string>
+    <string name="button_changeImage">Gallery</string>
     <string name="button_clearList">Clear entire list</string>
     <string name="button_delete">Delete</string>
     <string name="button_deleteAccount">Delete account</string>
@@ -27,18 +28,21 @@
     <string name="button_newRecipe">New Recipe</string>
     <string name="button_options">options</string>
     <string name="button_quit">Leave</string>
+    <string name="button_removeImage">Remove</string>
     <string name="button_reset">Reset</string>
     <string name="button_save">Save</string>
     <string name="button_seeResults">Show results</string>
     <string name="button_sendToFridge">Send ticked items to Fridge</string>
     <string name="button_signIn">Log in</string>
     <string name="button_signOut">Log out</string>
+    <string name="button_takePicture">Camera</string>
     <string name="button_terms">Terms and Conditions</string>
     <string name="button_termsConditions">Tap to accept Terms and Conditions (mandatory)</string>
 
     <string name="desc_add">add button</string>
     <string name="desc_appLogo">app logo</string>
     <string name="desc_burgerMenu">burger menu</string>
+    <string name="desc_changePicture">change picture</string>
     <string name="desc_delete">delete button</string>
     <string name="desc_dropDownMenu">drop down menu</string>
     <string name="desc_dstIcon">destination icon</string>
@@ -49,7 +53,9 @@
     <string name="desc_loading">loading</string>
     <string name="desc_profilePic">profile picture</string>
     <string name="desc_recipePicture">recipe picture</string>
+    <string name="desc_removePicture">remove picture</string>
     <string name="desc_shop">"add to groceries" button</string>
+    <string name="desc_takePicture">take picture</string>
     <string name="desc_textFieldIcon">text field icon</string>
 
     <string name="diet_fish">Fish</string>

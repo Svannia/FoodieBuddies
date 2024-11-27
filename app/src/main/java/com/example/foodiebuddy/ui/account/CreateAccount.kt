@@ -25,8 +25,11 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
     val pictureState = remember { mutableStateOf(currentPicture.value) }
     val bioState = rememberSaveable { mutableStateOf("") }
 
+    val defaultPicture = remember { mutableStateOf(Uri.EMPTY) }
+
     LaunchedEffect(Unit) {
         currentPicture.value = userViewModel.getDefaultPicture()
+        defaultPicture.value = userViewModel.getDefaultPicture()
         pictureState.value = currentPicture.value
     }
 
@@ -59,9 +62,14 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
             },
             nameState,
             pictureState,
+            defaultPicture.value,
             bioState,
             showPictureOptions,
             onEditPicture = { editingPicture.value = true },
+            onRemovePicture = {
+                pictureState.value = defaultPicture.value
+                currentPicture.value = defaultPicture.value
+            },
             acceptTerms = true
         ) {
             userViewModel.createUser(nameState.value, pictureState.value, bioState.value, {
