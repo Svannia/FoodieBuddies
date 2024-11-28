@@ -204,7 +204,9 @@ fun EditAccount(
                         placeHolder = stringResource(R.string.field_bio),
                         singleLine = false,
                         maxLength = 150,
-                        width = 300.dp
+                        width = 300.dp,
+                        height = 200.dp
+
                     )
                     Spacer(modifier = Modifier.size(16.dp))
                 }

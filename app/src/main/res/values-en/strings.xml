@@ -146,4 +146,7 @@
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
+    <string name="txt_recipeName">Recipe name</string>
+    <string name="field_recipeName">Enter your recipe name</string>
+    <string name="title_editRecipe">Edit your recipe</string>
 </resources>

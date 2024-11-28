@@ -147,4 +147,7 @@
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>
     <string name="txt_systemLight">Clair</string>
+    <string name="txt_recipeName">Recipe name</string>
+    <string name="field_recipeName">Enter your recipe name</string>
+    <string name="title_editRecipe">Edit your recipe</string>
 </resources>

@@ -24,7 +24,7 @@ import com.example.foodiebuddy.database.DatabaseConnection
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
-import com.example.foodiebuddy.ui.account.AccountSettings
+import com.example.foodiebuddy.ui.account.AccountEdit
 import com.example.foodiebuddy.ui.account.Buddies
 import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
@@ -133,14 +133,16 @@ class MainActivity : ComponentActivity() {
                             val userID =
                                 backStackEntry.arguments?.getString("userID")
                             if (userID != null) {
-                                Profile(userVM, navigationActions)
+                                val userViewModel: UserViewModel = viewModel {
+                                    UserViewModel(userID) }
+                                Profile(userViewModel, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Profile of user $userID")
                             }
                         }
                         composable(Route.ACCOUNT_SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                AccountSettings(userVM, navigationActions)
+                                AccountEdit(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Account Settings")
                             }
                         }

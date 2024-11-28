@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.ui.account
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,12 +13,11 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
-import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 @Composable
-fun AccountSettings(userViewModel: UserViewModel, navigationActions: NavigationActions) {
+fun AccountEdit(userViewModel: UserViewModel, navigationActions: NavigationActions) {
     val context = LocalContext.current
     val editingPicture = rememberSaveable { mutableStateOf(false) }
     val loadingData = rememberSaveable { mutableStateOf(false) }

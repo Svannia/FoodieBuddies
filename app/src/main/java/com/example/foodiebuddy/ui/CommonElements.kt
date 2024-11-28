@@ -382,6 +382,7 @@ fun CustomTextField(
     onFocusedChanged: (FocusState) -> Unit = {},
     showMaxChara: Boolean = true,
     width: Dp,
+    height: Dp? = null,
     keyboardActions: KeyboardActions = KeyboardActions.Default,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
@@ -395,7 +396,7 @@ fun CustomTextField(
         } else {
             Modifier
                 .width(width)
-                .height(80.dp)
+                .height(height!!)
                 .padding(0.dp)
                 .focusRequester(focusRequester)
                 .onFocusChanged { onFocusedChanged(it) }

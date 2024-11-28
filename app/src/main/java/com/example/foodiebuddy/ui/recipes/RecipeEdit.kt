@@ -1,15 +1,21 @@
 package com.example.foodiebuddy.ui.recipes
 
+import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.viewModels.RecipeViewModel
@@ -24,8 +30,11 @@ import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
+import com.example.foodiebuddy.ui.OptionsMenu
+import com.example.foodiebuddy.ui.SecondaryScreen
 
 @Composable
 fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActions: NavigationActions) {
@@ -34,6 +43,8 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val loadingData = remember { mutableStateOf(false) }
     val dataEdited = remember { mutableStateOf(false) }
     val pictureEdited = remember { mutableStateOf(false) }
+    val pictureRemoved = remember { mutableStateOf(false) }
+    val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
 
     val recipeID = recipeVM.getVmUid()
@@ -97,10 +108,32 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 pictureState.value = currentPicture.value
             }
         } else {
-            EditRecipe()
+            EditRecipe(
+                context = context,
+                onGoBack = { showAlert.value = true },
+                title = stringResource(R.string.title_editRecipe),
+                name = nameState,
+                picture = pictureState,
+                recipe = recipeState,
+                ingredients = ingredientsState,
+                origin = originState,
+                diet = dietState,
+                tags = tagsState,
+                showPictureOptions = showPictureOptions,
+                onEditPicture = { editingPicture.value = true },
+                onRemovePicture = {
+                    pictureState.value = Uri.EMPTY
+                    currentPicture.value = Uri.EMPTY
+                    pictureEdited.value = false
+                    pictureRemoved.value = true },
+                onSave = {
+                    // todo
+                }
+            )
             BackHandler {
                 showAlert.value = true
             }
+            // alert for leaving the recipe edition page
             if (showAlert.value) {
                 DialogWindow(
                     visible = showAlert,
@@ -108,6 +141,7 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     confirmText = stringResource(R.string.button_quit),
                     confirmColour = Color.Red
                 ) {
+                    showAlert.value = false
                     navigationActions.navigateTo(Route.RECIPES_HOME, true)
                 }
             }
@@ -115,10 +149,6 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     }
 }
 
-@Composable
-private fun EditRecipe() {
-
-}
 
 @Composable
 private fun SetRecipePicture() {
