@@ -252,13 +252,16 @@ constructor(private val userID: String ?= null) : ViewModel() {
      */
     fun fetchUserPersonal(isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (userID != null) {
+            Log.d("Debug", "starting to fetch in VM")
             // only fetches data if user exists
             db.userExists(
                 userID = userID,
                 onSuccess = { userExists ->
                     if (userExists) {
+                        Log.d("Debug", "user exists")
                         viewModelScope.launch {
                             var errorOccurred = false
+                            Log.d("Debug", "Calling DB")
                             val newUserPersonal = db.fetchUserPersonal(userID) { if (it) errorOccurred = true }
                             _userPersonal.value = newUserPersonal
                             isError(errorOccurred)

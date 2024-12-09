@@ -39,6 +39,7 @@ private const val NAME = "name"
 private const val RECIPE = "recipe"
 private const val INGREDIENTS = "ingredients"
 private const val QUANTITY = "quantity"
+private const val UNIT = "unit"
 private const val ORIGIN = "origin"
 private const val DIET = "diet"
 private const val TAGS = "tags"
@@ -46,7 +47,7 @@ private const val FAVOURITE = "favouriteOf"
 
 private const val defaultPicturePath = "userData/default.jpg"
 
-@Suppress("UNCHECKED_CAST")
+@Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
 class DatabaseConnection {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -341,8 +342,10 @@ class DatabaseConnection {
         }
 
         // fetches the userPersonal document
+        Log.d("Debug", "start of DB function")
         val document = userPersonalCollection.document(userID).get().await()
         return if (document.exists()) {
+            Log.d("Debug", "found user personal")
             var errorOccurred = false
 
             // fetch each ingredient from the groceries map
@@ -352,6 +355,7 @@ class DatabaseConnection {
                     fetchIngredient(ref) { if (it) errorOccurred = true }
                 }
             }
+            Log.d("Debug", "found groceries")
             // fetch each ingredient from the fridge map
             val fridgeListRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val fridgeList = fridgeListRefs.mapValues { entry ->
@@ -360,6 +364,7 @@ class DatabaseConnection {
                 }
             }
             // Create and return the UserPersonal object
+            Log.d("Debug", "all ingredients fetched")
             isError(errorOccurred)
             if (!errorOccurred) {
                 Log.d("MyDB", "Successfully fetched user personal")
@@ -1159,7 +1164,8 @@ class DatabaseConnection {
                         RecipeIngredient(
                             displayedName = map[DISPLAY_NAME] ?: "",
                             standName = map[STAND_NAME] ?: "",
-                            quantity = map[QUANTITY] ?: ""
+                            quantity = (map[QUANTITY] as? Number)?.toFloat() ?: 0f,
+                            unit = map[UNIT] ?: ""
                         )
                     } ?: emptyList()
                     val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
@@ -1295,7 +1301,8 @@ class DatabaseConnection {
                 RecipeIngredient(
                     displayedName = map[DISPLAY_NAME] ?: "",
                     standName = map[STAND_NAME] ?: "",
-                    quantity = map[QUANTITY] ?: ""
+                    quantity = map[QUANTITY]?.toFloatOrNull() ?: 0f,
+                    unit = map[UNIT] ?: ""
                 )
             } ?: emptyList()
             val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE

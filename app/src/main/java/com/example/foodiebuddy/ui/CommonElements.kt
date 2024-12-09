@@ -83,7 +83,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.rememberAsyncImagePainter
@@ -378,6 +380,7 @@ fun CustomTextField(
     placeHolder: String,
     singleLine: Boolean,
     maxLength: Int,
+    autoCap: Boolean = true,
     focusRequester: FocusRequester = FocusRequester.Default,
     onFocusedChanged: (FocusState) -> Unit = {},
     showMaxChara: Boolean = true,
@@ -437,10 +440,50 @@ fun CustomTextField(
         ),
         keyboardActions = keyboardActions,
         keyboardOptions = keyboardOptions.copy(
-            capitalization = KeyboardCapitalization.Sentences
+            capitalization = if (autoCap) KeyboardCapitalization.Sentences
+                else KeyboardCapitalization.None
         )
     )
 }
+
+@Composable
+fun CustomNumberField(
+    value: Float,
+    onValueChange: (Float) -> Unit,
+    placeHolder: String,
+    width: Dp
+) {
+    val text = remember { mutableStateOf(value.toString()) }
+
+    TextField(
+        modifier = Modifier
+            .width(width)
+            .padding(0.dp),
+        value = text.value,
+        onValueChange = { input ->
+            val filteredInput = input.filter { it.isDigit() || it == '.' }
+            text.value = filteredInput
+            filteredInput.toFloatOrNull()?.let{ onValueChange(it) }
+        },
+        textStyle = MyTypography.bodyMedium,
+        placeholder = {
+            Text(text = placeHolder, style = MyTypography.bodySmall)
+        },
+        singleLine = true,
+        supportingText = {},
+        colors = TextFieldDefaults.colors(
+            focusedContainerColor = Color.Transparent,
+            unfocusedContainerColor = Color.Transparent,
+            cursorColor = MaterialTheme.colorScheme.primary,
+            focusedIndicatorColor = MaterialTheme.colorScheme.primary
+        ),
+        keyboardOptions = KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+        )
+    )
+}
+
 
 /**
  * Creates a dialog window that can pop and be dismissed.
@@ -626,7 +669,7 @@ private fun BottomNavBar(
         modifier = Modifier
             .fillMaxWidth()
             .windowInsetsPadding(WindowInsets.navigationBars)
-            .height(100.dp)
+            .height(90.dp)
     ) {
         destinations.forEachIndexed { index, item ->
             NavigationBarItem(
@@ -637,7 +680,7 @@ private fun BottomNavBar(
                 },
                 icon = {
                     Icon(
-                        modifier = Modifier.size(36.dp),
+                        modifier = Modifier.size(28.dp),
                         painter = painterResource(item.icon),
                         contentDescription = stringResource(item.text),
                     )

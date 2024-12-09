@@ -173,7 +173,7 @@ fun AddCategory(
                     isFocused.value = true
                 },
                 icon = -1,
-                placeHolder = stringResource(R.string.button_addCategory),
+                placeHolder = stringResource(R.string.field_addCategory),
                 singleLine = true,
                 maxLength = MAX_CHARA,
                 showMaxChara = false,
@@ -293,7 +293,7 @@ fun IngredientCategoryEdit(
                     value = editedName.value,
                     onValueChange = { editedName.value = it },
                     icon = -1,
-                    placeHolder = stringResource(R.string.button_addItem),
+                    placeHolder = stringResource(R.string.field_addItem),
                     singleLine = true,
                     maxLength = MAX_CHARA,
                     showMaxChara = false,
@@ -562,7 +562,7 @@ private fun IngredientItemEdit(
  * @param onAdd block that runs with the ingredient name after adding it
  */
 @Composable
-private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableState<String>) -> Unit) {
+fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableState<String>) -> Unit) {
     val focusRequester = remember { FocusRequester() }
     val isFocused = remember { mutableStateOf(false) }
 
@@ -606,7 +606,7 @@ private fun AddIngredient(displayName: MutableState<String>, onAdd: (MutableStat
                 value = displayName.value,
                 onValueChange = { displayName.value = it },
                 icon = -1,
-                placeHolder = stringResource(R.string.button_addItem),
+                placeHolder = stringResource(R.string.field_addItem),
                 singleLine = true,
                 maxLength = MAX_CHARA,
                 showMaxChara = false,

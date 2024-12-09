@@ -102,7 +102,19 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     if (loadingData.value) LoadingPage()
     else {
         if (editingPicture.value) {
-            SetRecipePicture()
+            SetRecipePicture(
+                picture = pictureState.value,
+                onCancel = {
+                    editingPicture.value = false
+                    pictureState.value = currentPicture.value
+                },
+                onSave = { uri ->
+                    pictureState.value = uri
+                    currentPicture.value = uri
+                    editingPicture.value = false
+                    dataEdited.value = true
+                    pictureEdited.value = true
+                })
             BackHandler {
                 editingPicture.value = false
                 pictureState.value = currentPicture.value
@@ -142,15 +154,10 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     confirmColour = Color.Red
                 ) {
                     showAlert.value = false
-                    navigationActions.navigateTo(Route.RECIPES_HOME, true)
+                    navigationActions.navigateTo(Route.RECIPES_HOME)
                 }
             }
         }
     }
 }
 
-
-@Composable
-private fun SetRecipePicture() {
-
-}

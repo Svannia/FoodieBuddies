@@ -15,8 +15,6 @@
     <string name="app_name">Foodie Buddies</string>
 
     <string name="button_accept">Accepter</string>
-    <string name="button_addCategory">Ajouter une catégorie</string>
-    <string name="button_addItem">Ajouter un article</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
     <string name="button_cancel">Annuler</string>
     <string name="button_changeImage">Gallerie</string>
@@ -52,12 +50,13 @@
     <string name="desc_goBack">retour</string>
     <string name="desc_googleLogo">logo google</string>
     <string name="desc_loading">chargement</string>
-    <string name="desc_profilePic">photo de profil</string>
+    <string name="desc_profilePic">photo de profile</string>
     <string name="desc_recipePicture">photo de la recette</string>
     <string name="desc_removePicture">retirer photo</string>
     <string name="desc_shop">"bouton "ajouter à la liste de courses"</string>
     <string name="desc_takePicture">prendre photo</string>
     <string name="desc_textFieldIcon">icone du champ de texte</string>
+    <string name="desc_userPic">photo choisie par l\'utilisateur</string>
 
     <string name="diet_fish">Poisson</string>
     <string name="diet_meat">Viande</string>
@@ -71,9 +70,13 @@
     <string name="dst_recipes">Recettes</string>
     <string name="dst_settings">Paramètres</string>
 
+    <string name="field_addCategory">Ajouter une catégorie</string>
+    <string name="field_addIngredient">Ajouter un ingrédient</string>
+    <string name="field_addItem">Ajouter un article</string>
     <string name="field_bio">Bio</string>
     <string name="field_keywords">Qu\'est-ce que tu cherches ?</string>
     <string name="field_maxChar">max. %1$s caractères</string>
+    <string name="field_recipeName">Enter your recipe name</string>
     <string name="field_username">Nom d\'utilisateur</string>
 
     <string name="origin_american">Américain</string>
@@ -118,12 +121,16 @@
     <string name="title_account">Compte</string>
     <string name="title_creator">Créateur</string>
     <string name="title_diet">Régime</string>
+    <string name="title_editRecipe">Edit your recipe</string>
     <string name="title_filters">Filtres</string>
+    <string name="title_foodPic">Photo du plat</string>
     <string name="title_fridge">Mon Frigo</string>
     <string name="title_groceries">Liste de courses</string>
+    <string name="title_ingredients">Ingrédients</string>
     <string name="title_language">Langue</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origine</string>
+    <string name="title_recipeName">Recipe name</string>
     <string name="title_recipes">Recettes</string>
     <string name="title_settings">Paramètres</string>
     <string name="title_tag">Tags</string>
@@ -143,11 +150,11 @@
     <string name="txt_noRecipes">Il n\'y a pas encore de recettes sur l\'app!</string>
     <string name="txt_noResults">Il n\'y a aucune recette correspondant à ces filtres.</string>
     <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
+    <string name="txt_quantity">Quantité</string>
     <string name="txt_recipeCreator">Créée par %1$s</string>
+    <string name="txt_recipeRequirements">Les champs marqués par un astérisque rouge sont obligatoires.</string>
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>
     <string name="txt_systemLight">Clair</string>
-    <string name="txt_recipeName">Recipe name</string>
-    <string name="field_recipeName">Enter your recipe name</string>
-    <string name="title_editRecipe">Edit your recipe</string>
+    <string name="txt_unit">Unité</string>
 </resources>

@@ -159,8 +159,11 @@ class MainActivity : ComponentActivity() {
                         composable(Route.RECIPES_HOME) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                if (userVM.getVmUid().isEmpty()) userVM = viewModel {
-                                    UserViewModel(currentUser.uid)
+                                if (userVM.getVmUid().isEmpty()) {
+                                    Log.d("Debug", "yeah it's empty")
+                                    userVM = viewModel {
+                                        UserViewModel(currentUser.uid)
+                                    }
                                 }
                                 RecipesHome(userVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipes Home")

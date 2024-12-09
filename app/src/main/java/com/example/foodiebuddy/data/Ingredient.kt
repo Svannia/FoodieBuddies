@@ -1,5 +1,7 @@
 package com.example.foodiebuddy.data
 
+import java.util.UUID
+
 /**
  * Describes an ingredient that is owned by a user AKA it belongs to their fridge or groceries list.
  *
@@ -41,12 +43,15 @@ data class OwnedIngredient(
  *
  * @property displayedName the name display to the user
  * @property standName standardized name that will be used to compare against recipe ingredients
- * @property quantity any sentence that the user uses to describe the required quantity
+ * @property quantity real number for the ingredient's required quantity (can be zero/null)
+ * @property unit any sentence that the user uses to describe the required quantity (can be empty)
  */
 data class RecipeIngredient(
-    val displayedName: String,
-    val standName: String,
-    val quantity: String
+    var displayedName: String,
+    var standName: String,
+    var quantity: Float,
+    var unit: String,
+    val id: String = UUID.randomUUID().toString()
 ) {
     companion object {
         /**
@@ -55,7 +60,7 @@ data class RecipeIngredient(
          * @return empty Recipe Ingredient object.
          */
         fun empty(): RecipeIngredient {
-            return RecipeIngredient("", "", "")
+            return RecipeIngredient("", "", 0f, "")
         }
     }
     /**
