@@ -73,8 +73,10 @@
     <string name="field_addIngredient">Add an ingredient</string>
     <string name="field_addItem">Add an item</string>
     <string name="field_bio">Bio</string>
+    <string name="field_ingredientName">Ingredient name</string>
     <string name="field_keywords">What are you searching for?</string>
     <string name="field_maxChar">max. %1$s characters</string>
+    <string name="field_none">-</string>
     <string name="field_recipeName">Enter your recipe name</string>
     <string name="field_username">Username</string>
 
@@ -127,6 +129,7 @@
     <string name="title_groceries">Groceries list</string>
     <string name="title_ingredients">Ingrédients</string>
     <string name="title_language">Language</string>
+    <string name="title_miscellaneous">Miscellaneous</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origin</string>
     <string name="title_recipeName">Recipe name</string>
@@ -156,4 +159,18 @@
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
     <string name="txt_unit">Unit</string>
+
+    <string name="unit_bouquet">bunch</string>
+    <string name="unit_cc">tsp</string>
+    <string name="unit_cs">tbsp</string>
+    <string name="unit_de">cube</string>
+    <string name="unit_dl">dl</string>
+    <string name="unit_g">g</string>
+    <string name="unit_goutte">drop</string>
+    <string name="unit_kg">kg</string>
+    <string name="unit_ml">ml</string>
+    <string name="unit_none">-</string>
+    <string name="unit_pin">pinch</string>
+    <string name="unit_sachet">packet</string>
+    <string name="unit_tasse">cup</string>
 </resources>

@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -31,28 +32,41 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldColors
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -61,10 +75,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PaintingStyle
+import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -72,10 +91,12 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
+import com.example.foodiebuddy.data.MEASURE_UNITS
 import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
+import com.example.foodiebuddy.data.getString
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.system.checkPermission
@@ -89,6 +110,7 @@ import com.example.foodiebuddy.ui.images.SetPicture
 import com.example.foodiebuddy.ui.ingredients.standardizeName
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
+import kotlin.math.exp
 
 
 @Composable
@@ -132,7 +154,8 @@ fun EditRecipe(
         }) },
         bottomBar = {
             val newData = dataEdited?.value ?: true
-            val requiredFields = name.value.isNotEmpty() && recipe.value.isNotEmpty() && origin.value != Origin.NONE && diet.value != Diet.NONE
+            val requiredFields = name.value.isNotEmpty() && recipe.value.isNotEmpty() &&
+                    origin.value != Origin.NONE && diet.value != Diet.NONE && ingredients.all { it.displayedName.isNotEmpty() }
             BottomSaveBar(stringResource(R.string.button_save), requiredFields && newData) {
                 onSave()
             }
@@ -163,7 +186,7 @@ fun EditRecipe(
             item {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp))
                 {
-                    RequiredField(stringResource(R.string.title_recipeName))
+                    RequiredField(stringResource(R.string.title_recipeName), MyTypography.titleSmall)
                     CustomTextField(
                         value = name.value,
                         onValueChange = {
@@ -213,6 +236,43 @@ fun EditRecipe(
                             style = MyTypography.labelMedium
                         )
                     }
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
+                    Spacer(modifier = Modifier.size(8.dp))
+                }
+            }
+            // various tags
+            item {
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Text(text = stringResource(R.string.title_tag), style = MyTypography.titleSmall)
+                    TagDropDown(
+                        title = stringResource(R.string.title_origin),
+                        required = true,
+                        tags = Origin.entries.drop(1).toList(),
+                        filtersSet = setOf(origin.value),
+                        onlyOne = true,
+                        getString = { origin -> origin.getString(context) },
+                        onClick = { origin.value = it }
+                    )
+                    TagDropDown(
+                        title = stringResource(R.string.title_diet),
+                        required = true,
+                        tags = Diet.entries.drop(1).toList(),
+                        filtersSet = setOf(diet.value),
+                        onlyOne = true,
+                        getString = { diet -> diet.getString(context) },
+                        onClick = { diet.value = it }
+                    )
+                    TagDropDown(
+                        title = stringResource(R.string.title_miscellaneous),
+                        tags = Tag.entries.drop(1).toList(),
+                        filtersSet = tags.toSet(),
+                        getString = { tag -> tag.getString(context) },
+                        onClick = { tag ->
+                            if (tags.contains(tag)) tags.remove(tag)
+                            else tags.add(tag)
+                        }
+                    )
                     Spacer(modifier = Modifier.size(8.dp))
                     Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                     Spacer(modifier = Modifier.size(8.dp))
@@ -325,11 +385,11 @@ fun RecipeSecondaryScreen(
 }
 
 @Composable
-private fun RequiredField(title: String) {
+private fun RequiredField(title: String, style: TextStyle) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text=title, style = MyTypography.titleSmall)
+        Text(text=title, style = style)
         Spacer(modifier = Modifier.size(8.dp))
-        Text(text = "*", style = MyTypography.titleSmall, color = Color.Red)
+        Text(text = "*", style = style, color = Color.Red)
     }
 }
 
@@ -344,51 +404,65 @@ fun SetRecipePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit) 
 }
 
 @Composable
-fun IngredientListEdit(
-    ingredients: MutableList<RecipeIngredient>,
+fun <T> DropDownField(
+    options: List<T>,
+    selectedOption: T,
+    optionToString: (T) -> String,
+    onOptionSelected: (T) -> Unit
 ) {
-    // show all existing ingredients in added order
-    val newItemName = remember { mutableStateOf("") }
-    val newItemQty = remember { mutableIntStateOf(0) }
-    val newItemUnit = remember { mutableStateOf("") }
+    val expanded = remember { mutableStateOf(false) }
 
-    Column (
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        Text(text = stringResource(R.string.title_ingredients), style = MyTypography.titleSmall)
-        Spacer(modifier = Modifier.size(16.dp))
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(0.dp)
-        ) {
-            items(ingredients, key = {it}) { ingredient ->
-                IngredientItem(ingredient) {
-                    ingredients.remove(ingredient)
-                    ingredients.forEach { Log.d("Debug", "ingredients after removing are $${it.displayedName}") }
+    Box(modifier = Modifier
+        .fillMaxWidth()
+        .wrapContentSize(Alignment.TopStart))
+    {
+        // text field to expand
+        OutlinedTextField(
+            value = optionToString(selectedOption),
+            onValueChange = {},
+            textStyle = MyTypography.bodySmall,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    expanded.value = !expanded.value
+                    Log.d("Debug", "expanded is ${expanded.value}")
+                },
+            enabled = false,
+            colors = TextFieldDefaults.colors(
+                disabledContainerColor = Color.Transparent,
+                disabledIndicatorColor = MaterialTheme.colorScheme.inversePrimary,
+                disabledTextColor = MaterialTheme.colorScheme.inversePrimary,
+                disabledPlaceholderColor = MaterialTheme.colorScheme.inversePrimary,
+                disabledTrailingIconColor = MaterialTheme.colorScheme.inversePrimary
+            ),
+            trailingIcon = {
+                IconButton(onClick = { expanded.value = !expanded.value }) {
+                    Icon(
+                        modifier = Modifier.size(24.dp),
+                        painter = if (expanded.value) painterResource(R.drawable.up)
+                        else painterResource(R.drawable.down),
+                        contentDescription = stringResource(R.string.desc_dropDownMenu)
+                    )
                 }
             }
-        }
-        newItemName.value = ""
-        newItemQty.intValue = 0
-        newItemUnit.value = ""
-        // "Plus" button to add an ingredient
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            IconButton(
-                onClick = {
-                    ingredients.add(RecipeIngredient("", "", 0f, ""))
-                    ingredients.forEach { Log.d("Debug", "ingredients after adding are $${it.displayedName}") }
-                }
-            ) {
-                Icon(
-                    painterResource(R.drawable.add),
-                    modifier = Modifier.size(26.dp),
-                    contentDescription = stringResource(R.string.desc_add)
+        )
+
+        // expanded drop down menu
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(text = optionToString(option), style = MyTypography.bodySmall) },
+                    onClick = {
+                        onOptionSelected(option)
+                        expanded.value = false
+                    }
                 )
             }
         }
-        Spacer(modifier = Modifier.size(16.dp))
-        Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
     }
 }
 
@@ -399,7 +473,8 @@ fun IngredientItem(
 ) {
     val displayName = remember { mutableStateOf("") }
     val quantity = remember { mutableFloatStateOf(0f) }
-    val unit = remember { mutableStateOf("") }
+    val unit = remember { mutableStateOf("-") }
+    val unitsExpanded = remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -421,20 +496,24 @@ fun IngredientItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // text field to input the ingredient name
-                CustomTextField(
-                    value = displayName.value,
-                    onValueChange = {
-                        displayName.value = it.trimEnd()
-                        ingredient.displayedName = it.trimEnd()
-                        ingredient.standName = standardizeName(it.trimEnd())
-                    },
-                    icon = -1,
-                    placeHolder = stringResource(R.string.field_addIngredient),
-                    singleLine = true,
-                    maxLength = 21,
-                    showMaxChara = false,
-                    width = 200.dp
-                )
+                Row(verticalAlignment = Alignment.CenterVertically){
+                    CustomTextField(
+                        value = displayName.value,
+                        onValueChange = {
+                            displayName.value = it.trimEnd()
+                            ingredient.displayedName = it.trimEnd()
+                            ingredient.standName = standardizeName(it.trimEnd())
+                        },
+                        icon = -1,
+                        placeHolder = stringResource(R.string.field_ingredientName),
+                        singleLine = true,
+                        maxLength = 21,
+                        showMaxChara = false,
+                        width = 200.dp
+                    )
+                    Spacer(modifier = Modifier.size(16.dp))
+                    Text(text = "*", style = MyTypography.titleSmall, color = Color.Red)
+                }
                 // delete button next to the ingredient
                 IconButton(
                     modifier = Modifier
@@ -463,21 +542,56 @@ fun IngredientItem(
                     width = 50.dp
                 )
                 // unit
-                Text(text = stringResource(R.string.txt_unit))
-                CustomTextField(
-                    value = unit.value,
-                    onValueChange = {
-                        unit.value = it
-                        ingredient.unit = it
-                    },
-                    icon = -1,
-                    placeHolder = "-",
-                    singleLine = true,
-                    autoCap = false,
-                    maxLength = 10,
-                    showMaxChara = false,
-                    width = 100.dp
-                )
+                Text(text = stringResource(R.string.txt_unit), style = MyTypography.bodySmall)
+                val inverseColor = MaterialTheme.colorScheme.inversePrimary
+                Box(
+                    modifier = Modifier
+                        .width(100.dp)
+                        .height(40.dp)
+                        .drawWithContent {
+                            drawContent()
+                            drawLine(
+                                color = inverseColor,
+                                start = Offset(0f, size.height),
+                                end = Offset(size.width, size.height),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
+                        .clickable { unitsExpanded.value = !unitsExpanded.value },
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Text(text = unit.value, style = MyTypography.bodyMedium)
+                }
+            }
+        }
+    }
+    // DropdownMenu with measure units options
+    if (unitsExpanded.value) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(start = (300).dp),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            DropdownMenu(
+                expanded = true,
+                onDismissRequest = { unitsExpanded.value = false },
+                modifier = Modifier.width(120.dp)
+            ) {
+                Column(modifier = Modifier
+                    .heightIn(max = 200.dp)
+                    .verticalScroll(rememberScrollState())) {
+                    MEASURE_UNITS.forEach { option ->
+                        DropdownMenuItem(
+                            text = { Text(text = option, style = MyTypography.bodySmall) },
+                            onClick = {
+                                unit.value = option
+                                ingredient.unit = option
+                                unitsExpanded.value = false
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -513,8 +627,10 @@ fun TagLabel(tagName: String) {
  * and when expanded they are all displayed on the screen.
  *
  * @param title name of the tag family
+ * @param required adds a red asterisk next to the title if true
  * @param tags all entries of a tag enum
  * @param filtersSet the current set of filters for this tag family
+ * @param onlyOne if true only one tag can be enabled at once
  * @param getString the getString function that belongs to this enum of tags
  * @param onClick block that runs with the tag that got pressed
  */
@@ -522,8 +638,10 @@ fun TagLabel(tagName: String) {
 @Composable
 fun <T> TagDropDown(
     title: String,
+    required: Boolean = false,
     tags: List<T>,
     filtersSet: Set<T>,
+    onlyOne: Boolean = false,
     getString: (T) -> String,
     onClick: (T) -> Unit
 ) {
@@ -542,10 +660,17 @@ fun <T> TagDropDown(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // name of the tag family
-            Text(
-                text = title,
-                style = MyTypography.titleSmall
-            )
+            Row(verticalAlignment = Alignment.CenterVertically)
+            {
+                Text(
+                    text = title,
+                    style = MyTypography.titleSmall
+                )
+                if (required) {
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(text = "*", style = MyTypography.titleSmall, color = Color.Red)
+                }
+            }
             // button to expand or minimize the menu of tags
             IconButton(onClick = { expanded.value = !expanded.value }) {
                 Icon(
@@ -567,6 +692,10 @@ fun <T> TagDropDown(
             ) {
                 tags.forEach { tag ->
                     TagButton(getString(tag) , filtersSet.contains(tag)) {
+                        if (onlyOne) filtersSet.toMutableSet().apply {
+                            this.clear()
+                            this.add(tag)
+                        }
                         onClick(tag)
                     }
                 }
@@ -581,6 +710,82 @@ fun <T> TagDropDown(
             ) {
                 items(tags) { tag ->
                     TagButton(getString(tag) , filtersSet.contains(tag)) {
+                        if (onlyOne) filtersSet.toMutableSet().apply {
+                            this.clear()
+                            this.add(tag)
+                        }
+                        onClick(tag)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun <T> SingleTagDropDown(
+    title: String,
+    tags: List<T>,
+    selectedTag: MutableState<T>,
+    getString: (T) -> String,
+    onClick: (T) -> Unit
+) {
+    val expanded = remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        // Menu header
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // name of the tag family
+            Text(
+                text = title,
+                style = MyTypography.titleSmall
+            )
+            // button to expand or minimize the menu of tags
+            IconButton(onClick = { expanded.value = !expanded.value }) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    painter = if (expanded.value) painterResource(R.drawable.up)
+                    else painterResource(R.drawable.down),
+                    contentDescription = stringResource(R.string.desc_dropDownMenu)
+                )
+            }
+        }
+        // if expanded -> show all tags at once
+        if (expanded.value) {
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                tags.forEach { tag ->
+                    Log.d("Debug", "selected tag is $selectedTag")
+                    Log.d("Debug", "enabled is ${selectedTag.value == tag}")
+
+                    key(getString(tag)) {
+                        TagButton(getString(tag) , selectedTag.value == tag) {
+                            onClick(tag)
+                        }
+                    }
+                }
+            }
+            // if not expanded -> collapsed lazy row view
+        } else {
+            LazyRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(tags) { tag ->
+                    TagButton(getString(tag) , tag == selectedTag.value) {
                         onClick(tag)
                     }
                 }
@@ -639,11 +844,10 @@ private fun TagButton(
     enabled: Boolean,
     onClick: () -> Unit
 ) {
-    val selected = remember { mutableStateOf(enabled) }
     Box(
         modifier = Modifier
             .background(
-                color = if (selected.value) MaterialTheme.colorScheme.inversePrimary
+                color = if (enabled) MaterialTheme.colorScheme.inversePrimary
                 else Color.Transparent,
                 shape = RoundedCornerShape(50)
             )
@@ -653,14 +857,13 @@ private fun TagButton(
                 shape = RoundedCornerShape(50)
             )
             .clickable {
-                selected.value = !selected.value
                 onClick()
             }
     ) {
         Text(
             text = tagName,
             style = MyTypography.bodySmall,
-            color = if (selected.value) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.inversePrimary,
+            color = if (enabled) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.inversePrimary,
             modifier = Modifier.padding(vertical = 6.dp, horizontal = 12.dp)
         )
     }

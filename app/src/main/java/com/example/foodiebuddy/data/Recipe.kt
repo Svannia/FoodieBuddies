@@ -190,5 +190,3 @@ data class RecipeFilters(
     }
 
 }
-
-
