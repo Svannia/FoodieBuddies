@@ -30,6 +30,7 @@ import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.ingredients.FridgeHome
 import com.example.foodiebuddy.ui.ingredients.GroceriesHome
+import com.example.foodiebuddy.ui.recipes.RecipeCreate
 import com.example.foodiebuddy.ui.recipes.RecipeEdit
 import com.example.foodiebuddy.ui.recipes.RecipeView
 import com.example.foodiebuddy.ui.recipes.RecipesHome
@@ -171,10 +172,9 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(
                             route = "${Route.RECIPE}/{recipeID}",
-                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType })) {
-                                backStackEntry ->
-                            val recipeID =
-                                backStackEntry.arguments?.getString("recipeID")
+                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType }))
+                        { backStackEntry ->
+                            val recipeID = backStackEntry.arguments?.getString("recipeID")
                             if (recipeID != null) {
                                 val recipeVM: RecipeViewModel = viewModel {
                                     RecipeViewModel(recipeID)
@@ -183,16 +183,23 @@ class MainActivity : ComponentActivity() {
                                 Log.d("Compose", "Successfully composed screen Recipe of recipe $recipeID")
                             }
                         }
+                        composable(Route.RECIPE_CREATE) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null)
+                            {
+                                val recipeVM: RecipeViewModel = viewModel { RecipeViewModel() }
+                                RecipeCreate(userVM, recipeVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Recipe Create")
+                            }
+                        }
                         composable(
-                            route = "${Route.RECIPE_EDIT}/?recipeID={recipeID}",
-                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType; nullable = true })
+                            route = "${Route.RECIPE_EDIT}/{recipeID}",
+                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType })
                         ) { backStackEntry ->
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 val recipeID = backStackEntry.arguments?.getString("recipeID")
-                                val recipeVM: RecipeViewModel = if (!recipeID.isNullOrBlank()) {
-                                    viewModel { RecipeViewModel(recipeID) }
-                                } else viewModel { RecipeViewModel() }
+                                val recipeVM: RecipeViewModel = viewModel { RecipeViewModel(recipeID) }
                                 RecipeEdit(userVM, recipeVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipe Edit for recipeID $recipeID")
                             }

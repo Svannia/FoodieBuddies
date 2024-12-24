@@ -155,7 +155,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                     }
                     // options menu
                     OptionsMenu(
-                        stringResource(R.string.button_newRecipe) to { navigationActions.navigateTo("${Route.RECIPE_EDIT}/") },
+                        stringResource(R.string.button_newRecipe) to { navigationActions.navigateTo(Route.RECIPE_CREATE) },
                         stringResource(R.string.button_drafts) to {}
                     )
                 }

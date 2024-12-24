@@ -14,7 +14,7 @@ import com.example.foodiebuddy.R
  * @property ownerName username of the recipe author
  * @property name title of the recipe
  * @property picture optional picture of the recipe
- * @property recipe full recipe text
+ * @property instructions list of strings where each element represents a step of the cooking instructions
  * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
  * @property origin origin tag from Origin enum
  * @property diet diet tag from Diet enum
@@ -27,7 +27,7 @@ data class Recipe(
     val ownerName: String,
     val name: String,
     val picture: Uri,
-    val recipe: String,
+    val instructions: List<String>,
     val ingredients: List<RecipeIngredient>,
     val origin: Origin,
     val diet: Diet,
@@ -42,7 +42,7 @@ data class Recipe(
          * @return empty Recipe data object.
          */
         fun empty(): Recipe {
-            return Recipe("", "", "", "", Uri.EMPTY, "", emptyList(), Origin.NONE, Diet.NONE, emptyList(), emptyList())
+            return Recipe("", "", "", "", Uri.EMPTY, listOf(""), emptyList(), Origin.NONE, Diet.NONE, emptyList(), emptyList())
         }
     }
     /**

@@ -30,6 +30,7 @@
     <string name="button_removeImage">Retirer</string>
     <string name="button_reset">Réinitialiser</string>
     <string name="button_save">Sauvegarder</string>
+    <string name="button_publish">Publier</string>
     <string name="button_seeResults">Voir les résulats</string>
     <string name="button_sendToFridge">Envoyer les courses dans le Frigo</string>
     <string name="button_signIn">S\'enregistrer</string>
@@ -78,6 +79,7 @@
     <string name="field_keywords">Qu\'est-ce que tu cherches ?</string>
     <string name="field_maxChar">max. %1$s caractères</string>
     <string name="field_none">-</string>
+    <string name="field_recipeInstructions">Entre les instructions de ta recette</string>
     <string name="field_recipeName">Entre le nom de ta recette</string>
     <string name="field_username">Nom d\'utilisateur</string>
 
@@ -133,6 +135,7 @@
     <string name="title_miscellaneous">Divers</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origine</string>
+    <string name="title_recipeInstructions">Instructions</string>
     <string name="title_recipeName">Nom de la recette</string>
     <string name="title_recipes">Recettes</string>
     <string name="title_settings">Paramètres</string>
@@ -174,4 +177,7 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
+    <string name="title_stepNb">Étape %1$d</string>
+    <string name="field_instructions">Entre tes instructions de cuisine</string>
+    <string name="title_createRecipe">Crée une nouvelle recette</string>
 </resources>

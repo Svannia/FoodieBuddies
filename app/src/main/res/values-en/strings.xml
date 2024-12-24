@@ -29,6 +29,7 @@
     <string name="button_removeImage">Remove</string>
     <string name="button_reset">Reset</string>
     <string name="button_save">Save</string>
+    <string name="button_publish">Publish</string>
     <string name="button_seeResults">Show results</string>
     <string name="button_sendToFridge">Send ticked items to Fridge</string>
     <string name="button_signIn">Log in</string>
@@ -173,4 +174,9 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
+    <string name="title_recipeInstructions">Instructions</string>
+    <string name="field_recipeInstructions">Enter the instructions for you recipe</string>
+    <string name="title_stepNb">Step %1$d</string>
+    <string name="field_instructions">Enter your cooking instructions</string>
+    <string name="title_createRecipe">Create a new recipe</string>
 </resources>

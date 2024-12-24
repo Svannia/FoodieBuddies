@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -120,7 +121,7 @@ fun EditRecipe(
     title: String,
     name: MutableState<String>,
     picture: MutableState<Uri>,
-    recipe: MutableState<String>,
+    instructions: SnapshotStateList<String>,
     ingredients: SnapshotStateList<RecipeIngredient>,
     origin: MutableState<Origin>,
     diet: MutableState<Diet>,
@@ -153,10 +154,16 @@ fun EditRecipe(
             // todo
         }) },
         bottomBar = {
+            Log.d("Debug", "please recompose???? ingredients contain ${ingredients.toList()}")
             val newData = dataEdited?.value ?: true
-            val requiredFields = name.value.isNotEmpty() && recipe.value.isNotEmpty() &&
-                    origin.value != Origin.NONE && diet.value != Diet.NONE && ingredients.all { it.displayedName.isNotEmpty() }
-            BottomSaveBar(stringResource(R.string.button_save), requiredFields && newData) {
+            val requiredFields =
+                name.value.isNotEmpty() &&
+                instructions.isNotEmpty() &&
+                !instructions.all { it.isBlank() } &&
+                origin.value != Origin.NONE &&
+                diet.value != Diet.NONE &&
+                ingredients.toList().all { it.displayedName.isNotBlank() }
+            BottomSaveBar(stringResource(R.string.button_publish), requiredFields && newData) {
                 onSave()
             }
         }
@@ -297,22 +304,30 @@ fun EditRecipe(
             }
             // "Plus" button to add an ingredient
             item {
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                    IconButton(
-                        onClick = {
-                            ingredients.add(RecipeIngredient("", "", 0f, ""))
-                            ingredients.forEach { Log.d("Debug", "ingredients after adding are $${it.displayedName}") }
-                        }
-                    ) {
-                        Icon(
-                            painterResource(R.drawable.add),
-                            modifier = Modifier.size(26.dp),
-                            contentDescription = stringResource(R.string.desc_add)
-                        )
-                    }
+                AddButton {
+                    ingredients.add(RecipeIngredient.empty())
+                    Log.d("Debug", "ingredients contain ${ingredients.toList()}")
                 }
-                Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
-                Spacer(modifier = Modifier.size(16.dp))
+            }
+            // recipe instructions title
+            item {
+                RequiredField(title = stringResource(R.string.title_recipeInstructions), style = MyTypography.titleSmall)
+            }
+            // list of instruction steps
+            itemsIndexed(instructions.toList()) { index, step ->
+                StepItem(
+                    number = index,
+                    last = index > 0 && index == instructions.size -1,
+                    step = step,
+                    onValueChange = { instructions[index] = it },
+                    onDelete = { instructions.removeLast() }
+                )
+            }
+            // "Plus" button to add a step
+            item {
+                AddButton {
+                    instructions.add("")
+                }
             }
             // spacing for the keyboard (cuz doing things properly with ime paddings fucks things up)
             item {
@@ -467,13 +482,32 @@ fun <T> DropDownField(
 }
 
 @Composable
+fun AddButton(
+    onClick: () -> Unit
+) {
+    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+        IconButton(
+            onClick = { onClick() }
+        ) {
+            Icon(
+                painterResource(R.drawable.add),
+                modifier = Modifier.size(26.dp),
+                contentDescription = stringResource(R.string.desc_add)
+            )
+        }
+    }
+    Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
+    Spacer(modifier = Modifier.size(16.dp))
+}
+
+@Composable
 fun IngredientItem(
     ingredient: RecipeIngredient,
     onDelete: () -> Unit
 ) {
-    val displayName = remember { mutableStateOf("") }
-    val quantity = remember { mutableFloatStateOf(0f) }
-    val unit = remember { mutableStateOf("-") }
+    val displayName = remember { mutableStateOf(ingredient.displayedName) }
+    val quantity = remember { mutableFloatStateOf(ingredient.quantity) }
+    val unit = remember { mutableStateOf(ingredient.unit) }
     val unitsExpanded = remember { mutableStateOf(false) }
 
     Box(
@@ -582,17 +616,78 @@ fun IngredientItem(
                     .heightIn(max = 200.dp)
                     .verticalScroll(rememberScrollState())) {
                     MEASURE_UNITS.forEach { option ->
+                        val optionText = stringResource(option)
                         DropdownMenuItem(
-                            text = { Text(text = option, style = MyTypography.bodySmall) },
+                            text = { Text(text = optionText, style = MyTypography.bodySmall) },
                             onClick = {
-                                unit.value = option
-                                ingredient.unit = option
+                                unit.value = optionText
+                                ingredient.unit = optionText
                                 unitsExpanded.value = false
                             }
                         )
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun StepItem(
+    number: Int,
+    last: Boolean,
+    step: String,
+    onValueChange: (String) -> Unit,
+    onDelete: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight()
+            .border(
+                width = 1.dp,
+                color = MaterialTheme.colorScheme.outline,
+                shape = RoundedCornerShape(10)
+            ),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Column(modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // step numbering
+                Text(
+                    modifier = Modifier.padding(start = 16.dp),
+                    text = stringResource(R.string.title_stepNb, number+1),
+                    style = MyTypography.titleSmall
+                )
+                // delete button
+                if (last) {
+                    IconButton(
+                        modifier = Modifier
+                            .height(24.dp)
+                            .width(40.dp)
+                            .padding(end = 16.dp),
+                        onClick = { onDelete() }
+                    ){
+                        Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
+                    }
+                }
+            }
+            CustomTextField(
+                value = step,
+                onValueChange = { onValueChange(it) },
+                icon = -1,
+                placeHolder = stringResource(R.string.field_instructions),
+                singleLine = false,
+                maxLength = 500,
+                width = 350.dp,
+                height = 260.dp
+            )
         }
     }
 }

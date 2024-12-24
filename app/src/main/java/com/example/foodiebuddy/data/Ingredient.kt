@@ -1,6 +1,7 @@
 package com.example.foodiebuddy.data
 
 import android.content.Context
+import androidx.compose.ui.res.stringResource
 import com.example.foodiebuddy.R
 import java.util.UUID
 
@@ -76,4 +77,4 @@ data class RecipeIngredient(
 }
 
 // The units of measure for ingredients.
-val MEASURE_UNITS = listOf("aucun", "g", "kg", "ml", "dl", "cs", "cc", "pincée", "tasse", "sachet", "dé", "bouquet", "goutte")
+val MEASURE_UNITS = listOf(R.string.unit_none, R.string.unit_g, R.string.unit_kg, R.string.unit_ml, R.string.unit_dl, R.string.unit_cs, R.string.unit_cc, R.string.unit_pin, R.string.unit_tasse, R.string.unit_sachet, R.string.unit_de, R.string.unit_bouquet, R.string.unit_goutte)

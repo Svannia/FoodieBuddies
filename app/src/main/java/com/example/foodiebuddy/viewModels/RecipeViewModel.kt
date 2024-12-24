@@ -1,9 +1,14 @@
 package com.example.foodiebuddy.viewModels
 
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.foodiebuddy.data.Diet
+import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.Recipe
+import com.example.foodiebuddy.data.RecipeIngredient
+import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.database.DatabaseConnection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +34,24 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
      * @return the RecipeViewModel's UID if it is non-null, an empty string otherwise
      */
     fun getVmUid(): String { return recipeID ?: "" }
+
+    fun createRecipe(
+        userID: String,
+        owner: String,
+        name: String,
+        picture: Uri,
+        instructions: List<String>,
+        ingredients: List<RecipeIngredient>,
+        origin: Origin,
+        diet: Diet,
+        tags: List<Tag>,
+        isError: (Boolean) -> Unit,
+        callBack: (String) -> Unit
+    ) {
+        db.createRecipe(userID, owner, name, picture, instructions, ingredients, origin, diet, tags, { isError(it) }) {
+            callBack(it)
+        }
+    }
 
     /**
      * Fetches all recipe data.

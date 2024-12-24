@@ -10,6 +10,7 @@ import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
+import com.example.foodiebuddy.data.getString
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
@@ -18,6 +19,7 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
+import kotlinx.coroutines.processNextEventInCurrentThread
 import kotlinx.coroutines.tasks.await
 
 private const val USERNAME = "username"
@@ -36,7 +38,7 @@ private const val IS_TICKED = "isTicked"
 
 private const val OWNER_NAME = "ownerName"
 private const val NAME = "name"
-private const val RECIPE = "recipe"
+private const val INSTRUCTIONS = "instructions"
 private const val INGREDIENTS = "ingredients"
 private const val QUANTITY = "quantity"
 private const val UNIT = "unit"
@@ -1143,6 +1145,73 @@ class DatabaseConnection {
 
     // recipes
 
+    fun createRecipe(
+        userID: String,
+        owner: String,
+        name: String,
+        picture: Uri,
+        instructions: List<String>,
+        ingredients: List<RecipeIngredient>,
+        origin: Origin,
+        diet: Diet,
+        tags: List<Tag>,
+        isError: (Boolean) -> Unit,
+        callBack: (String) -> Unit
+    ) {
+        val recipe = hashMapOf(
+            OWNER to userID,
+            OWNER_NAME to owner,
+            NAME to name,
+            PICTURE to picture.toString(),
+            INSTRUCTIONS to instructions,
+            INGREDIENTS to ingredients.map { ingredient ->
+                mapOf(
+                    DISPLAY_NAME to ingredient.displayedName,
+                    STAND_NAME to ingredient.standName,
+                    QUANTITY to ingredient.quantity,
+                    UNIT to ingredient.unit
+                )
+            },
+            ORIGIN to origin.toString(),
+            DIET to diet.toString(),
+            TAGS to tags.map { it.toString() },
+            FAVOURITE to emptyList<String>()
+        )
+
+        recipesCollection
+            .add(recipe)
+            .addOnSuccessListener { document ->
+                Log.d("MyDB", "Successfully created recipe")
+
+                // increment the user's counter for created recipes
+                userDataCollection.document(userID)
+                    .update(NUMBER_RECIPES, FieldValue.increment(1))
+                    .addOnSuccessListener {
+                        Log.d("MyDB", "Successfully incremented recipes counter")
+                        // add recipe picture to storage if not Uri.EMPTY
+                        if (picture != Uri.EMPTY) {
+                            updateRecipePicture(document.id, picture, { isError(it) }) {
+                                isError(false)
+                                callBack(document.id)
+                                Log.d("MyDB", "Successfully finished recipe creation process")
+                            }
+                        } else {
+                            isError(false)
+                            callBack(document.id)
+                            Log.d("MyDB", "Successfully finished recipe creation process")
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        isError(true)
+                        Log.d("MyDB", "Failed to increment recipes counter with error $e")
+                    }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to create new recipe with error $e")
+            }
+    }
+
     /**
      * Fetches all Recipes from entire database.
      *
@@ -1158,8 +1227,12 @@ class DatabaseConnection {
                     val ownerName = document.getString(OWNER_NAME) ?: ""
                     val name = document.getString(NAME) ?: ""
                     val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
-                    val recipe = document.getString(RECIPE) ?: ""
-                    val formattedRecipe = recipe.replace("\\n", "\n")
+                    val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
+                    val formattedInstructions = mutableListOf<String>()
+                    instructions.forEach {
+                        val formattedStep = it.replace("\\n", "\n")
+                        formattedInstructions.add(formattedStep)
+                    }
                     val ingredients = (document.get(INGREDIENTS) as? List<Map<String, String>>)?.map { map ->
                         RecipeIngredient(
                             displayedName = map[DISPLAY_NAME] ?: "",
@@ -1174,7 +1247,7 @@ class DatabaseConnection {
                     val tags = tagsList.map { Tag.valueOf(it) }
                     val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
                     isError(false)
-                    Recipe(document.id, owner, ownerName, name, picture, formattedRecipe, ingredients, origin, diet, tags, favouriteOf)
+                    Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, origin, diet, tags, favouriteOf)
                 }
         } catch (e: Exception) {
             isError(true)
@@ -1295,8 +1368,12 @@ class DatabaseConnection {
             val ownerName = document.getString(OWNER_NAME) ?: ""
             val name = document.getString(NAME) ?: ""
             val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
-            val recipe = document.getString(RECIPE) ?: ""
-            val formattedRecipe = recipe.replace("\\n", "\n")
+            val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
+            val formattedInstructions = mutableListOf<String>()
+            instructions.forEach {
+                val formattedStep = it.replace("\\n", "\n")
+                formattedInstructions.add(formattedStep)
+            }
             val ingredients = (document.get(INGREDIENTS) as? List<Map<String, String>>)?.map { map ->
                 RecipeIngredient(
                     displayedName = map[DISPLAY_NAME] ?: "",
@@ -1311,7 +1388,7 @@ class DatabaseConnection {
             val tags = tagsList.map { Tag.valueOf(it) }
             val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
             isError(false)
-            Recipe(document.id, owner, ownerName, name, picture, formattedRecipe, ingredients, origin, diet, tags, favouriteOf)
+            Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, origin, diet, tags, favouriteOf)
         } else {
             isError(true)
             Log.d("MyDB", "Failed to fetch recipe data")
@@ -1484,6 +1561,43 @@ class DatabaseConnection {
             }
     }
 
+    private fun recipePicturePath(recipeID: String) = "recipeData/$recipeID/recipePicture.jpg"
+
+    private fun updateRecipePicture(recipeID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val pictureRef = storage.child(recipePicturePath(recipeID))
+        // update / add new picture to storage
+        pictureRef
+            .putFile(picture)
+            .addOnSuccessListener {
+                // fetch picture URL
+                pictureRef.downloadUrl
+                    .addOnSuccessListener { uri ->
+                        // add new Uri to recipes collection
+                        recipesCollection.document(recipeID).update(PICTURE, uri.toString())
+                            .addOnSuccessListener {
+                                isError(false)
+                                callBack()
+                                Log.d("MyDB", "Successfully updated recipe picture")
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("MyDB", "Failed to update recipe picture with error $e")
+                            }
+                    }
+                    .addOnFailureListener { e ->
+                        isError(true)
+                        Log.d("MyDB", "Failed to download picture URI with error $e")
+                    }
+            }
+            .addOnFailureListener { e ->
+                val errorCode = (e as? StorageException)?.errorCode
+                val httpErrorCode = (e as? StorageException)?.httpResultCode
+                isError(true)
+                Log.d("MyDB", "Failed to update recipe picture with error $e\n" +
+                        "errorCode is $errorCode\n" +
+                        "and http status is $httpErrorCode")
+            }
+    }
 
     // db tests
     /**

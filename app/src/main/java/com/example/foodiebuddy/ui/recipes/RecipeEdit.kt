@@ -47,41 +47,39 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
 
-    val recipeID = recipeVM.getVmUid()
     val recipeData by recipeVM.recipeData.collectAsState()
 
     val nameState = remember { mutableStateOf("") }
     val currentPicture = remember { mutableStateOf(Uri.EMPTY) }
     val pictureState = remember { mutableStateOf(Uri.EMPTY) }
-    val recipeState = remember { mutableStateOf("") }
+    val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
     val originState = remember { mutableStateOf(Origin.NONE) }
     val dietState = remember { mutableStateOf(Diet.NONE) }
     val tagsState = remember { mutableStateListOf<Tag>() }
 
     LaunchedEffect(Unit) {
-        if (recipeID.isNotEmpty()) {
-            loadingData.value = true
-            recipeVM.fetchRecipeData({
-                if (it) {
-                    handleError(context, "Could not fetch recipe data")
-                    loadingData.value = false
-                }
-            }) {
-                if (recipeData != Recipe.empty()) {
-                    nameState.value = recipeData.name
-                    currentPicture.value = recipeData.picture
-                    pictureState.value = recipeData.picture
-                    recipeState.value = recipeData.recipe
-                    ingredientsState.clear()
-                    ingredientsState.addAll(recipeData.ingredients)
-                    originState.value = recipeData.origin
-                    dietState.value = recipeData.diet
-                    tagsState.clear()
-                    tagsState.addAll(recipeData.tags)
-                }
+        loadingData.value = true
+        recipeVM.fetchRecipeData({
+            if (it) {
+                handleError(context, "Could not fetch recipe data")
                 loadingData.value = false
             }
+        }) {
+            if (recipeData != Recipe.empty()) {
+                nameState.value = recipeData.name
+                currentPicture.value = recipeData.picture
+                pictureState.value = recipeData.picture
+                instructionsState.clear()
+                instructionsState.addAll(recipeData.instructions)
+                ingredientsState.clear()
+                ingredientsState.addAll(recipeData.ingredients)
+                originState.value = recipeData.origin
+                dietState.value = recipeData.diet
+                tagsState.clear()
+                tagsState.addAll(recipeData.tags)
+            }
+            loadingData.value = false
         }
     }
     LaunchedEffect(recipeData) {
@@ -89,7 +87,8 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             nameState.value = recipeData.name
             currentPicture.value = recipeData.picture
             pictureState.value = recipeData.picture
-            recipeState.value = recipeData.recipe
+            instructionsState.clear()
+            instructionsState.addAll(recipeData.instructions)
             ingredientsState.clear()
             ingredientsState.addAll(recipeData.ingredients)
             originState.value = recipeData.origin
@@ -126,7 +125,7 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 title = stringResource(R.string.title_editRecipe),
                 name = nameState,
                 picture = pictureState,
-                recipe = recipeState,
+                instructions = instructionsState,
                 ingredients = ingredientsState,
                 origin = originState,
                 diet = dietState,
