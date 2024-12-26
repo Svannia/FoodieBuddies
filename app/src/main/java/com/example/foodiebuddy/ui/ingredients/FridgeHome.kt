@@ -96,7 +96,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
             navigationActions = navigationActions,
             title = stringResource(R.string.title_fridge),
             navigationIndex = 2,
-            topBarIcons = { OptionsMenu(
+            topBarIcons = { OptionsMenu( R.drawable.options, 
                 stringResource(R.string.button_clearList) to { showDeleteAlert.value = true }
             ) },
             userViewModel = userViewModel,

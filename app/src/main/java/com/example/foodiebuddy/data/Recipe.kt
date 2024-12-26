@@ -53,7 +53,6 @@ data class Recipe(
     fun isEmpty(): Boolean {
         return this == empty()
     }
-
 }
 
 /**
@@ -72,31 +71,21 @@ data class RecipeDraft(
     val name: String,
     val picture: String,
     val instructions: List<String>,
-    val ingredients: List<RecipeIngredient>,
+    val ingredients: List<Map<String, String>>,
     val origin: Origin,
     val diet: Diet,
     val tags: List<Tag>,
 ) {
-
     companion object {
         /**
-         * Creates an empty Recipe Draft data object.
+         * Creates an empty RecipeDraft data object.
          *
-         * @return empty Recipe Draft data object.
+         * @return empty RecipeDraft data object.
          */
         fun empty(): RecipeDraft {
             return RecipeDraft("", "", "", listOf(""), emptyList(), Origin.NONE, Diet.NONE, emptyList())
         }
     }
-    /**
-     * Checks if this Recipe Draft data object is empty.
-     *
-     * @return true if the Recipe Draft data object is empty.
-     */
-    fun isEmpty(): Boolean {
-        return this == empty()
-    }
-
 }
 
 // The Origin indicates from which country or region the recipe originates from.

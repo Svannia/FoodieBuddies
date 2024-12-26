@@ -580,7 +580,7 @@ fun DialogWindow(
  * and a block to run when that button is pressed.
  */
 @Composable
-fun OptionsMenu(vararg options: Pair<String, () -> Unit>) {
+fun OptionsMenu(icon: Int, vararg options: Pair<String, () -> Unit>) {
     val menuExpanded = remember { mutableStateOf(false) }
 
     Row{
@@ -588,7 +588,7 @@ fun OptionsMenu(vararg options: Pair<String, () -> Unit>) {
             onClick = { menuExpanded.value = !menuExpanded.value }
         ) {
             Icon(
-                painter = painterResource(R.drawable.options),
+                painter = painterResource(icon),
                 modifier = Modifier.size(28.dp),
                 contentDescription = stringResource(R.string.button_options)
             )

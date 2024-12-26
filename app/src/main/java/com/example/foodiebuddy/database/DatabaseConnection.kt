@@ -1190,7 +1190,7 @@ class DatabaseConnection {
                         Log.d("MyDB", "Successfully incremented recipes counter")
                         // add recipe picture to storage if not Uri.EMPTY
                         if (picture != Uri.EMPTY) {
-                            updateRecipePicture(document.id, picture, { isError(it) }) {
+                            updateRecipePicture(userID, document.id, picture, { isError(it) }) {
                                 isError(false)
                                 callBack(document.id)
                                 Log.d("MyDB", "Successfully finished recipe creation process")
@@ -1561,10 +1561,10 @@ class DatabaseConnection {
             }
     }
 
-    private fun recipePicturePath(recipeID: String) = "recipeData/$recipeID/recipePicture.jpg"
+    private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID/recipePicture.jpg"
 
-    private fun updateRecipePicture(recipeID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        val pictureRef = storage.child(recipePicturePath(recipeID))
+    private fun updateRecipePicture(userID: String, recipeID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val pictureRef = storage.child(recipePicturePath(userID, recipeID))
         // update / add new picture to storage
         pictureRef
             .putFile(picture)

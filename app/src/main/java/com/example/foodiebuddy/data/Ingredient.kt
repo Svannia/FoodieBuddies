@@ -1,6 +1,9 @@
 package com.example.foodiebuddy.data
 
 import android.content.Context
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.res.stringResource
 import com.example.foodiebuddy.R
 import java.util.UUID
@@ -73,6 +76,19 @@ data class RecipeIngredient(
      */
     fun isEmpty(): Boolean {
         return this == empty()
+    }
+
+    private var displayedNameState by mutableStateOf(displayedName)
+    private var standNameState by mutableStateOf(standName)
+    private var quantityState by mutableStateOf(quantity)
+    private var unitState by mutableStateOf(unit)
+
+    // Sync changes back to original fields if needed
+    fun syncFields() {
+        displayedName = displayedNameState
+        standName = standNameState
+        quantity = quantityState
+        unit = unitState
     }
 }
 

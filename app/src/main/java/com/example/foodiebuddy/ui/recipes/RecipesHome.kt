@@ -154,9 +154,9 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         )
                     }
                     // options menu
-                    OptionsMenu(
+                    OptionsMenu(R.drawable.options,
                         stringResource(R.string.button_newRecipe) to { navigationActions.navigateTo(Route.RECIPE_CREATE) },
-                        stringResource(R.string.button_drafts) to {}
+                        stringResource(R.string.button_drafts) to { navigationActions.navigateTo(Route.DRAFTS) }
                     )
                 }
 

@@ -109,7 +109,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
             navigationActions = navigationActions,
             title = stringResource(R.string.title_groceries),
             navigationIndex = 1,
-            topBarIcons = { OptionsMenu(
+            topBarIcons = { OptionsMenu(R.drawable.options,
                 stringResource(R.string.button_clearList) to { showDeleteAlert.value = true },
                 stringResource(R.string.button_sendToFridge) to {
                     loading.value = true

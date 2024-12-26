@@ -3,7 +3,6 @@ package com.example.foodiebuddy.ui.recipes
 import android.content.Context
 import android.net.Uri
 import android.util.Log
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -28,7 +27,6 @@ import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -39,21 +37,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.Checkbox
-import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,45 +51,38 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PaintingStyle
-import androidx.compose.ui.modifier.modifierLocalMapOf
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.MEASURE_UNITS
 import com.example.foodiebuddy.data.Origin
-import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.getString
-import com.example.foodiebuddy.errors.handleError
-import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomNumberField
@@ -108,10 +91,7 @@ import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.account.PictureOptions
 import com.example.foodiebuddy.ui.images.SetPicture
-import com.example.foodiebuddy.ui.ingredients.standardizeName
 import com.example.foodiebuddy.ui.theme.MyTypography
-import com.example.foodiebuddy.viewModels.UserViewModel
-import kotlin.math.exp
 
 
 @Composable
@@ -128,6 +108,7 @@ fun EditRecipe(
     tags: SnapshotStateList<Tag>,
     showPictureOptions: MutableState<Boolean>,
     dataEdited: MutableState<Boolean>?= null,
+    onlyEnableIfEdited: Boolean = false,
     onEditPicture: () -> Unit,
     onRemovePicture: () -> Unit,
     onDraftSave: () -> Unit,
@@ -148,13 +129,16 @@ fun EditRecipe(
 
         }
 
+    // to recompose screen when modifying ingredient name
+    var ingredientTrigger by remember { mutableIntStateOf(0) }
+    LaunchedEffect(ingredientTrigger) {}
+
     RecipeSecondaryScreen(
         title = title,
         onGoBack = { onGoBack() },
-        actions = { OptionsMenu( "Save to drafts" to { onDraftSave() }) },
+        actions = { OptionsMenu(R.drawable.save, stringResource(R.string.button_saveDraft) to { onDraftSave() }) },
         bottomBar = {
-            Log.d("Debug", "please recompose???? ingredients contain ${ingredients.toList()}")
-            val newData = dataEdited?.value ?: true
+            val newData = if (onlyEnableIfEdited) dataEdited?.value ?: true else true
             val requiredFields =
                 name.value.isNotEmpty() &&
                 instructions.isNotEmpty() &&
@@ -258,7 +242,10 @@ fun EditRecipe(
                         filtersSet = setOf(origin.value),
                         onlyOne = true,
                         getString = { origin -> origin.getString(context) },
-                        onClick = { origin.value = it }
+                        onClick = {
+                            origin.value = it
+                            if (dataEdited != null) dataEdited.value = true
+                        }
                     )
                     TagDropDown(
                         title = stringResource(R.string.title_diet),
@@ -267,7 +254,10 @@ fun EditRecipe(
                         filtersSet = setOf(diet.value),
                         onlyOne = true,
                         getString = { diet -> diet.getString(context) },
-                        onClick = { diet.value = it }
+                        onClick = {
+                            diet.value = it
+                            if (dataEdited != null) dataEdited.value = true
+                        }
                     )
                     TagDropDown(
                         title = stringResource(R.string.title_miscellaneous),
@@ -277,6 +267,7 @@ fun EditRecipe(
                         onClick = { tag ->
                             if (tags.contains(tag)) tags.remove(tag)
                             else tags.add(tag)
+                            if (dataEdited != null) dataEdited.value = true
                         }
                     )
                     Spacer(modifier = Modifier.size(8.dp))
@@ -295,11 +286,17 @@ fun EditRecipe(
             }
             // list of ingredients
             items(ingredients.toList(), key = {it.id}) { ingredient ->
-                IngredientItem(ingredient) {
-                    ingredients.remove(ingredient)
-                    ingredients.forEach { Log.d("Debug", "ingredients after removing are $${it.displayedName}") }
-                }
-                Log.d("Debug", "ingredients contain ${ingredients.toList()}")
+                IngredientItem(
+                    ingredient = ingredient,
+                    onValueChange = {
+                        ingredientTrigger++
+                        if (dataEdited != null) dataEdited.value = true
+                    },
+                    onDelete = {
+                        ingredients.remove(ingredient)
+                        if (dataEdited != null) dataEdited.value = true
+                    }
+                )
             }
             // "Plus" button to add an ingredient
             item {
@@ -316,10 +313,16 @@ fun EditRecipe(
             itemsIndexed(instructions.toList()) { index, step ->
                 StepItem(
                     number = index,
-                    last = index > 0 && index == instructions.size -1,
+                    last = true,//(index > 0 && index == instructions.size -1,
                     step = step,
-                    onValueChange = { instructions[index] = it },
-                    onDelete = { instructions.removeLast() }
+                    onValueChange = {
+                        instructions[index] = it
+                        if (dataEdited != null) dataEdited.value = true
+                    },
+                    onDelete = {
+                        instructions.removeLast()
+                        if (dataEdited != null) dataEdited.value = true
+                    }
                 )
             }
             // "Plus" button to add a step
@@ -502,6 +505,7 @@ fun AddButton(
 @Composable
 fun IngredientItem(
     ingredient: RecipeIngredient,
+    onValueChange: () -> Unit,
     onDelete: () -> Unit
 ) {
     val displayName = remember { mutableStateOf(ingredient.displayedName) }
@@ -535,7 +539,7 @@ fun IngredientItem(
                         onValueChange = {
                             displayName.value = it.trimEnd()
                             ingredient.displayedName = it.trimEnd()
-                            ingredient.standName = standardizeName(it.trimEnd())
+                            onValueChange()
                         },
                         icon = -1,
                         placeHolder = stringResource(R.string.field_ingredientName),
@@ -570,9 +574,10 @@ fun IngredientItem(
                     onValueChange = {
                         quantity.floatValue = it
                         ingredient.quantity = it
+                        onValueChange()
                     },
                     placeHolder = "-",
-                    width = 50.dp
+                    width = 100.dp
                 )
                 // unit
                 Text(text = stringResource(R.string.txt_unit), style = MyTypography.bodySmall)
@@ -621,6 +626,7 @@ fun IngredientItem(
                             onClick = {
                                 unit.value = optionText
                                 ingredient.unit = optionText
+                                onValueChange()
                                 unitsExpanded.value = false
                             }
                         )

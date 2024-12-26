@@ -5,6 +5,7 @@
     <string name="alert_deleteCatFridge">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Liste de Courses\".</string>
     <string name="alert_deleteCatGroceries">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Mon Frigo\".</string>
     <string name="alert_exitRecipe">Si tu quittes cette page, ta recette sera perdue.\nTu peux l\'ajouter à tes brouillons pour revenir dessus plus tard.</string>
+    <string name="alert_exitDraft">Si tu quittes cette page, les modifications apportées à ton brouillon seront perdues.</string>
     <string name="alert_termsConditions">
         Cette application est à usage strictement privé: installe-la seulement si Alice te l\'a donnée.\n
         \nNe partage pas le fichier d\'installation sans l\'accord d\'Alice. Si elle trouve un compte non autorisé, elle le supprimera illico presto.\n
@@ -26,11 +27,12 @@
     <string name="button_modifyProfilePicture">Modifier la photo de profil</string>
     <string name="button_newRecipe">Nouvelle Recette</string>
     <string name="button_options">options</string>
+    <string name="button_publish">Publier</string>
     <string name="button_quit">Quitter</string>
     <string name="button_removeImage">Retirer</string>
     <string name="button_reset">Réinitialiser</string>
     <string name="button_save">Sauvegarder</string>
-    <string name="button_publish">Publier</string>
+    <string name="button_saveDraft">Enregistrer le brouillon</string>
     <string name="button_seeResults">Voir les résulats</string>
     <string name="button_sendToFridge">Envoyer les courses dans le Frigo</string>
     <string name="button_signIn">S\'enregistrer</string>
@@ -76,6 +78,7 @@
     <string name="field_addItem">Ajouter un article</string>
     <string name="field_bio">Bio</string>
     <string name="field_ingredientName">Nom de l\'ingrédient</string>
+    <string name="field_instructions">Entre tes instructions de cuisine</string>
     <string name="field_keywords">Qu\'est-ce que tu cherches ?</string>
     <string name="field_maxChar">max. %1$s caractères</string>
     <string name="field_none">-</string>
@@ -123,6 +126,7 @@
 
     <string name="title_about">À propos</string>
     <string name="title_account">Compte</string>
+    <string name="title_createRecipe">Crée une nouvelle recette</string>
     <string name="title_creator">Créateur</string>
     <string name="title_diet">Régime</string>
     <string name="title_editRecipe">Modifie ta recette</string>
@@ -139,12 +143,14 @@
     <string name="title_recipeName">Nom de la recette</string>
     <string name="title_recipes">Recettes</string>
     <string name="title_settings">Paramètres</string>
+    <string name="title_stepNb">Étape %1$d</string>
     <string name="title_tag">Tags</string>
     <string name="title_theme">Thème</string>
 
     <string name="toast_categoryName">Cette catégorie existe déjà. Sauvegarde d\'abord tes modifications.</string>
     <string name="toast_ingredientExists">Cet ingrédient existe déjà dans ta liste de courses.</string>
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
+    <string name="toast_savedDraft">Ton brouillon a été enregistré.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
     <string name="txt_allIngredientsOnly">Uniquement si j\'ai les ingrédients</string>
@@ -153,6 +159,7 @@
     <string name="txt_favouriteOnly">Uniquement recettes préférées</string>
     <string name="txt_me">Moi</string>
     <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>
+    <string name="txt_noDrafts">Tu n\'as aucun brouillon sauvegardé pour le moment.</string>
     <string name="txt_noRecipes">Il n\'y a pas encore de recettes sur l\'app!</string>
     <string name="txt_noResults">Il n\'y a aucune recette correspondant à ces filtres.</string>
     <string name="txt_numberRecipes">Total de recettes ajoutées : %1$s</string>
@@ -177,7 +184,6 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
-    <string name="title_stepNb">Étape %1$d</string>
-    <string name="field_instructions">Entre tes instructions de cuisine</string>
-    <string name="title_createRecipe">Crée une nouvelle recette</string>
+    <string name="txt_unnamed">Sans nom</string>
+    <string name="title_editDraft">Modifie ton Brouillon</string>
 </resources>

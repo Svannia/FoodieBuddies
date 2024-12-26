@@ -10,6 +10,7 @@ import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.database.DatabaseConnection
+import com.example.foodiebuddy.ui.ingredients.standardizeName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -48,6 +49,11 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         isError: (Boolean) -> Unit,
         callBack: (String) -> Unit
     ) {
+        instructions.filter { instruction -> instruction.isNotBlank() }
+        ingredients.forEach { ingredient ->
+            if (ingredient.displayedName.isBlank()) ingredients.toMutableList().remove(ingredient)
+            ingredient.standName = standardizeName(ingredient.displayedName)
+        }
         db.createRecipe(userID, owner, name, picture, instructions, ingredients, origin, diet, tags, { isError(it) }) {
             callBack(it)
         }

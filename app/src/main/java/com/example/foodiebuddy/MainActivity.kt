@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
+import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,6 +32,8 @@ import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.ingredients.FridgeHome
 import com.example.foodiebuddy.ui.ingredients.GroceriesHome
+import com.example.foodiebuddy.ui.recipes.Drafts
+import com.example.foodiebuddy.ui.recipes.EditDraft
 import com.example.foodiebuddy.ui.recipes.RecipeCreate
 import com.example.foodiebuddy.ui.recipes.RecipeEdit
 import com.example.foodiebuddy.ui.recipes.RecipeView
@@ -202,6 +206,27 @@ class MainActivity : ComponentActivity() {
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel(recipeID) }
                                 RecipeEdit(userVM, recipeVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipe Edit for recipeID $recipeID")
+                            }
+                        }
+                        composable(Route.DRAFTS) {
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                Drafts(offDataVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Drafts")
+                            }
+                        }
+                        composable(
+                            route = "${Route.EDIT_DRAFT}/{draftID}",
+                            arguments = listOf(navArgument("draftID") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val draftID = backStackEntry.arguments?.getString("draftID")
+                                val recipeVM: RecipeViewModel = viewModel { RecipeViewModel() }
+                                if (draftID != null) {
+                                    EditDraft(draftID, userVM, recipeVM, offDataVM, navigationActions)
+                                    Log.d("Compose", "Successfully composed screen Draft Edit for draftID $draftID")
+                                }
                             }
                         }
 

@@ -5,6 +5,7 @@
     <string name="alert_deleteCatFridge">Warning: this action will also delete this category and all its elements in \"Groceries list\"</string>
     <string name="alert_deleteCatGroceries">Warning: this action will also delete this category and all its elements in \"My Fridge\"</string>
     <string name="alert_exitRecipe">If you exit now, this recipe will be lost.\nYou can save it to your drafts to get back on it later.</string>
+    <string name="alert_exitDraft">If you exit now, the modifications that you have made on this draft will be lost.</string>
     <string name="alert_termsConditions">
         This app is strictly for private use: only install it if you received it from Alice.\n
         \nDo not share the installation file without Alice\'s approval. If she finds an unauthorized account, she will delete it immediately.\n
@@ -25,11 +26,12 @@
     <string name="button_modifyProfilePicture">Edit your profile picture</string>
     <string name="button_newRecipe">New Recipe</string>
     <string name="button_options">options</string>
+    <string name="button_publish">Publish</string>
     <string name="button_quit">Leave</string>
     <string name="button_removeImage">Remove</string>
     <string name="button_reset">Reset</string>
     <string name="button_save">Save</string>
-    <string name="button_publish">Publish</string>
+    <string name="button_saveDraft">Save to drafts</string>
     <string name="button_seeResults">Show results</string>
     <string name="button_sendToFridge">Send ticked items to Fridge</string>
     <string name="button_signIn">Log in</string>
@@ -75,9 +77,11 @@
     <string name="field_addItem">Add an item</string>
     <string name="field_bio">Bio</string>
     <string name="field_ingredientName">Ingredient name</string>
+    <string name="field_instructions">Enter your cooking instructions</string>
     <string name="field_keywords">What are you searching for?</string>
     <string name="field_maxChar">max. %1$s characters</string>
     <string name="field_none">-</string>
+    <string name="field_recipeInstructions">Enter the instructions for you recipe</string>
     <string name="field_recipeName">Enter your recipe name</string>
     <string name="field_username">Username</string>
 
@@ -121,6 +125,7 @@
 
     <string name="title_about">About</string>
     <string name="title_account">Account</string>
+    <string name="title_createRecipe">Create a new recipe</string>
     <string name="title_creator">Creator</string>
     <string name="title_diet">Diet</string>
     <string name="title_editRecipe">Edit your recipe</string>
@@ -133,15 +138,18 @@
     <string name="title_miscellaneous">Miscellaneous</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origin</string>
+    <string name="title_recipeInstructions">Instructions</string>
     <string name="title_recipeName">Recipe name</string>
     <string name="title_recipes">Recipes</string>
     <string name="title_settings">Settings</string>
+    <string name="title_stepNb">Step %1$d</string>
     <string name="title_tag">Tags</string>
     <string name="title_theme">Theme</string>
 
     <string name="toast_categoryName">This category already exists</string>
     <string name="toast_ingredientExists">This article is already in your groceries list.</string>
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
+    <string name="toast_savedDraft">Your draft has been saved.</string>
     <string name="toast_unknownError">There was an error, please retry. If it keeps failing, please contact Alice!</string>
 
     <string name="txt_allIngredientsOnly">Only if I have the ingredients</string>
@@ -150,6 +158,7 @@
     <string name="txt_favouriteOnly">Only favourite recipes</string>
     <string name="txt_me">Me</string>
     <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
+    <string name="txt_noDrafts">You don\'t have any saved draft for now.</string>
     <string name="txt_noRecipes">There are no recipes on the app for now!</string>
     <string name="txt_noResults">There are no recipes corresponding to those filters.</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
@@ -174,9 +183,6 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="title_recipeInstructions">Instructions</string>
-    <string name="field_recipeInstructions">Enter the instructions for you recipe</string>
-    <string name="title_stepNb">Step %1$d</string>
-    <string name="field_instructions">Enter your cooking instructions</string>
-    <string name="title_createRecipe">Create a new recipe</string>
+    <string name="txt_unnamed">Unnamed</string>
+    <string name="title_editDraft">Edit your Draft</string>
 </resources>

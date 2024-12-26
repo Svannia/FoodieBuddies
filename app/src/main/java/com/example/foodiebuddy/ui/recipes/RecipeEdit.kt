@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -131,12 +132,15 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 diet = dietState,
                 tags = tagsState,
                 showPictureOptions = showPictureOptions,
+                dataEdited = dataEdited,
+                onlyEnableIfEdited = true,
                 onEditPicture = { editingPicture.value = true },
                 onRemovePicture = {
                     pictureState.value = Uri.EMPTY
                     currentPicture.value = Uri.EMPTY
                     pictureEdited.value = false
-                    pictureRemoved.value = true },
+                    pictureRemoved.value = true
+                },
                 onDraftSave = {},
                 onSave = {
                     // todo
