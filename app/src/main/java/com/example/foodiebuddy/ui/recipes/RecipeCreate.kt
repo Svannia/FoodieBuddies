@@ -9,23 +9,28 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Origin
+import com.example.foodiebuddy.data.RecipeDraft
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.getString
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.DialogWindow
+import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 import kotlinx.coroutines.processNextEventInCurrentThread
+import java.util.UUID
 
 @Composable
-fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActions: NavigationActions) {
+fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: OfflineDataViewModel, navigationActions: NavigationActions) {
     val context = LocalContext.current
     val editingPicture = remember { mutableStateOf(false) }
     val showPictureOptions = remember { mutableStateOf(false) }
@@ -82,6 +87,20 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationAct
                 pictureState.value = Uri.EMPTY
                 currentPicture.value = Uri.EMPTY
             },
+            onDraftSave = {
+                val draftId = UUID.randomUUID().toString()
+                val newDraft = RecipeDraft(
+                    id = draftId,
+                    name = nameState.value,
+                    picture = pictureState.toString(),
+                    instructions = instructionsState,
+                    ingredients = ingredientsState,
+                    origin = originState.value,
+                    diet = dietState.value,
+                    tags = tagsState
+                )
+                offDataVM.saveDraft(newDraft)
+            },
             onSave = {
                 recipeVM.createRecipe(
                     userID, username.value, nameState.value, pictureState.value,
@@ -91,6 +110,22 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationAct
                 ) {
                     navigationActions.navigateTo("${Route.RECIPE}/${it}")
                 }
-            })
+            }
+        )
+        BackHandler {
+            showAlert.value = true
+        }
+        // alert for leaving the recipe edition page
+        if (showAlert.value) {
+            DialogWindow(
+                visible = showAlert,
+                content = stringResource(R.string.alert_exitRecipe),
+                confirmText = stringResource(R.string.button_quit),
+                confirmColour = Color.Red
+            ) {
+                showAlert.value = false
+                navigationActions.navigateTo(Route.RECIPES_HOME)
+            }
+        }
     }
 }

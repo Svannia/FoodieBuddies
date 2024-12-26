@@ -130,6 +130,7 @@ fun EditRecipe(
     dataEdited: MutableState<Boolean>?= null,
     onEditPicture: () -> Unit,
     onRemovePicture: () -> Unit,
+    onDraftSave: () -> Unit,
     onSave: () -> Unit
 ) {
     // getting image and relevant permissions
@@ -150,9 +151,7 @@ fun EditRecipe(
     RecipeSecondaryScreen(
         title = title,
         onGoBack = { onGoBack() },
-        actions = { OptionsMenu( "Save to drafts" to {
-            // todo
-        }) },
+        actions = { OptionsMenu( "Save to drafts" to { onDraftSave() }) },
         bottomBar = {
             Log.d("Debug", "please recompose???? ingredients contain ${ingredients.toList()}")
             val newData = dataEdited?.value ?: true

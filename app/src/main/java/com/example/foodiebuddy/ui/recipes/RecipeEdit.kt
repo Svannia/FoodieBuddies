@@ -137,6 +137,7 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     currentPicture.value = Uri.EMPTY
                     pictureEdited.value = false
                     pictureRemoved.value = true },
+                onDraftSave = {},
                 onSave = {
                     // todo
                 }

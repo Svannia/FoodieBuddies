@@ -36,7 +36,7 @@ import com.example.foodiebuddy.ui.recipes.RecipeView
 import com.example.foodiebuddy.ui.recipes.RecipesHome
 import com.example.foodiebuddy.ui.settings.Settings
 import com.example.foodiebuddy.ui.theme.FoodieBuddyTheme
-import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
+import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -52,8 +52,8 @@ class MainActivity : ComponentActivity() {
         val db = DatabaseConnection()
 
         setContent {
-            val offlinePrefViewModel: OfflinePreferencesViewModel = viewModel()
-            val currentTheme by offlinePrefViewModel.currentTheme.collectAsState()
+            val offDataVM: OfflineDataViewModel = viewModel()
+            val currentTheme by offDataVM.currentTheme.collectAsState()
 
             FoodieBuddyTheme(themeChoice = currentTheme) {
                 Surface(
@@ -188,7 +188,7 @@ class MainActivity : ComponentActivity() {
                             if (currentUser != null)
                             {
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel() }
-                                RecipeCreate(userVM, recipeVM, navigationActions)
+                                RecipeCreate(userVM, recipeVM, offDataVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipe Create")
                             }
                         }
@@ -229,7 +229,7 @@ class MainActivity : ComponentActivity() {
                         composable(Route.SETTINGS) {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                Settings(userVM, offlinePrefViewModel,  navigationActions)
+                                Settings(userVM, offDataVM,  navigationActions)
                                 Log.d("Compose", "Successfully composed screen Settings")
                             }
                         }

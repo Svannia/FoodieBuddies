@@ -49,14 +49,14 @@ import com.example.foodiebuddy.ui.account.deleteAuthentication
 import com.example.foodiebuddy.ui.account.signOut
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.ValidGreen
-import com.example.foodiebuddy.viewModels.OfflinePreferencesViewModel
+import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 private const val HEIGHT = 52
 private const val OFFSET = 45
 
 @Composable
-fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesViewModel, navigationActions: NavigationActions) {
+fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navigationActions: NavigationActions) {
 
     val context = LocalContext.current
     //val permissionLauncher = getNotificationPermissionLauncher(context)
@@ -67,7 +67,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
     val loading = remember { mutableStateOf(false) }
 
     // variables to handle theme settings
-    val themeChoice = convertThemeToText(offPrefViewModel.currentTheme.collectAsState().value)
+    val themeChoice = convertThemeToText(offDataVM.currentTheme.collectAsState().value)
     val themeChoices = ThemeChoice.entries.map { convertThemeToText(it) }
     val themeChoiceState = remember { mutableStateOf(themeChoice) }
     val darkTheme = stringResource(R.string.txt_systemDark)
@@ -106,7 +106,7 @@ fun Settings(userViewModel: UserViewModel, offPrefViewModel: OfflinePreferencesV
                             { newTheme = ThemeChoice.LIGHT }
                             else if (newChoice == darkTheme)
                             { newTheme = ThemeChoice.DARK }
-                            offPrefViewModel.setTheme(newTheme)
+                            offDataVM.setTheme(newTheme)
                         }
                     }
                 }

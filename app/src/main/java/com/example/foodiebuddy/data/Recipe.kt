@@ -56,6 +56,49 @@ data class Recipe(
 
 }
 
+/**
+ * Describe a Recipe Draft object
+ *
+ * @property name title of the recipe
+ * @property picture optional picture of the recipe
+ * @property instructions list of strings where each element represents a step of the cooking instructions
+ * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+ * @property origin origin tag from Origin enum
+ * @property diet diet tag from Diet enum
+ * @property tags list of tags from Tag enum
+ */
+data class RecipeDraft(
+    val id: String,
+    val name: String,
+    val picture: String,
+    val instructions: List<String>,
+    val ingredients: List<RecipeIngredient>,
+    val origin: Origin,
+    val diet: Diet,
+    val tags: List<Tag>,
+) {
+
+    companion object {
+        /**
+         * Creates an empty Recipe Draft data object.
+         *
+         * @return empty Recipe Draft data object.
+         */
+        fun empty(): RecipeDraft {
+            return RecipeDraft("", "", "", listOf(""), emptyList(), Origin.NONE, Diet.NONE, emptyList())
+        }
+    }
+    /**
+     * Checks if this Recipe Draft data object is empty.
+     *
+     * @return true if the Recipe Draft data object is empty.
+     */
+    fun isEmpty(): Boolean {
+        return this == empty()
+    }
+
+}
+
 // The Origin indicates from which country or region the recipe originates from.
 enum class Origin {
     NONE, HOMEMADE, SWISS, FRENCH, ITALIAN, SPANISH, PORTUGUESE, GERMAN, ENGLISH, SWEDISH, GREEK, EASTERN_EUROPEAN,

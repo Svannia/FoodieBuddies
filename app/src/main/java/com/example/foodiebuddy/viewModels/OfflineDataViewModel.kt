@@ -3,10 +3,13 @@ package com.example.foodiebuddy.viewModels
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.foodiebuddy.data.RecipeDraft
 import com.example.foodiebuddy.database.DataStoreManager
 import com.example.foodiebuddy.database.ThemeChoice
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /**
@@ -14,11 +17,15 @@ import kotlinx.coroutines.launch
  *
  * @property application to access the DataStoreManager
  */
-class OfflinePreferencesViewModel(application: Application) : AndroidViewModel(application) {
+class OfflineDataViewModel(application: Application) : AndroidViewModel(application) {
     private val dataStoreManager = DataStoreManager(application)
 
     private val _currentTheme = MutableStateFlow(ThemeChoice.SYSTEM_DEFAULT)
     val currentTheme: StateFlow<ThemeChoice> = _currentTheme
+
+    val drafts: StateFlow<List<RecipeDraft>> = dataStoreManager.drafts.stateIn(
+        viewModelScope, SharingStarted.Eagerly, emptyList()
+    )
 
     init {
         loadTheme()
@@ -45,5 +52,13 @@ class OfflinePreferencesViewModel(application: Application) : AndroidViewModel(a
                 _currentTheme.value = ThemeChoice.valueOf(themeName)
             }
         }
+    }
+
+    fun saveDraft(draft: RecipeDraft) {
+        viewModelScope.launch { dataStoreManager.saveDraft(draft) }
+    }
+
+    fun deleteDraft(draftId: String) {
+        viewModelScope.launch { dataStoreManager.deleteDraft(draftId) }
     }
 }
