@@ -313,7 +313,7 @@ fun EditRecipe(
             itemsIndexed(instructions.toList()) { index, step ->
                 StepItem(
                     number = index,
-                    last = true,//(index > 0 && index == instructions.size -1,
+                    last = index > 0 && index == instructions.size -1,
                     step = step,
                     onValueChange = {
                         instructions[index] = it
