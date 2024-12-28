@@ -166,7 +166,7 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                                             .fillMaxWidth()
                                             .padding(top = 16.dp),
                                         text = stringResource(R.string.txt_emptyGroceries),
-                                        style = MyTypography.bodyMedium,
+                                        style = MyTypography.bodyLarge,
                                         textAlign = TextAlign.Center
                                     )
                                 }

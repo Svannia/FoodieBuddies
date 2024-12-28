@@ -132,7 +132,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                     signOut(context)
                                 },
                             contentAlignment = Alignment.CenterStart
-                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_signOut), style = MyTypography.bodyMedium) }
+                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_signOut), style = MyTypography.bodyLarge) }
                         // Delete account button
                         Box(
                             modifier = Modifier
@@ -140,7 +140,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                 .height(HEIGHT.dp)
                                 .clickable { alertVisible.value = true },
                             contentAlignment = Alignment.CenterStart
-                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_deleteAccount), style = MyTypography.bodyMedium, color = Color.Red) }
+                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_deleteAccount), style = MyTypography.bodyLarge, color = Color.Red) }
                     }
                 }
                 // settings category for About information
@@ -152,7 +152,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                 .height(HEIGHT.dp)
                                 .clickable { dialogVisible.value = true },
                             contentAlignment = Alignment.CenterStart
-                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_terms), style = MyTypography.bodyMedium) }
+                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_terms), style = MyTypography.bodyLarge) }
                     }
                 }
             }
@@ -263,7 +263,7 @@ private fun ToggleBox(name: String, isToggled: Boolean, onToggle: () -> Unit) {
                 selected = isToggled,
                 onClick = { onToggle() },
                 colors = RadioButtonDefaults.colors(selectedColor = MaterialTheme.colorScheme.primary))
-            Text(text = name, style = MyTypography.bodyMedium)
+            Text(text = name, style = MyTypography.bodyLarge)
         }
     }
 }

@@ -78,11 +78,11 @@ import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
-import com.example.foodiebuddy.data.MEASURE_UNITS
 import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.getString
+import com.example.foodiebuddy.data.measuresMap
 import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomNumberField
@@ -220,9 +220,9 @@ fun EditRecipe(
                             },
                             text =
                             if (picture.value != Uri.EMPTY) {
-                                stringResource(R.string.button_modifyProfilePicture)
+                                stringResource(R.string.button_modifyRecipePicture)
                             }
-                            else stringResource(R.string.button_addProfilePicture),
+                            else stringResource(R.string.button_addRecipePicture),
                             style = MyTypography.labelMedium
                         )
                     }
@@ -287,6 +287,7 @@ fun EditRecipe(
             // list of ingredients
             items(ingredients.toList(), key = {it.id}) { ingredient ->
                 IngredientItem(
+                    context = context,
                     ingredient = ingredient,
                     onValueChange = {
                         ingredientTrigger++
@@ -302,7 +303,6 @@ fun EditRecipe(
             item {
                 AddButton {
                     ingredients.add(RecipeIngredient.empty())
-                    Log.d("Debug", "ingredients contain ${ingredients.toList()}")
                 }
             }
             // recipe instructions title
@@ -374,10 +374,7 @@ fun RecipeSecondaryScreen(
         topBar = {
             Box {
                 CenterAlignedTopAppBar(
-                    title = { Text(
-                        text = title,
-                        style = MyTypography.titleMedium)
-                    },
+                    title = { Text(text = title, style = MyTypography.titleMedium) },
                     // "go back button" that doesn't necessarily navigate back in navigation graph
                     navigationIcon = {
                         IconButton(
@@ -442,7 +439,6 @@ fun <T> DropDownField(
                 .fillMaxWidth()
                 .clickable {
                     expanded.value = !expanded.value
-                    Log.d("Debug", "expanded is ${expanded.value}")
                 },
             enabled = false,
             colors = TextFieldDefaults.colors(
@@ -504,6 +500,7 @@ fun AddButton(
 
 @Composable
 fun IngredientItem(
+    context: Context,
     ingredient: RecipeIngredient,
     onValueChange: () -> Unit,
     onDelete: () -> Unit
@@ -537,8 +534,8 @@ fun IngredientItem(
                     CustomTextField(
                         value = displayName.value,
                         onValueChange = {
-                            displayName.value = it.trimEnd()
-                            ingredient.displayedName = it.trimEnd()
+                            displayName.value = it
+                            ingredient.displayedName = it
                             onValueChange()
                         },
                         icon = -1,
@@ -574,6 +571,7 @@ fun IngredientItem(
                     onValueChange = {
                         quantity.floatValue = it
                         ingredient.quantity = it
+                        Log.d("Debug", "quantity ${quantity.floatValue}")
                         onValueChange()
                     },
                     placeHolder = "-",
@@ -598,7 +596,7 @@ fun IngredientItem(
                         .clickable { unitsExpanded.value = !unitsExpanded.value },
                     contentAlignment = Alignment.TopCenter
                 ) {
-                    Text(text = unit.value, style = MyTypography.bodyMedium)
+                    Text(text = unit.value.getString(context), style = MyTypography.bodyLarge)
                 }
             }
         }
@@ -619,13 +617,13 @@ fun IngredientItem(
                 Column(modifier = Modifier
                     .heightIn(max = 200.dp)
                     .verticalScroll(rememberScrollState())) {
-                    MEASURE_UNITS.forEach { option ->
-                        val optionText = stringResource(option)
+                    measuresMap.forEach { (entry, stringID) ->
+                        val optionText = stringResource(stringID)
                         DropdownMenuItem(
                             text = { Text(text = optionText, style = MyTypography.bodySmall) },
                             onClick = {
-                                unit.value = optionText
-                                ingredient.unit = optionText
+                                unit.value = entry
+                                ingredient.unit = entry
                                 onValueChange()
                                 unitsExpanded.value = false
                             }
@@ -866,9 +864,6 @@ fun <T> SingleTagDropDown(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 tags.forEach { tag ->
-                    Log.d("Debug", "selected tag is $selectedTag")
-                    Log.d("Debug", "enabled is ${selectedTag.value == tag}")
-
                     key(getString(tag)) {
                         TagButton(getString(tag) , selectedTag.value == tag) {
                             onClick(tag)
@@ -923,7 +918,7 @@ fun BottomSaveBar(
         ) {
             Text(
                 text = saveText,
-                style = MyTypography.bodyMedium,
+                style = MyTypography.bodyLarge,
                 textAlign = TextAlign.Center
             )
         }

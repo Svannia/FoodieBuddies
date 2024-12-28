@@ -52,6 +52,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         instructions.filter { instruction -> instruction.isNotBlank() }
         ingredients.forEach { ingredient ->
             if (ingredient.displayedName.isBlank()) ingredients.toMutableList().remove(ingredient)
+            ingredient.displayedName = ingredient.displayedName.trimEnd()
             ingredient.standName = standardizeName(ingredient.displayedName)
         }
         db.createRecipe(userID, owner, name, picture, instructions, ingredients, origin, diet, tags, { isError(it) }) {
@@ -77,7 +78,9 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
                             val newRecipe = db.fetchRecipeData(recipeID) { if (it) errorOccurred = true }
                             _recipeData.value = newRecipe
                             isError(errorOccurred)
-                            if (!errorOccurred) callBack()
+                            if (!errorOccurred) {
+                                callBack()
+                            }
                         }
                     } else {
                         isError(true)
@@ -92,6 +95,28 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         } else {
             isError(true)
             Log.d("RecipeVM", "Failed to fetch recipe data: ID is null")
+        }
+    }
+
+    fun addUserToFavourites(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (recipeID != null) {
+            db.addUserToFavourites(recipeID, userID, { isError(it) }) {
+                fetchRecipeData({ isError(it) }) { callBack() }
+            }
+        } else {
+            isError(true)
+            Log.d("RecipeVM", "Could not add user to favourites: recipeID is null")
+        }
+    }
+
+    fun removeUserFromFavourites(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (recipeID != null) {
+            db.removeUserFromFavourites(recipeID, userID, { isError(it) }) {
+                fetchRecipeData({ isError(it) }) { callBack() }
+            }
+        } else {
+            isError(true)
+            Log.d("RecipeVM", "Could not remove user from favourites: recipeID is null")
         }
     }
 

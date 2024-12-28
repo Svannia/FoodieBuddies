@@ -276,7 +276,7 @@ private fun SaveButton(isEnabled: Boolean, onClick: () -> Unit) {
         enabled = isEnabled,
         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
     ) {
-        Text(stringResource(R.string.button_save), style = MyTypography.bodyMedium)
+        Text(stringResource(R.string.button_save), style = MyTypography.bodyLarge)
     }
 }
 

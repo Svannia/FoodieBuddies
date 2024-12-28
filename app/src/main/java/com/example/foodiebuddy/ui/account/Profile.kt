@@ -87,9 +87,9 @@ fun Profile(userViewModel: UserViewModel, navigationActions: NavigationActions) 
                 RoundImage(150.dp, pictureState.value, stringResource(R.string.desc_profilePic))
                 Text(text = nameState.value, style = MyTypography.titleMedium)
                 Spacer(modifier = Modifier.size(16.dp))
-                Text(text = stringResource(R.string.txt_numberRecipes, countState.intValue), style = MyTypography.bodyMedium)
+                Text(text = stringResource(R.string.txt_numberRecipes, countState.intValue), style = MyTypography.bodyLarge)
                 Spacer(modifier = Modifier.size(16.dp))
-                Text(text = bioState.value, style = MyTypography.bodyMedium)
+                Text(text = bioState.value, style = MyTypography.bodyLarge)
             }
     }
 }

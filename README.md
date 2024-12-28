@@ -10,6 +10,7 @@ There are different logcat tags to help with debugging:
 - Login : All authentication, account existence checks / creation / accesses / deletion.
 - MyDB : Successes and failures in accessing/updating the Firestore Database.
 - NavAction : Navigation from a route to the other, backstack controls when going back in navigation history.
+- RecipeVM : All RecipeViewModel actions like init, DB accesses, etc...
 - UserVM : All UserViewModel actions like initialization, accesses to Database, etc...
   
 ### JavaDoc

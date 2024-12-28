@@ -16,6 +16,7 @@
 
     <string name="button_accept">Accept</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
+    <string name="button_addRecipePicture">Add a picture</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_changeImage">Gallery</string>
     <string name="button_clearList">Clear entire list</string>
@@ -24,6 +25,7 @@
     <string name="button_drafts">My Drafts</string>
     <string name="button_edit">Edit</string>
     <string name="button_modifyProfilePicture">Edit your profile picture</string>
+    <string name="button_modifyRecipePicture">Edit your picture</string>
     <string name="button_newRecipe">New Recipe</string>
     <string name="button_options">options</string>
     <string name="button_publish">Publish</string>
@@ -133,7 +135,7 @@
     <string name="title_foodPic">Picture of the food</string>
     <string name="title_fridge">My Fridge</string>
     <string name="title_groceries">Groceries list</string>
-    <string name="title_ingredients">Ingrédients</string>
+    <string name="title_ingredients">Ingredients</string>
     <string name="title_language">Language</string>
     <string name="title_miscellaneous">Miscellaneous</string>
     <string name="title_notifications">Notifications</string>
@@ -169,6 +171,8 @@
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
     <string name="txt_unit">Unit</string>
+    <string name="txt_addFav">Add to Favourites</string>
+    <string name="txt_removeFav">In Favourites - Tap to remove</string>
 
     <string name="unit_bouquet">bunch</string>
     <string name="unit_cc">tsp</string>
@@ -185,4 +189,7 @@
     <string name="unit_tasse">cup</string>
     <string name="txt_unnamed">Unnamed</string>
     <string name="title_editDraft">Edit your Draft</string>
+    <string name="title_recipe">Recipe</string>
+    <string name="desc_favouriteIcon">favourite icon</string>
+    <string name="unit_l">l</string>
 </resources>

@@ -3,6 +3,7 @@ package com.example.foodiebuddy.database
 import android.net.Uri
 import android.util.Log
 import com.example.foodiebuddy.data.Diet
+import com.example.foodiebuddy.data.Measure
 import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.OwnedIngredient
 import com.example.foodiebuddy.data.Recipe
@@ -10,7 +11,6 @@ import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
-import com.example.foodiebuddy.data.getString
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.FieldValue
@@ -19,7 +19,6 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
-import kotlinx.coroutines.processNextEventInCurrentThread
 import kotlinx.coroutines.tasks.await
 
 private const val USERNAME = "username"
@@ -344,10 +343,8 @@ class DatabaseConnection {
         }
 
         // fetches the userPersonal document
-        Log.d("Debug", "start of DB function")
         val document = userPersonalCollection.document(userID).get().await()
         return if (document.exists()) {
-            Log.d("Debug", "found user personal")
             var errorOccurred = false
 
             // fetch each ingredient from the groceries map
@@ -357,7 +354,6 @@ class DatabaseConnection {
                     fetchIngredient(ref) { if (it) errorOccurred = true }
                 }
             }
-            Log.d("Debug", "found groceries")
             // fetch each ingredient from the fridge map
             val fridgeListRefs = document.get(FRIDGE) as? Map<String, List<DocumentReference>> ?: emptyMap()
             val fridgeList = fridgeListRefs.mapValues { entry ->
@@ -366,7 +362,6 @@ class DatabaseConnection {
                 }
             }
             // Create and return the UserPersonal object
-            Log.d("Debug", "all ingredients fetched")
             isError(errorOccurred)
             if (!errorOccurred) {
                 Log.d("MyDB", "Successfully fetched user personal")
@@ -1145,6 +1140,21 @@ class DatabaseConnection {
 
     // recipes
 
+    /**
+     * Checks if a recipe exists in the DB.
+     *
+     * @param recipeID ID of the recipe whose existence to check
+     * @param onSuccess block that runs if the check succeeds (whether or not the recipe exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun recipeExists(recipeID: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        recipesCollection
+            .document(recipeID)
+            .get()
+            .addOnSuccessListener { document -> onSuccess(document.exists()) }
+            .addOnFailureListener { e -> onFailure(e) }
+    }
+
     fun createRecipe(
         userID: String,
         owner: String,
@@ -1162,7 +1172,7 @@ class DatabaseConnection {
             OWNER to userID,
             OWNER_NAME to owner,
             NAME to name,
-            PICTURE to picture.toString(),
+            PICTURE to "",
             INSTRUCTIONS to instructions,
             INGREDIENTS to ingredients.map { ingredient ->
                 mapOf(
@@ -1213,6 +1223,54 @@ class DatabaseConnection {
     }
 
     /**
+     * Fetches all of a recipe's data.
+     *
+     * @param recipeID ID of the recipe whose data to retrieve
+     * @return Recipe data object with all recipe data
+     */
+    suspend fun fetchRecipeData(recipeID: String, isError: (Boolean) -> Unit): Recipe {
+        if (recipeID.isEmpty()) {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch recipe data because recipeID is empty")
+            return Recipe.empty()
+        }
+
+        val document = recipesCollection.document(recipeID).get().await()
+        return if (document.exists()) {
+            val owner = document.getString(OWNER) ?: ""
+            val ownerName = document.getString(OWNER_NAME) ?: ""
+            val name = document.getString(NAME) ?: ""
+            val rawPicture = document.getString(PICTURE) ?: ""
+            val picture = if (rawPicture.isBlank()) Uri.EMPTY else Uri.parse(rawPicture)
+            val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
+            val formattedInstructions = mutableListOf<String>()
+            instructions.forEach {
+                val formattedStep = it.replace("\\n", "\n")
+                formattedInstructions.add(formattedStep)
+            }
+            val ingredients = (document.get(INGREDIENTS) as? List<Map<String, Any>>)?.map { map ->
+                RecipeIngredient(
+                    displayedName = (map[DISPLAY_NAME] ?: "").toString(),
+                    standName = map[STAND_NAME].toString(),
+                    quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                    unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
+                )
+            } ?: emptyList()
+            val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
+            val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
+            val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
+            val tags = tagsList.map { Tag.valueOf(it) }
+            val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
+            isError(false)
+            Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, origin, diet, tags, favouriteOf)
+        } else {
+            isError(true)
+            Log.d("MyDB", "Failed to fetch recipe data")
+            Recipe.empty()
+        }
+    }
+
+    /**
      * Fetches all Recipes from entire database.
      *
      * @param isError block that runs if there is an error executing the function
@@ -1226,19 +1284,20 @@ class DatabaseConnection {
                     val owner = document.getString(OWNER) ?: ""
                     val ownerName = document.getString(OWNER_NAME) ?: ""
                     val name = document.getString(NAME) ?: ""
-                    val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
+                    val rawPicture = document.getString(PICTURE) ?: ""
+                    val picture = if (rawPicture.isBlank()) Uri.EMPTY else Uri.parse(rawPicture)
                     val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
                     val formattedInstructions = mutableListOf<String>()
                     instructions.forEach {
                         val formattedStep = it.replace("\\n", "\n")
                         formattedInstructions.add(formattedStep)
                     }
-                    val ingredients = (document.get(INGREDIENTS) as? List<Map<String, String>>)?.map { map ->
+                    val ingredients = (document.get(INGREDIENTS) as? List<Map<String, Any>>)?.map { map ->
                         RecipeIngredient(
-                            displayedName = map[DISPLAY_NAME] ?: "",
-                            standName = map[STAND_NAME] ?: "",
-                            quantity = (map[QUANTITY] as? Number)?.toFloat() ?: 0f,
-                            unit = map[UNIT] ?: ""
+                            displayedName = (map[DISPLAY_NAME] ?: "").toString(),
+                            standName = map[STAND_NAME].toString(),
+                            quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                            unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
                         )
                     } ?: emptyList()
                     val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
@@ -1254,6 +1313,44 @@ class DatabaseConnection {
             Log.d("MyDB", "Failed to fetch all recipes with error $e")
             emptyList()
         }
+    }
+
+    fun addUserToFavourites(uid: String, userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        recipesCollection
+            .document(uid)
+            .update(FAVOURITE, FieldValue.arrayUnion(userID))
+            .addOnSuccessListener {
+                isError(false)
+                callBack()
+                Log.d("MyDB", "Successfully added user to favourites")
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to add user to favourites with error $e")
+            }
+    }
+
+    /**
+     * Removes a user's favourite by removing their reference from the recipe.
+     *
+     * @param uid of the recipe
+     * @param userID of the user removing the favourite
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
+    fun removeUserFromFavourites(uid: String, userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        recipesCollection
+            .document(uid)
+            .update(FAVOURITE, FieldValue.arrayRemove(userID))
+            .addOnSuccessListener {
+                isError(false)
+                callBack()
+                Log.d("MyDB", "Successfully removed user from recipe favouritesOf")
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to remove user from favourites with error $e")
+            }
     }
 
     /**
@@ -1309,91 +1406,6 @@ class DatabaseConnection {
                 isError(true)
                 Log.d("MyDB", "Failed to query all recipes with user in their favourites with error $e")
             }
-    }
-
-    /**
-     * Removes a user's favourite by removing their reference from the recipe.
-     *
-     * @param uid of the recipe
-     * @param userID of the user removing the favourite
-     * @param isError block that runs if there is an error executing the function
-     * @param callBack block that runs after the DB was updated
-     */
-    fun removeUserFromFavourites(uid: String, userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        recipesCollection
-            .document(uid)
-            .update(FAVOURITE, FieldValue.arrayRemove(userID))
-            .addOnSuccessListener {
-                isError(false)
-                callBack()
-                Log.d("MyDB", "Successfully removed user from recipe favouritesOf")
-            }
-            .addOnFailureListener { e ->
-                isError(true)
-                Log.d("MyDB", "Failed to remove user from favourites with error $e")
-            }
-    }
-
-    /**
-     * Checks if a recipe exists in the DB.
-     *
-     * @param recipeID ID of the recipe whose existence to check
-     * @param onSuccess block that runs if the check succeeds (whether or not the recipe exists)
-     * @param onFailure block that runs if there is an error executing the function
-     */
-    fun recipeExists(recipeID: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
-        recipesCollection
-            .document(recipeID)
-            .get()
-            .addOnSuccessListener { document -> onSuccess(document.exists()) }
-            .addOnFailureListener { e -> onFailure(e) }
-    }
-
-    /**
-     * Fetches all of a recipe's data.
-     *
-     * @param recipeID ID of the recipe whose data to retrieve
-     * @return Recipe data object with all recipe data
-     */
-    suspend fun fetchRecipeData(recipeID: String, isError: (Boolean) -> Unit): Recipe {
-        if (recipeID.isEmpty()) {
-            isError(true)
-            Log.d("MyDB", "Failed to fetch recipe data because recipeID is empty")
-            return Recipe.empty()
-        }
-
-        val document = recipesCollection.document(recipeID).get().await()
-        return if (document.exists()) {
-            val owner = document.getString(OWNER) ?: ""
-            val ownerName = document.getString(OWNER_NAME) ?: ""
-            val name = document.getString(NAME) ?: ""
-            val picture = Uri.parse(document.getString(PICTURE)) ?: Uri.EMPTY
-            val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
-            val formattedInstructions = mutableListOf<String>()
-            instructions.forEach {
-                val formattedStep = it.replace("\\n", "\n")
-                formattedInstructions.add(formattedStep)
-            }
-            val ingredients = (document.get(INGREDIENTS) as? List<Map<String, String>>)?.map { map ->
-                RecipeIngredient(
-                    displayedName = map[DISPLAY_NAME] ?: "",
-                    standName = map[STAND_NAME] ?: "",
-                    quantity = map[QUANTITY]?.toFloatOrNull() ?: 0f,
-                    unit = map[UNIT] ?: ""
-                )
-            } ?: emptyList()
-            val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
-            val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
-            val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
-            val tags = tagsList.map { Tag.valueOf(it) }
-            val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
-            isError(false)
-            Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, origin, diet, tags, favouriteOf)
-        } else {
-            isError(true)
-            Log.d("MyDB", "Failed to fetch recipe data")
-            Recipe.empty()
-        }
     }
 
 

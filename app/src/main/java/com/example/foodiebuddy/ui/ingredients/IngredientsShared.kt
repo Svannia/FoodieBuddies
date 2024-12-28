@@ -429,11 +429,11 @@ private fun IngredientItemView(
             Text(
                 text = ingredient.displayedName,
                 style =
-                if (isTicked.value && canTick) MyTypography.bodyMedium.copy(
+                if (isTicked.value && canTick) MyTypography.bodyLarge.copy(
                     color = MaterialTheme.colorScheme.outline,
                     textDecoration = TextDecoration.LineThrough
                 )
-                else MyTypography.bodyMedium
+                else MyTypography.bodyLarge
             )
         }
     }
@@ -486,11 +486,11 @@ private fun IngredientItemEdit(
                 Text(
                     text = ingredient.displayedName,
                     style =
-                    if (isTicked.value && canTick) MyTypography.bodyMedium.copy(
+                    if (isTicked.value && canTick) MyTypography.bodyLarge.copy(
                         color = MaterialTheme.colorScheme.outline,
                         textDecoration = TextDecoration.LineThrough
                     )
-                    else MyTypography.bodyMedium
+                    else MyTypography.bodyLarge
                 )
             }
             Row(

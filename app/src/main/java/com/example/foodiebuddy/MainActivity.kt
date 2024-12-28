@@ -165,7 +165,6 @@ class MainActivity : ComponentActivity() {
                             val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 if (userVM.getVmUid().isEmpty()) {
-                                    Log.d("Debug", "yeah it's empty")
                                     userVM = viewModel {
                                         UserViewModel(currentUser.uid)
                                     }
@@ -183,7 +182,7 @@ class MainActivity : ComponentActivity() {
                                 val recipeVM: RecipeViewModel = viewModel {
                                     RecipeViewModel(recipeID)
                                 }
-                                RecipeView(recipeVM, navigationActions)
+                                RecipeView(userVM, recipeVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipe of recipe $recipeID")
                             }
                         }

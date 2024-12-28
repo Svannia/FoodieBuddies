@@ -101,7 +101,7 @@ fun LoginScreen(navigationActions: NavigationActions) {
             Text(
                 text = stringResource(R.string.button_signIn),
                 color = MaterialTheme.colorScheme.inversePrimary,
-                style = MyTypography.bodyMedium
+                style = MyTypography.bodyLarge
             )
         }
     } }

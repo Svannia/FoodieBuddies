@@ -58,7 +58,7 @@ fun Drafts(offDataVM: OfflineDataViewModel, navigationActions: NavigationActions
                                 .fillMaxWidth()
                                 .padding(top = 16.dp),
                             text = stringResource(R.string.txt_noDrafts),
-                            style = MyTypography.bodyMedium,
+                            style = MyTypography.bodyLarge,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -78,7 +78,7 @@ fun Drafts(offDataVM: OfflineDataViewModel, navigationActions: NavigationActions
                             ) {
                                 Text(
                                     text = draft.name.ifBlank { stringResource(R.string.txt_unnamed) },
-                                    style = MyTypography.bodyMedium,
+                                    style = MyTypography.bodyLarge,
                                     fontStyle = if (draft.name.isEmpty()) FontStyle.Italic else FontStyle.Normal
                                 )
                                 IconButton(

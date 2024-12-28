@@ -103,7 +103,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
                             "displayedName" to ingredient.displayedName,
                             "standName" to ingredient.standName,
                             "quantity" to ingredient.quantity.toString(),
-                            "unit" to ingredient.unit,
+                            "unit" to ingredient.unit.getString(context),
                             "id" to ingredient.id
                         )
                     },

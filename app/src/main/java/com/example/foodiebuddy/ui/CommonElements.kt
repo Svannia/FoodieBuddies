@@ -113,7 +113,8 @@ import kotlinx.coroutines.launch
 fun SecondaryScreen(
     title: String,
     navigationActions: NavigationActions,
-    navExtraActions : () -> Unit,
+    route: String ?= null,
+    navExtraActions: () -> Unit,
     topBarIcons: @Composable () -> Unit,
     content: @Composable (PaddingValues) -> Unit,
 ) {
@@ -124,7 +125,7 @@ fun SecondaryScreen(
                 CenterAlignedTopAppBar(
                     title = { Text(text = title, style = MyTypography.titleMedium)},
                     navigationIcon = {
-                        GoBackButton(navigationActions, navExtraActions)
+                        GoBackButton(navigationActions, navExtraActions, route)
                     },
                     actions = {
                         Row(
@@ -197,12 +198,12 @@ fun PrimaryScreen(
                 ) {
                     Spacer(modifier = Modifier.size(16.dp))
                     RoundImage(64.dp, pictureState.value, stringResource(R.string.desc_profilePic))
-                    Text(text = nameState.value, style = MyTypography.bodyMedium)
+                    Text(text = nameState.value, style = MyTypography.bodyLarge)
                     Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                 }
                 BURGER_DESTINATIONS.forEach { item ->
                     NavigationDrawerItem(
-                        label = { Text(text = stringResource(item.text), style = MyTypography.bodyMedium) },
+                        label = { Text(text = stringResource(item.text), style = MyTypography.bodyLarge) },
                         selected = false,
                         onClick = {
                             navigationActions.navigateTo(item.route)
@@ -410,7 +411,7 @@ fun CustomTextField(
                 onValueChange(it)
             }
         },
-        textStyle = MyTypography.bodyMedium,
+        textStyle = MyTypography.bodyLarge,
         prefix = {
             if (icon >= 0) {
                 Row{
@@ -465,7 +466,7 @@ fun CustomNumberField(
             text.value = filteredInput
             filteredInput.toFloatOrNull()?.let{ onValueChange(it) }
         },
-        textStyle = MyTypography.bodyMedium,
+        textStyle = MyTypography.bodyLarge,
         placeholder = {
             Text(text = placeHolder, style = MyTypography.bodySmall)
         },
@@ -513,7 +514,7 @@ fun DialogWindow(
         text = {
             Text(
                 text = content,
-                style = MyTypography.bodyMedium
+                style = MyTypography.bodyLarge
             )
         },
         confirmButton = {
@@ -536,7 +537,7 @@ fun DialogWindow(
             ) {
                 Text(
                     text = confirmText,
-                    style = MyTypography.bodyMedium,
+                    style = MyTypography.bodyLarge,
                     color = confirmColour
                 )
             }
@@ -564,7 +565,7 @@ fun DialogWindow(
             ) {
                 Text(
                     text = stringResource(R.string.button_cancel),
-                    style = MyTypography.bodyMedium,
+                    style = MyTypography.bodyLarge,
                     color = MaterialTheme.colorScheme.inversePrimary
                 )
             }
@@ -617,10 +618,11 @@ fun OptionsMenu(icon: Int, vararg options: Pair<String, () -> Unit>) {
  * @param navExtraActions optional extra block to run when navigating back (e.g navigating back from CreateAccount screen also signs out)
  */
 @Composable
-private fun GoBackButton(navigationActions: NavigationActions, navExtraActions: () -> Unit) {
+fun GoBackButton(navigationActions: NavigationActions, navExtraActions: () -> Unit, route: String ?= null) {
     IconButton(
         onClick = {
-            navigationActions.goBack()
+            if (route != null) navigationActions.navigateTo(route)
+            else navigationActions.goBack()
             navExtraActions()
         }
     ) {
@@ -688,7 +690,7 @@ private fun BottomNavBar(
                 label = {
                     Text(
                         text = stringResource(item.text),
-                        style = MyTypography.bodyMedium
+                        style = MyTypography.bodyLarge
                     )
                 },
                 alwaysShowLabel = true

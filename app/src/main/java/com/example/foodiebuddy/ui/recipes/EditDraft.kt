@@ -10,18 +10,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.core.net.toUri
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
-import com.example.foodiebuddy.data.MEASURE_UNITS
+import com.example.foodiebuddy.data.Measure
 import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.RecipeDraft
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
+import com.example.foodiebuddy.data.getString
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
@@ -29,7 +29,6 @@ import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
-import java.util.UUID
 
 @Composable
 fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: OfflineDataViewModel, navigationActions: NavigationActions) {
@@ -71,7 +70,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                 displayedName = map["displayedName"] ?: "",
                 standName = "",
                 quantity = map["quantity"]?.toFloat() ?: 0f,
-                unit = map["unit"] ?: "-"
+                unit = map["unit"]?.let { Measure.valueOf(it) } ?: Measure.NONE
             )
         })
         originState.value = draft.value.origin
@@ -131,7 +130,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                             "displayedName" to ingredient.displayedName,
                             "standName" to ingredient.standName,
                             "quantity" to ingredient.quantity.toString(),
-                            "unit" to ingredient.unit,
+                            "unit" to ingredient.unit.getString(context),
                             "id" to ingredient.id
                         )
                     },

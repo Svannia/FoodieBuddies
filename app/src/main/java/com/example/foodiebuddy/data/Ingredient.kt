@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.res.stringResource
 import com.example.foodiebuddy.R
 import java.util.UUID
 
@@ -56,7 +55,7 @@ data class RecipeIngredient(
     var displayedName: String,
     var standName: String,
     var quantity: Float,
-    var unit: String,
+    var unit: Measure,
     val id: String = UUID.randomUUID().toString()
 ) {
     companion object {
@@ -66,7 +65,7 @@ data class RecipeIngredient(
          * @return empty Recipe Ingredient object.
          */
         fun empty(): RecipeIngredient {
-            return RecipeIngredient("", "", 0f, "-")
+            return RecipeIngredient("", "", 0f, Measure.NONE)
         }
     }
     /**
@@ -77,20 +76,35 @@ data class RecipeIngredient(
     fun isEmpty(): Boolean {
         return this == empty()
     }
-
-    private var displayedNameState by mutableStateOf(displayedName)
-    private var standNameState by mutableStateOf(standName)
-    private var quantityState by mutableStateOf(quantity)
-    private var unitState by mutableStateOf(unit)
-
-    // Sync changes back to original fields if needed
-    fun syncFields() {
-        displayedName = displayedNameState
-        standName = standNameState
-        quantity = quantityState
-        unit = unitState
-    }
 }
 
 // The units of measure for ingredients.
-val MEASURE_UNITS = listOf(R.string.unit_none, R.string.unit_g, R.string.unit_kg, R.string.unit_ml, R.string.unit_dl, R.string.unit_cs, R.string.unit_cc, R.string.unit_pin, R.string.unit_tasse, R.string.unit_sachet, R.string.unit_de, R.string.unit_bouquet, R.string.unit_goutte)
+enum class Measure {
+    NONE, G, KG, ML, DL, L, CS, CC, PIN, TASSE, SACHET, DE, BOUQUET, GOUTTE
+}
+val measuresMap = mapOf(
+    Measure.NONE to R.string.unit_none,
+    Measure.G to R.string.unit_g,
+    Measure.KG to R.string.unit_kg,
+    Measure.ML to R.string.unit_ml,
+    Measure.DL to R.string.unit_dl,
+    Measure.L to R.string.unit_l,
+    Measure.CS to R.string.unit_cs,
+    Measure.CC to R.string.unit_cc,
+    Measure.PIN to R.string.unit_pin,
+    Measure.TASSE to R.string.unit_tasse,
+    Measure.SACHET to R.string.unit_sachet,
+    Measure.DE to R.string.unit_de,
+    Measure.BOUQUET to R.string.unit_bouquet,
+    Measure.GOUTTE to R.string.unit_goutte
+)
+
+/**
+ * Translates a Measure Unit element into its corresponding string from strings.xml.
+ *
+ * @param context used to access the string resources
+ * @return user-readable string
+ */
+fun Measure.getString(context: Context): String {
+    return context.getString(measuresMap[this] ?: R.string.unit_none)
+}

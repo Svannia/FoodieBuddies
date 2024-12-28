@@ -136,7 +136,7 @@ fun FridgeHome(userViewModel: UserViewModel, navigationActions: NavigationAction
                                             .fillMaxWidth()
                                             .padding(top = 16.dp),
                                         text = stringResource(R.string.txt_emptyFridge),
-                                        style = MyTypography.bodyMedium,
+                                        style = MyTypography.bodyLarge,
                                         textAlign = TextAlign.Center
                                     )
                                 }

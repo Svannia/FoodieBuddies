@@ -17,6 +17,7 @@
 
     <string name="button_accept">Accepter</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
+    <string name="button_addRecipePicture">Ajouter une photo</string>
     <string name="button_cancel">Annuler</string>
     <string name="button_changeImage">Gallerie</string>
     <string name="button_clearList">Effacer toute la liste</string>
@@ -25,6 +26,7 @@
     <string name="button_drafts">Mes Brouillons</string>
     <string name="button_edit">Modifier</string>
     <string name="button_modifyProfilePicture">Modifier la photo de profil</string>
+    <string name="button_modifyRecipePicture">Modifier la photo</string>
     <string name="button_newRecipe">Nouvelle Recette</string>
     <string name="button_options">options</string>
     <string name="button_publish">Publier</string>
@@ -170,6 +172,8 @@
     <string name="txt_systemDefault">Thème par défault du système</string>
     <string name="txt_systemLight">Clair</string>
     <string name="txt_unit">Unité</string>
+    <string name="txt_addFav">Ajouter aux Favoris</string>
+    <string name="txt_removeFav">Dans tes Favoris - Appuie pour la retirer</string>
 
     <string name="unit_bouquet">bouquet</string>
     <string name="unit_cc">cc</string>
@@ -186,4 +190,7 @@
     <string name="unit_tasse">tasse</string>
     <string name="txt_unnamed">Sans nom</string>
     <string name="title_editDraft">Modifie ton Brouillon</string>
+    <string name="title_recipe">Recette</string>
+    <string name="desc_favouriteIcon">bouton favoris</string>
+    <string name="unit_l">l</string>
 </resources>

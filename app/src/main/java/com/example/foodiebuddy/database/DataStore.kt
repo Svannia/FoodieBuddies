@@ -71,7 +71,6 @@ class DataStoreManager(private val context: Context) {
                 updatedDrafts.add(draft)
             }
             preferences[draftsKey] = gson.toJson(updatedDrafts)
-            Log.d("Debug", "drafts : $updatedDrafts")
         }
     }
 

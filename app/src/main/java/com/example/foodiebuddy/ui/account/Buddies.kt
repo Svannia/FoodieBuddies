@@ -90,7 +90,7 @@ fun Buddies(userViewModel: UserViewModel, navigationActions: NavigationActions) 
                                     .fillMaxWidth()
                                     .padding(top = 16.dp),
                                 text = stringResource(R.string.txt_noBuddies),
-                                style = MyTypography.bodyMedium,
+                                style = MyTypography.bodyLarge,
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -116,7 +116,7 @@ fun Buddies(userViewModel: UserViewModel, navigationActions: NavigationActions) 
                                         )
                                         Text(
                                             text = user.username,
-                                            style = MyTypography.bodyMedium
+                                            style = MyTypography.bodyLarge
                                         )
                                     }
                                 }

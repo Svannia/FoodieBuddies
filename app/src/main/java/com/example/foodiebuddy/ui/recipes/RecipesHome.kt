@@ -180,11 +180,11 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                         .fillMaxWidth()
                                         .padding(top = 16.dp),
                                     text = stringResource(R.string.txt_noRecipes),
-                                    style = MyTypography.bodyMedium,
+                                    style = MyTypography.bodyLarge,
                                     textAlign = TextAlign.Center
                                 )
                             }
-                            // if there are no recipes corresponding to the set of filters
+                        // if there are no recipes corresponding to the set of filters
                         } else if (filteredRecipes.isEmpty()) {
                             item {
                                 Text(
@@ -192,7 +192,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                         .fillMaxWidth()
                                         .padding(top = 16.dp),
                                     text = stringResource(R.string.txt_noResults),
-                                    style = MyTypography.bodyMedium,
+                                    style = MyTypography.bodyLarge,
                                     textAlign = TextAlign.Center
                                 )
                             }
@@ -235,7 +235,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                                     // name of the recipe
                                                     Text(
                                                         text = recipe.name,
-                                                        style = MyTypography.bodyMedium
+                                                        style = MyTypography.bodyLarge
                                                     )
                                                     // creator of the recipe
                                                     Text(
@@ -263,9 +263,9 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                                     }
                                                 }
                                             }
-                                            Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                                         }
                                     }
+                                    Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                                 }
                             }
                         }
@@ -346,7 +346,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         )
                         Text(
                             text = stringResource(R.string.txt_favouriteOnly),
-                            style = MyTypography.bodyMedium
+                            style = MyTypography.bodyLarge
                         )
                     }
                 }
@@ -368,7 +368,7 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                         )
                         Text(
                             text = stringResource(R.string.txt_allIngredientsOnly),
-                            style = MyTypography.bodyMedium
+                            style = MyTypography.bodyLarge
                         )
                     }
                 }
