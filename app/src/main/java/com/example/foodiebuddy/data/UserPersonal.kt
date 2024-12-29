@@ -1,7 +1,5 @@
 package com.example.foodiebuddy.data
 
-import android.net.Uri
-
 /**
  * Describes a user's personal, private data.
  *

@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -48,17 +47,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -93,7 +89,29 @@ import com.example.foodiebuddy.ui.account.PictureOptions
 import com.example.foodiebuddy.ui.images.SetPicture
 import com.example.foodiebuddy.ui.theme.MyTypography
 
-
+/**
+ * The content of a screen that can edit the data of a recipe.
+ *
+ * @param context used to access various resources
+ * @param onGoBack block that runs when pressing the Back button
+ * @param title tile at the top of the screen
+ * @param name editable name of the recipe
+ * @param picture editable recipe picture
+ * @param instructions editable list of instruction steps
+ * @param ingredients editable list of RecipeIngredient objects
+ * @param portion editable number of portions this recipe serves
+ * @param perPerson editable boolean; if true, the portion is per person, if false per piece
+ * @param origin editable Origin tag
+ * @param diet editable Diet tag
+ * @param tags editable list of miscellaneous Tag objects
+ * @param showPictureOptions whether or not to show the various picture options
+ * @param dataEdited optional, stores whether or not any data was edited
+ * @param onlyEnableIfEdited if true, the Save button will stay disabled if no recipe data was edited
+ * @param onEditPicture block that runs when pressing the prompt to edit a new picture
+ * @param onRemovePicture block that runs when deleting the recipe picture
+ * @param onDraftSave block that runs when saving the current recipe data into a draft
+ * @param onSave block that runs when pressing the Save button
+ */
 @Composable
 fun EditRecipe(
     context: Context,
@@ -103,6 +121,8 @@ fun EditRecipe(
     picture: MutableState<Uri>,
     instructions: SnapshotStateList<String>,
     ingredients: SnapshotStateList<RecipeIngredient>,
+    portion: MutableIntState,
+    perPerson: MutableState<Boolean>,
     origin: MutableState<Origin>,
     diet: MutableState<Diet>,
     tags: SnapshotStateList<Tag>,
@@ -143,6 +163,7 @@ fun EditRecipe(
                 name.value.isNotEmpty() &&
                 instructions.isNotEmpty() &&
                 !instructions.all { it.isBlank() } &&
+                portion.intValue >= 1 &&
                 origin.value != Origin.NONE &&
                 diet.value != Diet.NONE &&
                 ingredients.toList().all { it.displayedName.isNotBlank() }
@@ -284,6 +305,105 @@ fun EditRecipe(
                     )
                 }
             }
+            // portion
+            item {
+                val perExpanded = remember { mutableStateOf(false) }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier.height(39.dp),
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = stringResource(R.string.txt_for),
+                            style = MyTypography.bodyLarge
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(24.dp))
+                    CustomNumberField(
+                        value = portion.intValue,
+                        onValueChange = {
+                            Log.d("Debug", "number has value $it")
+                            portion.intValue = it as Int
+                                        },
+                        isInteger = true,
+                        placeHolder = "-",
+                        width = 70.dp
+                    )
+                    Spacer(modifier = Modifier.size(24.dp))
+                    val inverseColor = MaterialTheme.colorScheme.inversePrimary
+                    Box(
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(39.dp)
+                            .drawWithContent {
+                                drawContent()
+                                drawLine(
+                                    color = inverseColor,
+                                    start = Offset(0f, size.height),
+                                    end = Offset(size.width, size.height),
+                                    strokeWidth = 0.8.dp.toPx()
+                                )
+                            }
+                            .clickable { perExpanded.value = !perExpanded.value },
+                        contentAlignment = Alignment.TopCenter
+                    ) {
+                        Text(
+                            text = if (perPerson.value) {
+                                if (portion.intValue > 1) stringResource(R.string.txt_people)
+                                else stringResource(R.string.txt_person)
+                            } else {
+                                if (portion.intValue > 1) stringResource(R.string.txt_pieces)
+                                else stringResource(R.string.txt_piece)
+                            },
+                            style = MyTypography.bodyLarge
+                        )
+                    }
+                    Spacer(modifier = Modifier.size(24.dp))
+                    Text("*", style = MyTypography.bodyLarge, color = Color.Red)
+                }
+                if (perExpanded.value) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(start = (100).dp),
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        DropdownMenu(
+                            expanded = true,
+                            onDismissRequest = { perExpanded.value = false },
+                            modifier = Modifier.width(120.dp)
+                        ) {
+                            Column {
+                                DropdownMenuItem(
+                                    text = { Text(
+                                        text =  if (portion.intValue > 1) stringResource(R.string.txt_people)
+                                                else stringResource(R.string.txt_person),
+                                        style = MyTypography.bodySmall
+                                    ) },
+                                    onClick = {
+                                        perPerson.value = true
+                                        perExpanded.value = false
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text(
+                                        text =  if (portion.intValue > 1) stringResource(R.string.txt_pieces)
+                                                else stringResource(R.string.txt_piece),
+                                        style = MyTypography.bodySmall
+                                    ) },
+                                    onClick = {
+                                        perPerson.value = false
+                                        perExpanded.value = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
             // list of ingredients
             items(ingredients.toList(), key = {it.id}) { ingredient ->
                 IngredientItem(
@@ -360,6 +480,15 @@ fun EditRecipe(
     }
 }
 
+/**
+ * This creates the layout for a secondary screen with more customized back button and a bottom save button.
+ *
+ * @param title at the top of the screen
+ * @param onGoBack block to run when pressing the back button
+ * @param actions optional extra actions at the right of the top bar
+ * @param bottomBar composable that stays fixed at the bottom of the screen, e.g a save button
+ * @param content screen body
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RecipeSecondaryScreen(
@@ -398,6 +527,12 @@ fun RecipeSecondaryScreen(
     )
 }
 
+/**
+ * Creates a text followed by a red asterisk.
+ *
+ * @param title text preceding the asterisk
+ * @param style TextStyle for this text, also applied on the asterisk
+ */
 @Composable
 private fun RequiredField(title: String, style: TextStyle) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -407,6 +542,13 @@ private fun RequiredField(title: String, style: TextStyle) {
     }
 }
 
+/**
+ * Screen to edit a picture for the recipe.
+ *
+ * @param picture to be edited
+ * @param onCancel block that runs when pressing the Cancel button
+ * @param onSave block that runs when pressing the Save button, returning the edited picture
+ */
 @Composable
 fun SetRecipePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit) {
     SetPicture(
@@ -417,68 +559,11 @@ fun SetRecipePicture(picture: Uri, onCancel: () -> Unit, onSave: (Uri) -> Unit) 
     )
 }
 
-@Composable
-fun <T> DropDownField(
-    options: List<T>,
-    selectedOption: T,
-    optionToString: (T) -> String,
-    onOptionSelected: (T) -> Unit
-) {
-    val expanded = remember { mutableStateOf(false) }
-
-    Box(modifier = Modifier
-        .fillMaxWidth()
-        .wrapContentSize(Alignment.TopStart))
-    {
-        // text field to expand
-        OutlinedTextField(
-            value = optionToString(selectedOption),
-            onValueChange = {},
-            textStyle = MyTypography.bodySmall,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    expanded.value = !expanded.value
-                },
-            enabled = false,
-            colors = TextFieldDefaults.colors(
-                disabledContainerColor = Color.Transparent,
-                disabledIndicatorColor = MaterialTheme.colorScheme.inversePrimary,
-                disabledTextColor = MaterialTheme.colorScheme.inversePrimary,
-                disabledPlaceholderColor = MaterialTheme.colorScheme.inversePrimary,
-                disabledTrailingIconColor = MaterialTheme.colorScheme.inversePrimary
-            ),
-            trailingIcon = {
-                IconButton(onClick = { expanded.value = !expanded.value }) {
-                    Icon(
-                        modifier = Modifier.size(24.dp),
-                        painter = if (expanded.value) painterResource(R.drawable.up)
-                        else painterResource(R.drawable.down),
-                        contentDescription = stringResource(R.string.desc_dropDownMenu)
-                    )
-                }
-            }
-        )
-
-        // expanded drop down menu
-        DropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            options.forEach { option ->
-                DropdownMenuItem(
-                    text = { Text(text = optionToString(option), style = MyTypography.bodySmall) },
-                    onClick = {
-                        onOptionSelected(option)
-                        expanded.value = false
-                    }
-                )
-            }
-        }
-    }
-}
-
+/**
+ * A single Add button to add ingredients or instruction steps at the end of the current list.
+ *
+ * @param onClick block that runs when pressing the Add button
+ */
 @Composable
 fun AddButton(
     onClick: () -> Unit
@@ -498,6 +583,14 @@ fun AddButton(
     Spacer(modifier = Modifier.size(16.dp))
 }
 
+/**
+ * Creates the look for an editable recipe ingredient.
+ *
+ * @param context used to access string resources
+ * @param ingredient RecipeIngredient object whose information is displayed in this item
+ * @param onValueChange block that runs when making any change in the ingredient's data
+ * @param onDelete block that runs when pressing the Delete button for this ingredient
+ */
 @Composable
 fun IngredientItem(
     context: Context,
@@ -569,11 +662,11 @@ fun IngredientItem(
                 CustomNumberField(
                     value = quantity.floatValue,
                     onValueChange = {
-                        quantity.floatValue = it
+                        quantity.floatValue = it as Float
                         ingredient.quantity = it
-                        Log.d("Debug", "quantity ${quantity.floatValue}")
                         onValueChange()
                     },
+                    isInteger = false,
                     placeHolder = "-",
                     width = 100.dp
                 )
@@ -583,14 +676,14 @@ fun IngredientItem(
                 Box(
                     modifier = Modifier
                         .width(100.dp)
-                        .height(40.dp)
+                        .height(39.dp)
                         .drawWithContent {
                             drawContent()
                             drawLine(
                                 color = inverseColor,
                                 start = Offset(0f, size.height),
                                 end = Offset(size.width, size.height),
-                                strokeWidth = 1.dp.toPx()
+                                strokeWidth = 0.8.dp.toPx()
                             )
                         }
                         .clickable { unitsExpanded.value = !unitsExpanded.value },
@@ -635,6 +728,15 @@ fun IngredientItem(
     }
 }
 
+/**
+ * Creates the look for an editable instruction step.
+ *
+ * @param number position of this step in the instructions list
+ * @param last whether or not this step can be deleted
+ * @param step user-input text that makes the instruction
+ * @param onValueChange block that runs when changing the instruction text, returning the user input,
+ * @param onDelete block that runs when deleting this step
+ */
 @Composable
 fun StepItem(
     number: Int,
@@ -812,75 +914,6 @@ fun <T> TagDropDown(
                             this.clear()
                             this.add(tag)
                         }
-                        onClick(tag)
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun <T> SingleTagDropDown(
-    title: String,
-    tags: List<T>,
-    selectedTag: MutableState<T>,
-    getString: (T) -> String,
-    onClick: (T) -> Unit
-) {
-    val expanded = remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        // Menu header
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // name of the tag family
-            Text(
-                text = title,
-                style = MyTypography.titleSmall
-            )
-            // button to expand or minimize the menu of tags
-            IconButton(onClick = { expanded.value = !expanded.value }) {
-                Icon(
-                    modifier = Modifier.size(24.dp),
-                    painter = if (expanded.value) painterResource(R.drawable.up)
-                    else painterResource(R.drawable.down),
-                    contentDescription = stringResource(R.string.desc_dropDownMenu)
-                )
-            }
-        }
-        // if expanded -> show all tags at once
-        if (expanded.value) {
-            FlowRow(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                tags.forEach { tag ->
-                    key(getString(tag)) {
-                        TagButton(getString(tag) , selectedTag.value == tag) {
-                            onClick(tag)
-                        }
-                    }
-                }
-            }
-            // if not expanded -> collapsed lazy row view
-        } else {
-            LazyRow(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(tags) { tag ->
-                    TagButton(getString(tag) , tag == selectedTag.value) {
                         onClick(tag)
                     }
                 }

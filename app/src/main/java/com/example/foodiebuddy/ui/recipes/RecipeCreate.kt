@@ -17,7 +17,6 @@ import androidx.compose.ui.res.stringResource
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Origin
-import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.RecipeDraft
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
@@ -29,7 +28,6 @@ import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
-import kotlinx.coroutines.processNextEventInCurrentThread
 import java.util.UUID
 
 @Composable
@@ -52,6 +50,8 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
     val pictureState = remember { mutableStateOf(Uri.EMPTY) }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
+    val portionState = remember { mutableIntStateOf(1) }
+    val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
     val dietState = remember { mutableStateOf(Diet.NONE) }
     val tagsState = remember { mutableStateListOf<Tag>() }
@@ -82,6 +82,8 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
             picture = pictureState,
             instructions = instructionsState,
             ingredients = ingredientsState,
+            portion = portionState,
+            perPerson = perPersonState,
             origin = originState,
             diet = dietState,
             tags = tagsState,
@@ -107,6 +109,8 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
                             "id" to ingredient.id
                         )
                     },
+                    portion = portionState.intValue,
+                    perPerson = perPersonState.value,
                     origin = originState.value,
                     diet = dietState.value,
                     tags = tagsState.toList()
@@ -120,6 +124,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
                 recipeVM.createRecipe(
                     userID, username.value, nameState.value, pictureState.value,
                     instructionsState, ingredientsState,
+                    portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,
                     { if (it) handleError(context, "Could not create recipe") }
                 ) {

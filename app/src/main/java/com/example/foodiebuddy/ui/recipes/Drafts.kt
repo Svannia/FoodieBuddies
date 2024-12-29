@@ -15,11 +15,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -62,6 +59,7 @@ fun Drafts(offDataVM: OfflineDataViewModel, navigationActions: NavigationActions
                             textAlign = TextAlign.Center
                         )
                     }
+                // list all drafts locally saved
                 } else {
                     items(drafts, key = {it.id}) { draft ->
                         Box(
@@ -76,11 +74,13 @@ fun Drafts(offDataVM: OfflineDataViewModel, navigationActions: NavigationActions
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
+                                // name of the draft
                                 Text(
                                     text = draft.name.ifBlank { stringResource(R.string.txt_unnamed) },
                                     style = MyTypography.bodyLarge,
                                     fontStyle = if (draft.name.isEmpty()) FontStyle.Italic else FontStyle.Normal
                                 )
+                                // button to delete the draft
                                 IconButton(
                                     modifier = Modifier
                                         .height(24.dp)

@@ -1,9 +1,7 @@
 package com.example.foodiebuddy.ui.recipes
 
-import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
-import android.util.Log
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,33 +13,26 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.pointer.motionEventSpy
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import coil.compose.rememberAsyncImagePainter
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Measure
@@ -50,6 +41,7 @@ import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.data.getString
+import com.example.foodiebuddy.data.plural
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
@@ -59,7 +51,7 @@ import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
-import kotlin.concurrent.timerTask
+import java.text.DecimalFormat
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -77,6 +69,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val picture = remember { mutableStateOf(Uri.EMPTY) }
     val instructions = remember { mutableStateListOf("") }
     val ingredients = remember { mutableStateListOf<RecipeIngredient>() }
+    val portion = remember { mutableIntStateOf(1) }
+    val perPerson = remember { mutableStateOf(true) }
     val origin = remember { mutableStateOf(Origin.NONE) }
     val diet = remember { mutableStateOf(Diet.NONE) }
     val tags = remember { mutableStateListOf<Tag>() }
@@ -100,6 +94,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 instructions.addAll(recipe.instructions)
                 ingredients.clear()
                 ingredients.addAll(recipe.ingredients)
+                portion.intValue = recipe.portion
+                perPerson.value = recipe.perPerson
                 origin.value = recipe.origin
                 diet.value = recipe.diet
                 tags.clear()
@@ -122,6 +118,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             instructions.addAll(recipeData.instructions)
             ingredients.clear()
             ingredients.addAll(recipeData.ingredients)
+            portion.intValue = recipeData.portion
+            perPerson.value = recipeData.perPerson
             origin.value = recipeData.origin
             diet.value = recipeData.diet
             tags.clear()
@@ -139,6 +137,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             route = Route.RECIPES_HOME,
             navExtraActions = {},
             topBarIcons = {
+                // only show Edit button if the current user is this recipe's creator
                 if (uid == "" || ownerID.value.isBlank()) {
                     handleError(context, "Could not compare UID of current user and recipe owner")
                 } else if (uid == ownerID.value) {
@@ -258,8 +257,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 ) {
                                     Text(
                                         text =
-                                        formatQuantity(ingredient.quantity)
-                                            + " " + (if (ingredient.unit == Measure.NONE) "" else ingredient.unit.getString(context)),
+                                        formatQuantity(ingredient.quantity) + "  "
+                                            + formatUnit(ingredient.unit, ingredient.quantity, context),
                                         style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                         modifier = Modifier.weight(1.5f)
                                     )
@@ -278,7 +277,12 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     }
 }
 
-@SuppressLint("DefaultLocale")
+/**
+ * Formats the ingredient quantity to remove useless decimal points and change frequent decimal quantities into fractions.
+ *
+ * @param quantity quantity to format as a float
+ * @return formatted string
+ */
 private fun formatQuantity(quantity: Float): String {
     return when {
         quantity == 0f -> ""
@@ -286,6 +290,23 @@ private fun formatQuantity(quantity: Float): String {
         quantity % 1 == 0.5f -> if (quantity.toInt() == 0) "½" else "${quantity.toInt()}½"
         quantity % 1 == 0.25f -> if (quantity.toInt() == 0) "¼" else "${quantity.toInt()}¼"
         quantity % 1 == 0.75f -> if (quantity.toInt() == 0) "¾" else "${quantity.toInt()}¾"
-        else -> String.format("%.2f", quantity)
+        else -> {
+            val decimalFormat = DecimalFormat("#.##")
+            decimalFormat.format(quantity)
+        }
+    }
+}
+
+/**
+* Formats the ingredient unit of measure to remove NONE units and add plural form when necessary.
+*
+* @param unit Measure objects to format
+* @param quantity quantity to check for plural form
+* @return formatted string
+*/
+private fun formatUnit(unit: Measure, quantity: Float, context: Context): String {
+    return if (unit == Measure.NONE) "" else {
+        if (quantity > 1f) unit.plural(context)
+        else unit.getString(context)
     }
 }

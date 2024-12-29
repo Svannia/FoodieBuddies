@@ -4,8 +4,8 @@
     <string name="alert_deleteAccount">Es-tu sûr.e de vouloir supprimer ton compte?\nCette action n\'est pas réversible.</string>
     <string name="alert_deleteCatFridge">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Liste de Courses\".</string>
     <string name="alert_deleteCatGroceries">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Mon Frigo\".</string>
-    <string name="alert_exitRecipe">Si tu quittes cette page, ta recette sera perdue.\nTu peux l\'ajouter à tes brouillons pour revenir dessus plus tard.</string>
     <string name="alert_exitDraft">Si tu quittes cette page, les modifications apportées à ton brouillon seront perdues.</string>
+    <string name="alert_exitRecipe">Si tu quittes cette page, ta recette sera perdue.\nTu peux l\'ajouter à tes brouillons pour revenir dessus plus tard.</string>
     <string name="alert_termsConditions">
         Cette application est à usage strictement privé: installe-la seulement si Alice te l\'a donnée.\n
         \nNe partage pas le fichier d\'installation sans l\'accord d\'Alice. Si elle trouve un compte non autorisé, elle le supprimera illico presto.\n
@@ -51,6 +51,7 @@
     <string name="desc_dropDownMenu">menu déroulant</string>
     <string name="desc_dstIcon">icone de destination</string>
     <string name="desc_edit">bouton modification</string>
+    <string name="desc_favouriteIcon">bouton favoris</string>
     <string name="desc_filters">filtres</string>
     <string name="desc_goBack">retour</string>
     <string name="desc_googleLogo">logo google</string>
@@ -131,6 +132,7 @@
     <string name="title_createRecipe">Crée une nouvelle recette</string>
     <string name="title_creator">Créateur</string>
     <string name="title_diet">Régime</string>
+    <string name="title_editDraft">Modifie ton Brouillon</string>
     <string name="title_editRecipe">Modifie ta recette</string>
     <string name="title_filters">Filtres</string>
     <string name="title_foodPic">Photo du plat</string>
@@ -141,6 +143,7 @@
     <string name="title_miscellaneous">Divers</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origine</string>
+    <string name="title_recipe">Recette</string>
     <string name="title_recipeInstructions">Instructions</string>
     <string name="title_recipeName">Nom de la recette</string>
     <string name="title_recipes">Recettes</string>
@@ -155,6 +158,7 @@
     <string name="toast_savedDraft">Ton brouillon a été enregistré.</string>
     <string name="toast_unknownError">Une erreur est survenue, merci de réessayer. Si le bug persiste, contacte Alice !</string>
 
+    <string name="txt_addFav">Ajouter aux Favoris</string>
     <string name="txt_allIngredientsOnly">Uniquement si j\'ai les ingrédients</string>
     <string name="txt_emptyFridge">Ton frigo est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_emptyGroceries">Ta liste de courses est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
@@ -168,12 +172,12 @@
     <string name="txt_quantity">Quantité</string>
     <string name="txt_recipeCreator">Créée par %1$s</string>
     <string name="txt_recipeRequirements">Les champs marqués par un astérisque rouge sont obligatoires.</string>
+    <string name="txt_removeFav">Dans tes Favoris - Appuie pour la retirer</string>
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>
     <string name="txt_systemLight">Clair</string>
     <string name="txt_unit">Unité</string>
-    <string name="txt_addFav">Ajouter aux Favoris</string>
-    <string name="txt_removeFav">Dans tes Favoris - Appuie pour la retirer</string>
+    <string name="txt_unnamed">Sans nom</string>
 
     <string name="unit_bouquet">bouquet</string>
     <string name="unit_cc">cc</string>
@@ -183,14 +187,15 @@
     <string name="unit_g">g</string>
     <string name="unit_goutte">goutte</string>
     <string name="unit_kg">kg</string>
+    <string name="unit_l">l</string>
     <string name="unit_ml">ml</string>
     <string name="unit_none">-</string>
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
-    <string name="txt_unnamed">Sans nom</string>
-    <string name="title_editDraft">Modifie ton Brouillon</string>
-    <string name="title_recipe">Recette</string>
-    <string name="desc_favouriteIcon">bouton favoris</string>
-    <string name="unit_l">l</string>
+    <string name="txt_for">Pour</string>
+    <string name="txt_people">personnes</string>
+    <string name="txt_person">personne</string>
+    <string name="txt_pieces">pièces</string>
+    <string name="txt_piece">pièce</string>
 </resources>

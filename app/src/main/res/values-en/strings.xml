@@ -4,8 +4,8 @@
     <string name="alert_deleteAccount">Are you sure you want to delete your account?\nThis cannot be undone.</string>
     <string name="alert_deleteCatFridge">Warning: this action will also delete this category and all its elements in \"Groceries list\"</string>
     <string name="alert_deleteCatGroceries">Warning: this action will also delete this category and all its elements in \"My Fridge\"</string>
-    <string name="alert_exitRecipe">If you exit now, this recipe will be lost.\nYou can save it to your drafts to get back on it later.</string>
     <string name="alert_exitDraft">If you exit now, the modifications that you have made on this draft will be lost.</string>
+    <string name="alert_exitRecipe">If you exit now, this recipe will be lost.\nYou can save it to your drafts to get back on it later.</string>
     <string name="alert_termsConditions">
         This app is strictly for private use: only install it if you received it from Alice.\n
         \nDo not share the installation file without Alice\'s approval. If she finds an unauthorized account, she will delete it immediately.\n
@@ -50,6 +50,7 @@
     <string name="desc_dropDownMenu">drop down menu</string>
     <string name="desc_dstIcon">destination icon</string>
     <string name="desc_edit">edit button</string>
+    <string name="desc_favouriteIcon">favourite icon</string>
     <string name="desc_filters">filters</string>
     <string name="desc_goBack">go back</string>
     <string name="desc_googleLogo">google logo</string>
@@ -130,6 +131,7 @@
     <string name="title_createRecipe">Create a new recipe</string>
     <string name="title_creator">Creator</string>
     <string name="title_diet">Diet</string>
+    <string name="title_editDraft">Edit your Draft</string>
     <string name="title_editRecipe">Edit your recipe</string>
     <string name="title_filters">Filters</string>
     <string name="title_foodPic">Picture of the food</string>
@@ -140,6 +142,7 @@
     <string name="title_miscellaneous">Miscellaneous</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origin</string>
+    <string name="title_recipe">Recipe</string>
     <string name="title_recipeInstructions">Instructions</string>
     <string name="title_recipeName">Recipe name</string>
     <string name="title_recipes">Recipes</string>
@@ -154,6 +157,7 @@
     <string name="toast_savedDraft">Your draft has been saved.</string>
     <string name="toast_unknownError">There was an error, please retry. If it keeps failing, please contact Alice!</string>
 
+    <string name="txt_addFav">Add to Favourites</string>
     <string name="txt_allIngredientsOnly">Only if I have the ingredients</string>
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
@@ -167,12 +171,12 @@
     <string name="txt_quantity">Quantity</string>
     <string name="txt_recipeCreator">Created by %1$s</string>
     <string name="txt_recipeRequirements">Fields marked with a red asterisk are mandatory.</string>
+    <string name="txt_removeFav">In Favourites - Tap to remove</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
     <string name="txt_unit">Unit</string>
-    <string name="txt_addFav">Add to Favourites</string>
-    <string name="txt_removeFav">In Favourites - Tap to remove</string>
+    <string name="txt_unnamed">Unnamed</string>
 
     <string name="unit_bouquet">bunch</string>
     <string name="unit_cc">tsp</string>
@@ -182,14 +186,15 @@
     <string name="unit_g">g</string>
     <string name="unit_goutte">drop</string>
     <string name="unit_kg">kg</string>
+    <string name="unit_l">l</string>
     <string name="unit_ml">ml</string>
     <string name="unit_none">-</string>
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="txt_unnamed">Unnamed</string>
-    <string name="title_editDraft">Edit your Draft</string>
-    <string name="title_recipe">Recipe</string>
-    <string name="desc_favouriteIcon">favourite icon</string>
-    <string name="unit_l">l</string>
+    <string name="txt_for">For</string>
+    <string name="txt_people">people</string>
+    <string name="txt_person">person</string>
+    <string name="txt_pieces">pieces</string>
+    <string name="txt_piece">piece</string>
 </resources>

@@ -94,6 +94,7 @@ fun Buddies(userViewModel: UserViewModel, navigationActions: NavigationActions) 
                                 textAlign = TextAlign.Center
                             )
                         }
+                    // list of users
                     } else {
                         allUsers.value.forEach { user ->
                             item {

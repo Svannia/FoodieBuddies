@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,6 +52,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     val pictureState = remember { mutableStateOf(Uri.EMPTY) }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
+    val portionState = remember { mutableIntStateOf(1) }
+    val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
     val dietState = remember { mutableStateOf(Diet.NONE) }
     val tagsState = remember { mutableStateListOf<Tag>() }
@@ -73,6 +76,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                 unit = map["unit"]?.let { Measure.valueOf(it) } ?: Measure.NONE
             )
         })
+        portionState.intValue = draft.value.portion
+        perPersonState.value = draft.value.perPerson
         originState.value = draft.value.origin
         dietState.value = draft.value.diet
         tagsState.clear()
@@ -108,6 +113,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             picture = pictureState,
             instructions = instructionsState,
             ingredients = ingredientsState,
+            portion = portionState,
+            perPerson = perPersonState,
             origin = originState,
             diet = dietState,
             tags = tagsState,
@@ -134,6 +141,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                             "id" to ingredient.id
                         )
                     },
+                    portion = portionState.intValue,
+                    perPerson = perPersonState.value,
                     origin = originState.value,
                     diet = dietState.value,
                     tags = tagsState.toList()
@@ -147,9 +156,11 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                 recipeVM.createRecipe(
                     userID, username.value, nameState.value, pictureState.value,
                     instructionsState, ingredientsState,
+                    portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,
                     { if (it) handleError(context, "Could not create recipe") }
                 ) {
+                    // delete the draft if it is published
                     offDataVM.deleteDraft(draftID)
                     navigationActions.navigateTo("${Route.RECIPE}/${it}")
                 }

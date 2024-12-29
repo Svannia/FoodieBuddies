@@ -1,9 +1,6 @@
 package com.example.foodiebuddy.data
 
 import android.content.Context
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import com.example.foodiebuddy.R
 import java.util.UUID
 
@@ -34,9 +31,9 @@ data class OwnedIngredient(
         }
     }
     /**
-     * Checks if this Owned Ingredient object is empty.
+     * Checks if this OwnedIngredient data object is empty.
      *
-     * @return true if the Owned Ingredient object is empty.
+     * @return true if the OwnedIngredient data object is empty.
      */
     fun isEmpty(): Boolean {
         return this == empty()
@@ -49,7 +46,8 @@ data class OwnedIngredient(
  * @property displayedName the name display to the user
  * @property standName standardized name that will be used to compare against recipe ingredients
  * @property quantity real number for the ingredient's required quantity (can be zero/null)
- * @property unit any sentence that the user uses to describe the required quantity (can be empty)
+ * @property unit Measure object for the quantity's unit of measure
+ * @property id unique identifier to avoid irregularities when editing ingredients list
  */
 data class RecipeIngredient(
     var displayedName: String,
@@ -69,9 +67,9 @@ data class RecipeIngredient(
         }
     }
     /**
-     * Checks if this Recipe Ingredient object is empty.
+     * Checks if this RecipeIngredient data object is empty.
      *
-     * @return true if the Recipe Ingredient object is empty.
+     * @return true if the RecipeIngredient data object is empty.
      */
     fun isEmpty(): Boolean {
         return this == empty()
@@ -107,4 +105,21 @@ val measuresMap = mapOf(
  */
 fun Measure.getString(context: Context): String {
     return context.getString(measuresMap[this] ?: R.string.unit_none)
+}
+
+/**
+ * Creates the plural version of a measure unit.
+ *
+ * @param context used to access the string resources
+ * @return user-readable string in plural form
+ */
+fun Measure.plural(context: Context): String {
+    return when (this) {
+        Measure.PIN, Measure.TASSE, Measure.SACHET, Measure.DE, Measure.BOUQUET, Measure.GOUTTE -> {
+            val singular = context.getString(measuresMap[this] ?: R.string.unit_none)
+            if (singular.endsWith("ch")) singular + "es"
+            else singular + "s"
+        }
+        else -> context.getString(measuresMap[this] ?: R.string.unit_none)
+    }
 }

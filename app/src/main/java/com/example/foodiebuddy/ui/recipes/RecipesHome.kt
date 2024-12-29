@@ -19,7 +19,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -57,7 +56,7 @@ import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.UserViewModel
 
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
 
@@ -273,8 +272,8 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                 }
             }
         )
-        // if the filters are showing
     } else {
+        // if the filters are showing
         RecipeSecondaryScreen(
             title = stringResource(R.string.title_filters),
             onGoBack = { showFilters.value = false },
@@ -470,6 +469,14 @@ private fun filterRecipes(allRecipes: List<Recipe>, filters: RecipeFilters, user
     }
 }
 
+/**
+ * Lists all creators with their ID's and usernames, with the current user being first in the list and their username changed to "Me".
+ *
+ * @param context used to access the string resources
+ * @param userData User object of the current user
+ * @param allUsersData list of User objects for all other users
+ * @return list of pairs where each pair represents a user: first key is the UID, second key is the username
+ */
 private fun buildCreatorsList(context: Context, userData: User, allUsersData: List<User>): List<Pair<String, String>> {
     val list = mutableListOf(Pair(userData.uid, context.getString(R.string.txt_me)))
     allUsersData.forEach { user ->

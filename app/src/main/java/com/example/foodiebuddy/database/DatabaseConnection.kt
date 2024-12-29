@@ -41,6 +41,8 @@ private const val INSTRUCTIONS = "instructions"
 private const val INGREDIENTS = "ingredients"
 private const val QUANTITY = "quantity"
 private const val UNIT = "unit"
+private const val PORTION = "portion"
+private const val PER_PERSON = "perPerson"
 private const val ORIGIN = "origin"
 private const val DIET = "diet"
 private const val TAGS = "tags"
@@ -48,7 +50,7 @@ private const val FAVOURITE = "favouriteOf"
 
 private const val defaultPicturePath = "userData/default.jpg"
 
-@Suppress("UNCHECKED_CAST", "CAST_NEVER_SUCCEEDS")
+@Suppress("UNCHECKED_CAST")
 class DatabaseConnection {
     private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
 
@@ -1155,6 +1157,23 @@ class DatabaseConnection {
             .addOnFailureListener { e -> onFailure(e) }
     }
 
+    /**
+     * Creates a new Recipe document.
+     *
+     * @property userID UID of the user who created the recipe
+     * @property owner username of the recipe author
+     * @property name title of the recipe
+     * @property picture picture of the recipe (empty URI if there is no picture)
+     * @property instructions list of strings where each element represents a step of the cooking instructions
+     * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @property portion number that indicates for how many servings this recipe is designed
+     * @property perPerson if true, the portion is per person, if false it is per piece
+     * @property origin origin tag from Origin enum
+     * @property diet diet tag from Diet enum
+     * @property tags list of tags from Tag enum
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated, returning the recipe's ID
+     */
     fun createRecipe(
         userID: String,
         owner: String,
@@ -1162,6 +1181,8 @@ class DatabaseConnection {
         picture: Uri,
         instructions: List<String>,
         ingredients: List<RecipeIngredient>,
+        portion: Int,
+        perPerson: Boolean,
         origin: Origin,
         diet: Diet,
         tags: List<Tag>,
@@ -1182,6 +1203,8 @@ class DatabaseConnection {
                     UNIT to ingredient.unit
                 )
             },
+            PORTION to portion,
+            PER_PERSON to perPerson,
             ORIGIN to origin.toString(),
             DIET to diet.toString(),
             TAGS to tags.map { it.toString() },
@@ -1256,13 +1279,15 @@ class DatabaseConnection {
                     unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
                 )
             } ?: emptyList()
+            val portion = document.getLong(PORTION)?.toInt() ?: 1
+            val perPerson = document.getBoolean(PER_PERSON) ?: true
             val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
             val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
             val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
             val tags = tagsList.map { Tag.valueOf(it) }
             val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
             isError(false)
-            Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, origin, diet, tags, favouriteOf)
+            Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
         } else {
             isError(true)
             Log.d("MyDB", "Failed to fetch recipe data")
@@ -1300,13 +1325,15 @@ class DatabaseConnection {
                             unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
                         )
                     } ?: emptyList()
+                    val portion = document.getLong(PORTION)?.toInt() ?: 1
+                    val perPerson = document.getBoolean(PER_PERSON) ?: true
                     val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
                     val diet = document.getString(DIET)?.let { Diet.valueOf(it) } ?: Diet.NONE
                     val tagsList = document.get(TAGS) as? List<String> ?: emptyList()
                     val tags = tagsList.map { Tag.valueOf(it) }
                     val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
                     isError(false)
-                    Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, origin, diet, tags, favouriteOf)
+                    Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
                 }
         } catch (e: Exception) {
             isError(true)
@@ -1315,9 +1342,18 @@ class DatabaseConnection {
         }
     }
 
+    /**
+     * Adds a user's favourite by adding their reference to the recipe.
+     *
+     * @param uid of the recipe
+     * @param userID of the user adding the favourite
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
     fun addUserToFavourites(uid: String, userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         recipesCollection
             .document(uid)
+            // add the user ID to the list favouriteOf of the recipe
             .update(FAVOURITE, FieldValue.arrayUnion(userID))
             .addOnSuccessListener {
                 isError(false)
@@ -1471,7 +1507,7 @@ class DatabaseConnection {
     }
 
     /**
-     * Accesses the existing user data path in Storage to update new picture.
+     * Updates an existing picture or adds a new one if the profile picture doesn't exist yet.
      *
      * @param userID ID of the user
      * @param picture new picture to be updated in Storage
@@ -1573,11 +1609,27 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Retrieves the data path in Storage to access a recipe's data.
+     *
+     * @param userID ID of the user who is allowed to modify this recipe's picture (its creator)
+     * @param recipeID ID of the recipe to access
+     * @return path in Storage
+     */
     private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID/recipePicture.jpg"
 
+    /**
+     * Updates an existing picture or adds a new one if the recipe picture doesn't exist yet.
+     *
+     * @param userID ID of the user who is allowed to modify this recipe's picture (its creator)
+     * @param recipeID ID of the recipe to access
+     * @param picture URI of the new picture
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun updateRecipePicture(userID: String, recipeID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val pictureRef = storage.child(recipePicturePath(userID, recipeID))
-        // update / add new picture to storage
+        // update or add new picture to storage
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {

@@ -1,26 +1,18 @@
 package com.example.foodiebuddy.ui.recipes
 
-import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.AlertDialog
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.graphics.Color
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.viewModels.RecipeViewModel
-import com.example.foodiebuddy.viewModels.UserViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.example.foodiebuddy.R
@@ -31,14 +23,11 @@ import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.Route
-import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.DialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
-import com.example.foodiebuddy.ui.OptionsMenu
-import com.example.foodiebuddy.ui.SecondaryScreen
 
 @Composable
-fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActions: NavigationActions) {
+fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) {
     val context = LocalContext.current
     val editingPicture = remember { mutableStateOf(false) }
     val loadingData = remember { mutableStateOf(false) }
@@ -55,6 +44,8 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val pictureState = remember { mutableStateOf(Uri.EMPTY) }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
+    val portionState = remember { mutableIntStateOf(1) }
+    val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
     val dietState = remember { mutableStateOf(Diet.NONE) }
     val tagsState = remember { mutableStateListOf<Tag>() }
@@ -75,6 +66,8 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 instructionsState.addAll(recipeData.instructions)
                 ingredientsState.clear()
                 ingredientsState.addAll(recipeData.ingredients)
+                portionState.intValue = recipeData.portion
+                perPersonState.value = recipeData.perPerson
                 originState.value = recipeData.origin
                 dietState.value = recipeData.diet
                 tagsState.clear()
@@ -92,6 +85,8 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             instructionsState.addAll(recipeData.instructions)
             ingredientsState.clear()
             ingredientsState.addAll(recipeData.ingredients)
+            portionState.intValue = recipeData.portion
+            perPersonState.value = recipeData.perPerson
             originState.value = recipeData.origin
             dietState.value = recipeData.diet
             tagsState.clear()
@@ -102,6 +97,7 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     if (loadingData.value) LoadingPage()
     else {
         if (editingPicture.value) {
+            // screen to edit a picture for the recipe
             SetRecipePicture(
                 picture = pictureState.value,
                 onCancel = {
@@ -128,6 +124,8 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 picture = pictureState,
                 instructions = instructionsState,
                 ingredients = ingredientsState,
+                portion = portionState,
+                perPerson = perPersonState,
                 origin = originState,
                 diet = dietState,
                 tags = tagsState,
@@ -141,6 +139,7 @@ fun RecipeEdit(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     pictureEdited.value = false
                     pictureRemoved.value = true
                 },
+                // no draft option when editing an existing recipe
                 onDraftSave = {},
                 onSave = {
                     // todo

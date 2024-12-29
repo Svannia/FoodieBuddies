@@ -80,6 +80,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -104,6 +105,7 @@ import kotlinx.coroutines.launch
  *
  * @param title display in the top bar (can be empty)
  * @param navigationActions to handle screen navigation
+ * @param route optional Route to navigate to when pressing the Back button, instead of navigating back
  * @param navExtraActions optional extra block to run when navigating back (e.g navigating back from CreateAccount screen also signs out)
  * @param topBarIcons extra composable on the right-side of the top bar (optional)
  * @param content screen body
@@ -366,10 +368,12 @@ fun SquareImage(size: Dp, picture: Uri, contentDescription: String) {
  * @param placeHolder text displayed in the empty text field
  * @param singleLine whether or not the value of the text field can contain line breaks
  * @param maxLength maximum amount of characters allowed in the text field
+ * @param autoCap whether or not to activate the AutoCap on the keyboard when starting to type. True by default
  * @param focusRequester optional FocusRequester when the TextField needs to be manually put into focus
  * @param onFocusedChanged needed if there is a FocusRequester: block that runs when focus is changed
  * @param showMaxChara whether or not to show supporting text with the max amount of character. True by default
  * @param width width of the TextField
+ * @param height optional height for the TextField, usually used for writing big blocks of text
  * @param keyboardActions optional overriding of default keyboard actions
  * @param keyboardOptions optional overriding of default keyboard options
  */
@@ -447,10 +451,20 @@ fun CustomTextField(
     )
 }
 
+/**
+ * TextField that only accepts numerical value.
+ *
+ * @param value number passed by the user in the TextField, can be float or integer
+ * @param onValueChange block that runs with the new input when it is edited
+ * @param isInteger whether the input should be treated as integer or float
+ * @param placeHolder text displayed in the empty TextField
+ * @param width width of the TextField
+ */
 @Composable
 fun CustomNumberField(
-    value: Float,
-    onValueChange: (Float) -> Unit,
+    value: Number,
+    onValueChange: (Number) -> Unit,
+    isInteger: Boolean,
     placeHolder: String,
     width: Dp
 ) {
@@ -460,11 +474,17 @@ fun CustomNumberField(
         modifier = Modifier
             .width(width)
             .padding(0.dp),
-        value = text.value,
+        value = if (value.toFloat() < 0) placeHolder
+                else text.value,
         onValueChange = { input ->
-            val filteredInput = input.filter { it.isDigit() || it == '.' }
+            val filteredInput = if (isInteger) input.filter { it.isDigit() }
+                                else input.filter { it.isDigit() || it == '.' }
             text.value = filteredInput
-            filteredInput.toFloatOrNull()?.let{ onValueChange(it) }
+            if (isInteger) {
+                if (input.isBlank()) onValueChange(-1)
+                else filteredInput.toIntOrNull()?.let { onValueChange(it) }
+            }
+            else filteredInput.toFloatOrNull()?.let{ onValueChange(it) }
         },
         textStyle = MyTypography.bodyLarge,
         placeholder = {
@@ -479,7 +499,7 @@ fun CustomNumberField(
             focusedIndicatorColor = MaterialTheme.colorScheme.primary
         ),
         keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number,
+            keyboardType = if (isInteger) KeyboardType.Number else KeyboardType.Decimal,
             imeAction = ImeAction.Done
         )
     )
@@ -576,6 +596,7 @@ fun DialogWindow(
 /**
  * Element that creates an icon button that opens a drop-down menu of options when pressed.
  *
+ * @param icon identifier for the icon to be used as the IconButton
  * @param options non-exhaustive number of pairs.
  * Each pair contains a string for the name of the action appearing in the drop-down menu,
  * and a block to run when that button is pressed.
@@ -616,6 +637,7 @@ fun OptionsMenu(icon: Int, vararg options: Pair<String, () -> Unit>) {
  *
  * @param navigationActions to handle screen navigation
  * @param navExtraActions optional extra block to run when navigating back (e.g navigating back from CreateAccount screen also signs out)
+ * @param route optional route to navigate to instead of navigating back
  */
 @Composable
 fun GoBackButton(navigationActions: NavigationActions, navExtraActions: () -> Unit, route: String ?= null) {

@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
-import androidx.compose.foundation.gestures.DraggableState
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -203,7 +201,7 @@ class MainActivity : ComponentActivity() {
                             if (currentUser != null) {
                                 val recipeID = backStackEntry.arguments?.getString("recipeID")
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel(recipeID) }
-                                RecipeEdit(userVM, recipeVM, navigationActions)
+                                RecipeEdit(recipeVM, navigationActions)
                                 Log.d("Compose", "Successfully composed screen Recipe Edit for recipeID $recipeID")
                             }
                         }

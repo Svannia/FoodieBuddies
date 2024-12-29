@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.database
 
 import android.content.Context
-import android.util.Log
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -60,6 +59,11 @@ class DataStoreManager(private val context: Context) {
             }
         }
 
+    /**
+     * Saves a new draft if it's ID doesn't exist yet, else updates the existing draft.
+     *
+     * @param draft RecipeDraft to add/update in the local data
+     */
     suspend fun saveDraft(draft: RecipeDraft) {
         context.dataStore.edit { preferences ->
             val currentDrafts = drafts.firstOrNull() ?: emptyList()
@@ -74,6 +78,11 @@ class DataStoreManager(private val context: Context) {
         }
     }
 
+    /**
+     * Deletes a draft from the local data.
+     *
+     * @param draftId ID of the draft to delete
+     */
     suspend fun deleteDraft(draftId: String) {
         context.dataStore.edit { preferences ->
             val currentDrafts = drafts.firstOrNull() ?: emptyList()

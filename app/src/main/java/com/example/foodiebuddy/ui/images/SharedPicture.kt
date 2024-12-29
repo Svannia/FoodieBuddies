@@ -34,7 +34,6 @@ import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.clipPath
-import androidx.compose.ui.graphics.drawscope.draw
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -55,6 +54,14 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.math.abs
 
+/**
+ * Screen to edit picture with zoom, displacement and mask.
+ *
+ * @param picture to be edited
+ * @param roundMask if true makes the mask round, if false makes it square
+ * @param onCancel block to run if the user presses the Cancel button
+ * @return onSave block to run if the user presses the Save button, returning the edited picture
+ */
 @Composable
 fun SetPicture(picture: Uri, roundMask: Boolean, onCancel: () -> Unit, onSave: (Uri) -> Unit) {
     val context = LocalContext.current

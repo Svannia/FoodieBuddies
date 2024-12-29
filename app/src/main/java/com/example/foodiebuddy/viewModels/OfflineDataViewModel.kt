@@ -54,10 +54,20 @@ class OfflineDataViewModel(application: Application) : AndroidViewModel(applicat
         }
     }
 
+    /**
+     * Saves a new draft if it's ID doesn't exist yet, else updates the existing draft.
+     *
+     * @param draft RecipeDraft to add/update in the local data
+     */
     fun saveDraft(draft: RecipeDraft) {
         viewModelScope.launch { dataStoreManager.saveDraft(draft) }
     }
 
+    /**
+    * Deletes a draft from the local data.
+    *
+    * @param draftId ID of the draft to delete
+    */
     fun deleteDraft(draftId: String) {
         viewModelScope.launch { dataStoreManager.deleteDraft(draftId) }
     }
