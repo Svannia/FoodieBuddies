@@ -35,7 +35,6 @@ private const val STAND_NAME = "standName"
 private const val CATEGORY = "category"
 private const val IS_TICKED = "isTicked"
 
-private const val OWNER_NAME = "ownerName"
 private const val NAME = "name"
 private const val INSTRUCTIONS = "instructions"
 private const val INGREDIENTS = "ingredients"
@@ -1161,7 +1160,6 @@ class DatabaseConnection {
      * Creates a new Recipe document.
      *
      * @property userID UID of the user who created the recipe
-     * @property owner username of the recipe author
      * @property name title of the recipe
      * @property picture picture of the recipe (empty URI if there is no picture)
      * @property instructions list of strings where each element represents a step of the cooking instructions
@@ -1176,7 +1174,6 @@ class DatabaseConnection {
      */
     fun createRecipe(
         userID: String,
-        owner: String,
         name: String,
         picture: Uri,
         instructions: List<String>,
@@ -1191,7 +1188,6 @@ class DatabaseConnection {
     ) {
         val recipe = hashMapOf(
             OWNER to userID,
-            OWNER_NAME to owner,
             NAME to name,
             PICTURE to "",
             INSTRUCTIONS to instructions,
@@ -1261,7 +1257,6 @@ class DatabaseConnection {
         val document = recipesCollection.document(recipeID).get().await()
         return if (document.exists()) {
             val owner = document.getString(OWNER) ?: ""
-            val ownerName = document.getString(OWNER_NAME) ?: ""
             val name = document.getString(NAME) ?: ""
             val rawPicture = document.getString(PICTURE) ?: ""
             val picture = if (rawPicture.isBlank()) Uri.EMPTY else Uri.parse(rawPicture)
@@ -1287,7 +1282,7 @@ class DatabaseConnection {
             val tags = tagsList.map { Tag.valueOf(it) }
             val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
             isError(false)
-            Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
+            Recipe(document.id, owner, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
         } else {
             isError(true)
             Log.d("MyDB", "Failed to fetch recipe data")
@@ -1307,7 +1302,6 @@ class DatabaseConnection {
             query.documents
                 .map { document ->
                     val owner = document.getString(OWNER) ?: ""
-                    val ownerName = document.getString(OWNER_NAME) ?: ""
                     val name = document.getString(NAME) ?: ""
                     val rawPicture = document.getString(PICTURE) ?: ""
                     val picture = if (rawPicture.isBlank()) Uri.EMPTY else Uri.parse(rawPicture)
@@ -1333,7 +1327,7 @@ class DatabaseConnection {
                     val tags = tagsList.map { Tag.valueOf(it) }
                     val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
                     isError(false)
-                    Recipe(document.id, owner, ownerName, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
+                    Recipe(document.id, owner, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
                 }
         } catch (e: Exception) {
             isError(true)

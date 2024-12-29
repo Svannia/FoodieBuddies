@@ -39,7 +39,6 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
     * Creates a new Recipe document.
     *
     * @property userID UID of the user who created the recipe
-    * @property owner username of the recipe author
     * @property name title of the recipe
     * @property picture picture of the recipe (empty URI if there is no picture)
     * @property instructions list of strings where each element represents a step of the cooking instructions
@@ -54,7 +53,6 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
     */
     fun createRecipe(
         userID: String,
-        owner: String,
         name: String,
         picture: Uri,
         instructions: List<String>,
@@ -77,7 +75,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
             // add the standardized name of each ingredient
             ingredient.standName = standardizeName(ingredient.displayedName)
         }
-        db.createRecipe(userID, owner, name, picture, instructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
+        db.createRecipe(userID, name, picture, instructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
             callBack(it)
         }
     }

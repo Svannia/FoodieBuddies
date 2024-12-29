@@ -237,8 +237,9 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                                         style = MyTypography.bodyLarge
                                                     )
                                                     // creator of the recipe
+                                                    val ownerName = allCreators.value.find { it.first == recipe.owner }?.second ?: ""
                                                     Text(
-                                                        text = stringResource(R.string.txt_recipeCreator, recipe.ownerName),
+                                                        text = stringResource(R.string.txt_recipeCreator, ownerName),
                                                         style = MyTypography.bodySmall,
                                                         color = MaterialTheme.colorScheme.outline
                                                     )

@@ -7,7 +7,6 @@ import android.net.Uri
  *
  * @property uid of the recipe
  * @property owner UID of the user who created the recipe
- * @property ownerName username of the recipe author
  * @property name title of the recipe
  * @property picture picture of the recipe (empty URI if there is no picture)
  * @property instructions list of strings where each element represents a step of the cooking instructions
@@ -22,7 +21,6 @@ import android.net.Uri
 data class Recipe(
     val uid: String,
     val owner: String,
-    val ownerName: String,
     val name: String,
     val picture: Uri,
     val instructions: List<String>,
@@ -42,7 +40,7 @@ data class Recipe(
          * @return empty Recipe data object.
          */
         fun empty(): Recipe {
-            return Recipe("", "", "", "", Uri.EMPTY, listOf(""), emptyList(), 1, true,  Origin.NONE, Diet.NONE, emptyList(), emptyList())
+            return Recipe("", "", "", Uri.EMPTY, listOf(""), emptyList(), 1, true,  Origin.NONE, Diet.NONE, emptyList(), emptyList())
         }
     }
     /**

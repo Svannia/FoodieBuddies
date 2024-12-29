@@ -87,7 +87,6 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             val recipe = recipeVM.recipeData.value
             if (recipe != Recipe.empty()) {
                 ownerID.value = recipe.owner
-                ownerName.value = recipe.ownerName
                 name.value = recipe.name
                 picture.value = recipe.picture
                 instructions.clear()
@@ -105,13 +104,20 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             } else {
                 handleError(context, "Could not fetch data, recipe is empty")
             }
-            loadingData.value = false
+            userVM.fetchSomeUsername(ownerID.value, {
+                if (it) {
+                    handleError(context, "Could not fetch owner's username")
+                    loadingData.value = false
+                }
+            }) {
+                ownerName.value = it
+                loadingData.value = false
+            }
         }
     }
     LaunchedEffect(recipeData) {
         if (recipeData != Recipe.empty()) {
             ownerID.value = recipeData.owner
-            ownerName.value = recipeData.ownerName
             name.value = recipeData.name
             picture.value = recipeData.picture
             instructions.clear()

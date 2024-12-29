@@ -113,6 +113,29 @@ constructor(private val userID: String ?= null) : ViewModel() {
         }
     }
 
+    fun fetchSomeUsername(uid: String, isError: (Boolean) -> Unit, callBack: (String) -> Unit) {
+        db.userExists(
+            userID = uid,
+            onSuccess = { userExists ->
+                if (userExists) {
+                    viewModelScope.launch {
+                        var errorOccurred = false
+                        val thisUser = db.fetchUserData(uid) { if (it) errorOccurred = true }
+                        isError(errorOccurred)
+                        if (!errorOccurred) callBack(thisUser.username)
+                    }
+                } else {
+                    isError(true)
+                    Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
+                }
+            },
+            onFailure = { e ->
+                isError(true)
+                Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
+            }
+        )
+    }
+
     /**
      * Fetches the default user profile picture.
      *

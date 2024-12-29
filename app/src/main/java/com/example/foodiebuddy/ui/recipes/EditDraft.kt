@@ -39,9 +39,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
 
-    val userData by userVM.userData.collectAsState()
     val userID = userVM.getCurrentUserID()
-    val username = remember { mutableStateOf("") }
 
     val drafts by offDataVM.drafts.collectAsState()
     val draft = remember { mutableStateOf(RecipeDraft.empty())
@@ -59,7 +57,6 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     val tagsState = remember { mutableStateListOf<Tag>() }
 
     LaunchedEffect(Unit) {
-        username.value = userData.username
         draft.value = drafts.find { it.id == draftID } ?: RecipeDraft.empty()
         nameState.value = draft.value.name
         val picture = if (draft.value.picture.isEmpty()) Uri.EMPTY else draft.value.picture.toUri()
@@ -154,7 +151,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             },
             onSave = {
                 recipeVM.createRecipe(
-                    userID, username.value, nameState.value, pictureState.value,
+                    userID, nameState.value, pictureState.value,
                     instructionsState, ingredientsState,
                     portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,

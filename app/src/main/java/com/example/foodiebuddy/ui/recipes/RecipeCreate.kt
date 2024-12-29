@@ -4,9 +4,6 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -37,13 +34,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
     val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
 
-    val userData by userVM.userData.collectAsState()
     val userID = userVM.getCurrentUserID()
-    val username = remember { mutableStateOf("") }
-
-    LaunchedEffect(userData) {
-        username.value = userData.username
-    }
 
     val nameState = remember { mutableStateOf("") }
     val currentPicture = remember { mutableStateOf(Uri.EMPTY) }
@@ -122,7 +113,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
             },
             onSave = {
                 recipeVM.createRecipe(
-                    userID, username.value, nameState.value, pictureState.value,
+                    userID, nameState.value, pictureState.value,
                     instructionsState, ingredientsState,
                     portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,
