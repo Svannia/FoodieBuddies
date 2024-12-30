@@ -154,4 +154,13 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         }
     }
 
+    fun deleteRecipe(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (recipeID != null) {
+            db.deleteRecipe(userID, recipeID, { isError(it) }) { callBack() }
+        } else {
+            isError(true)
+            Log.d("RecipeVM", "Failed to delete recipe: ID is null")
+        }
+    }
+
 }

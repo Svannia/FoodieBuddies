@@ -250,19 +250,23 @@ class DatabaseConnection {
             .delete()
             .addOnSuccessListener {
                 // if document deletion was successful -> also delete the profile picture
-                deleteProfilePicture(userID, { isError(it) }) {
+                deleteUserPictures(userID, { isError(it) }) {
                     // once those deletions are successful -> delete the userPersonal document
                     deleteUserPersonal(userID, { isError(it) }) {
-                        removeUserFromAllFavourites(userID, { isError(it) }) {
-                            callBack()
-                            Log.d("MyDB", "Successfully deleted user $userID")
+                        // delete all recipes created by this user
+                        deleteAllUserRecipes(userID, { isError(it) }) {
+                            // in all recipes, remove this user from the list favouriteOf
+                            removeUserFromAllFavourites(userID, { isError(it) }) {
+                                callBack()
+                                Log.d("MyDB", "Successfully deleted user $userID")
+                            }
                         }
                     }
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to delete user $userID with error $e")
+                Log.d("MyDB", "Failed to delete user with error $e")
             }
     }
 
@@ -1438,6 +1442,76 @@ class DatabaseConnection {
             }
     }
 
+    fun deleteRecipe(userID: String, recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        // delete the recipe document
+        recipesCollection
+            .document(recipeID)
+            .delete()
+            .addOnSuccessListener {
+                // if document was safely deleted -> delete eventual picture
+                deleteRecipePicture(userID, recipeID, { isError(it) } ) {
+                    // once picture deletion is successful -> decrease creator's recipes counter
+                    userDataCollection.document(userID)
+                        .update(NUMBER_RECIPES, FieldValue.increment(-1))
+                        .addOnSuccessListener {
+                            isError(false)
+                            callBack()
+                            Log.d("MyDB", "Successfully finished recipe deletion process")
+                        }
+                        .addOnFailureListener { e ->
+                            isError(true)
+                            Log.d("MyDB", "Failed to decrement recipes counter with error $e")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to delete recipe with error $e")
+            }
+
+    }
+
+    private fun deleteAllUserRecipes(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        recipesCollection
+            .whereEqualTo(OWNER, userID).get()
+            .addOnSuccessListener { query ->
+                var remaining = query.documents.size
+                var errorOccurred = false
+
+                // return if there are no recipes
+                if (remaining <= 0) {
+                    isError(false)
+                    callBack()
+                    return@addOnSuccessListener
+                }
+
+                // else delete all recipes
+                for (document in query.documents) {
+                    val id = document.id
+                    deleteRecipe(userID, id, {
+                        if (it) {
+                            errorOccurred = true
+                            Log.d("MyDB", "Failed to delete recipe $id")
+                            remaining--
+                            if (remaining <= 0) isError(true)
+                        }
+                    }) {
+                        remaining--
+                        if (remaining <= 0) {
+                            isError(errorOccurred)
+                            if (!errorOccurred) {
+                                Log.d("MyDB", "Successfully deleted all user's recipes")
+                            }
+                        }
+                    }
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to fetch recipes with given userID as owner, with error $e")
+            }
+    }
+
 
     // storage pictures
 
@@ -1568,7 +1642,7 @@ class DatabaseConnection {
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after DB was updated
      */
-    private fun deleteProfilePicture(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    private fun deleteUserPictures(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // deletes all items in the user's storage data path
         val folderRef = storage.child(userPath(userID))
         folderRef.listAll()
@@ -1611,6 +1685,8 @@ class DatabaseConnection {
      * @return path in Storage
      */
     private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID/recipePicture.jpg"
+
+    private fun recipePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID"
 
     /**
      * Updates an existing picture or adds a new one if the recipe picture doesn't exist yet.
@@ -1656,6 +1732,41 @@ class DatabaseConnection {
                         "and http status is $httpErrorCode")
             }
     }
+
+    private fun deleteRecipePicture(userID: String, recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val folderRef = storage.child(recipePath(userID, recipeID))
+        folderRef.listAll()
+            .addOnSuccessListener { result ->
+                var remaining = result.items.size
+                var errorOccurred = false
+                result.items.forEach { item ->
+                    item.delete()
+                        .addOnSuccessListener {
+                            remaining--
+                            if (remaining <= 0) {
+                                isError(errorOccurred)
+                                if (errorOccurred) {
+                                    Log.d("MyDB", "Failed to deleted stored file")
+                                } else {
+                                    callBack()
+                                    Log.d("MyDB", "Successfully deleted stored files for recipe")
+                                }
+                            }
+                        }
+                        .addOnFailureListener { e ->
+                            remaining--
+                            errorOccurred = true
+                            if (remaining <= 0) isError(true)
+                            Log.d("MyDB", "Failed to delete stored file with error $e")
+                        }
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to list stored files with error $e")
+            }
+    }
+
 
     // db tests
     /**

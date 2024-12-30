@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <resources>
     <string name="alert_clearList">Es-tu sûr.e de vouloir effacer cette liste?\nCette action n\'est pas réversible.</string>
+    <string name="alert_deleteRecipe">Es-tu sûr.e de vouloir supprimer cette recette?\nCette action n\'est pas réversible.</string>
     <string name="alert_deleteAccount">Es-tu sûr.e de vouloir supprimer ton compte?\nCette action n\'est pas réversible.</string>
     <string name="alert_deleteCatFridge">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Liste de Courses\".</string>
     <string name="alert_deleteCatGroceries">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Mon Frigo\".</string>
@@ -198,4 +199,5 @@
     <string name="txt_person">personne</string>
     <string name="txt_pieces">pièces</string>
     <string name="txt_piece">pièce</string>
+    <string name="button_deleteRecipe">Supprimer la recette</string>
 </resources>

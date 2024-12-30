@@ -36,6 +36,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
     val pictureRemoved = remember { mutableStateOf(false) }
     val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
+    val showDeleteAlert = remember { mutableStateOf(false) }
 
     val recipeData by recipeVM.recipeData.collectAsState()
 
@@ -131,7 +132,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 tags = tagsState,
                 showPictureOptions = showPictureOptions,
                 dataEdited = dataEdited,
-                onlyEnableIfEdited = true,
+                editingExistingRecipe = true,
                 onEditPicture = { editingPicture.value = true },
                 onRemovePicture = {
                     pictureState.value = Uri.EMPTY
@@ -143,10 +144,32 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 onDraftSave = {},
                 onSave = {
                     // todo
-                }
+                },
+                onDelete = { showDeleteAlert.value = true }
             )
             BackHandler {
                 showAlert.value = true
+            }
+            // alert for deleting the recipe
+            if (showDeleteAlert.value) {
+                DialogWindow(
+                    visible = showDeleteAlert,
+                    content = stringResource(R.string.alert_deleteRecipe),
+                    confirmText = stringResource(R.string.button_delete),
+                    confirmColour = Color.Red
+                ) {
+                    showDeleteAlert.value = true
+                    loadingData.value = true
+                    recipeVM.deleteRecipe(recipeData.owner, {
+                        if (it) {
+                            handleError(context, "Could not delete recipe")
+                            loadingData.value = false
+                        }
+                    }) {
+                        loadingData.value = false
+                        navigationActions.navigateTo(Route.RECIPES_HOME)
+                    }
+                }
             }
             // alert for leaving the recipe edition page
             if (showAlert.value) {

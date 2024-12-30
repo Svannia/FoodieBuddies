@@ -38,6 +38,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DropdownMenu
@@ -49,6 +50,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -106,11 +108,12 @@ import com.example.foodiebuddy.ui.theme.MyTypography
  * @param tags editable list of miscellaneous Tag objects
  * @param showPictureOptions whether or not to show the various picture options
  * @param dataEdited optional, stores whether or not any data was edited
- * @param onlyEnableIfEdited if true, the Save button will stay disabled if no recipe data was edited
+ * @param editingExistingRecipe if true, the Save button will stay disabled if no recipe data was edited and there will be a Delete button
  * @param onEditPicture block that runs when pressing the prompt to edit a new picture
  * @param onRemovePicture block that runs when deleting the recipe picture
  * @param onDraftSave block that runs when saving the current recipe data into a draft
  * @param onSave block that runs when pressing the Save button
+ * @param onDelete optional block to run when pressing the eventual Delete button
  */
 @Composable
 fun EditRecipe(
@@ -128,11 +131,12 @@ fun EditRecipe(
     tags: SnapshotStateList<Tag>,
     showPictureOptions: MutableState<Boolean>,
     dataEdited: MutableState<Boolean>?= null,
-    onlyEnableIfEdited: Boolean = false,
+    editingExistingRecipe: Boolean = false,
     onEditPicture: () -> Unit,
     onRemovePicture: () -> Unit,
     onDraftSave: () -> Unit,
-    onSave: () -> Unit
+    onSave: () -> Unit,
+    onDelete: () -> Unit = {}
 ) {
     // getting image and relevant permissions
     val imageInput = "image/*"
@@ -158,7 +162,7 @@ fun EditRecipe(
         onGoBack = { onGoBack() },
         actions = { OptionsMenu(R.drawable.save, stringResource(R.string.button_saveDraft) to { onDraftSave() }) },
         bottomBar = {
-            val newData = if (onlyEnableIfEdited) dataEdited?.value ?: true else true
+            val newData = if (editingExistingRecipe) dataEdited?.value ?: true else true
             val requiredFields =
                 name.value.isNotEmpty() &&
                 instructions.isNotEmpty() &&
@@ -449,6 +453,27 @@ fun EditRecipe(
             item {
                 AddButton {
                     instructions.add("")
+                }
+            }
+            // eventual Delete button
+            if (editingExistingRecipe) {
+                item {
+                    TextButton(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(width = 2.dp, color = Color.Red, shape = RoundedCornerShape(50)),
+                        onClick = { onDelete() },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.Transparent
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.button_deleteRecipe),
+                            style = MyTypography.bodyLarge,
+                            textAlign = TextAlign.Center,
+                            color = Color.Red
+                        )
+                    }
                 }
             }
             // spacing for the keyboard (cuz doing things properly with ime paddings fucks things up)
