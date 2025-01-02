@@ -1340,6 +1340,68 @@ class DatabaseConnection {
         }
     }
 
+    fun updateRecipe(
+        userID: String,
+        recipeID: String,
+        name: String,
+        picture: Uri,
+        updatePicture: Boolean,
+        removePicture: Boolean,
+        instructions: List<String>,
+        ingredients: List<RecipeIngredient>,
+        portion: Int,
+        perPerson: Boolean,
+        origin: Origin,
+        diet: Diet,
+        tags: List<Tag>,
+        isError: (Boolean) -> Unit,
+        callBack: () -> Unit
+    ) {
+        val recipe = hashMapOf(
+            NAME to name,
+            INSTRUCTIONS to instructions,
+            INGREDIENTS to ingredients.map { ingredient ->
+                mapOf(
+                    DISPLAY_NAME to ingredient.displayedName,
+                    STAND_NAME to ingredient.standName,
+                    QUANTITY to ingredient.quantity,
+                    UNIT to ingredient.unit
+                )
+            },
+            PORTION to portion,
+            PER_PERSON to perPerson,
+            ORIGIN to origin.toString(),
+            DIET to diet.toString(),
+            TAGS to tags.map { it.toString() },
+        )
+
+        recipesCollection
+            .document(recipeID)
+            .update(recipe as Map<String, Any>)
+            .addOnSuccessListener {
+                if (removePicture) {
+                    deleteRecipePicture(userID, recipeID, { isError(it) }) {
+                        isError(false)
+                        callBack()
+                        Log.d("MyDB", "Successfully updated recipe with removed picture")
+                    }
+                } else if (updatePicture) {
+                    updateRecipePicture(userID, recipeID, picture, { isError(it) }) {
+                        callBack()
+                        Log.d("MyDB", "Successfully updated recipe with new picture")
+                    }
+                } else {
+                    isError(false)
+                    callBack()
+                    Log.d("MyDB", "Successfully updated recipe data without picture change")
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to update recipe with error $e")
+            }
+    }
+
     /**
      * Adds a user's favourite by adding their reference to the recipe.
      *
@@ -1500,7 +1562,7 @@ class DatabaseConnection {
                         if (remaining <= 0) {
                             isError(errorOccurred)
                             if (!errorOccurred) {
-                                Log.d("MyDB", "Successfully deleted all user's reciapes")
+                                Log.d("MyDB", "Successfully deleted all user's recipes")
                             }
                         }
                     }

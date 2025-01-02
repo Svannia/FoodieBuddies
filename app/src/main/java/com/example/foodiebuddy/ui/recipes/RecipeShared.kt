@@ -166,11 +166,11 @@ fun EditRecipe(
             val requiredFields =
                 name.value.isNotEmpty() &&
                 instructions.isNotEmpty() &&
-                !instructions.all { it.isBlank() } &&
+                !instructions.all { step -> step.isBlank() || step.all { it == ' ' } } &&
                 portion.intValue >= 1 &&
                 origin.value != Origin.NONE &&
                 diet.value != Diet.NONE &&
-                ingredients.toList().all { it.displayedName.isNotBlank() }
+                ingredients.toList().all { ingredient -> ingredient.displayedName.isNotBlank() && !ingredient.displayedName.all { it == ' ' } }
             BottomSaveBar(stringResource(R.string.button_publish), requiredFields && newData) {
                 onSave()
             }

@@ -6,6 +6,7 @@
     <string name="alert_deleteCatFridge">Warning: this action will also delete this category and all its elements in \"Groceries list\"</string>
     <string name="alert_deleteCatGroceries">Warning: this action will also delete this category and all its elements in \"My Fridge\"</string>
     <string name="alert_exitDraft">If you exit now, the modifications that you have made on this draft will be lost.</string>
+    <string name="alert_exitRecipeEdit">If you exit now, the modifications that you have made on this recipe will be lost.</string>
     <string name="alert_exitRecipe">If you exit now, this recipe will be lost.\nYou can save it to your drafts to get back on it later.</string>
     <string name="alert_termsConditions">
         This app is strictly for private use: only install it if you received it from Alice.\n

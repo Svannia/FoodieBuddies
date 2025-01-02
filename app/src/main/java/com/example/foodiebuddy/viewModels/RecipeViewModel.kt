@@ -65,16 +65,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         isError: (Boolean) -> Unit,
         callBack: (String) -> Unit
     ) {
-        // remove any empty instruction step
-        instructions.filter { instruction -> instruction.isNotBlank() }
-        ingredients.forEach { ingredient ->
-            // ensure there is no unnamed ingredient
-            if (ingredient.displayedName.isBlank()) ingredients.toMutableList().remove(ingredient)
-            // remove any trailing white space at the end of ingredient names
-            ingredient.displayedName = ingredient.displayedName.trimEnd()
-            // add the standardized name of each ingredient
-            ingredient.standName = standardizeName(ingredient.displayedName)
-        }
+        processListData(ingredients, instructions)
         db.createRecipe(userID, name, picture, instructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
             callBack(it)
         }
@@ -118,6 +109,33 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         }
     }
 
+    fun updateRecipe(
+        name: String,
+        picture: Uri,
+        updatePicture: Boolean,
+        removePicture: Boolean,
+        instructions: List<String>,
+        ingredients: List<RecipeIngredient>,
+        portion: Int,
+        perPerson: Boolean,
+        origin: Origin,
+        diet: Diet,
+        tags: List<Tag>,
+        isError: (Boolean) -> Unit,
+        callBack: () -> Unit
+    ) {
+        if (recipeID != null) {
+            processListData(ingredients, instructions)
+            db.updateRecipe(recipeData.value.owner, recipeID, name, picture, updatePicture, removePicture, instructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
+            {
+                fetchRecipeData({ isError(it) }) { callBack() }
+            }
+        } else {
+            isError(true)
+            Log.d("RecipeVM", "Could not update recipe: recipeID is null")
+        }
+    }
+
     /**
      * Adds a user's favourite by adding their reference to the recipe.
      *
@@ -126,7 +144,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
      * @param callBack block that runs after the DB was updated
      */
     fun addUserToFavourites(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        if (recipeID != null) {
+        if (recipeID != null)   {
             db.addUserToFavourites(recipeID, userID, { isError(it) }) {
                 fetchRecipeData({ isError(it) }) { callBack() }
             }
@@ -160,6 +178,19 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         } else {
             isError(true)
             Log.d("RecipeVM", "Failed to delete recipe: ID is null")
+        }
+    }
+
+    private fun processListData(ingredients: List<RecipeIngredient>, instructions: List<String>) {
+        // remove any empty instruction step
+        instructions.filter { instruction -> instruction.isNotBlank() && !instruction.all { it == ' ' } }
+        ingredients.forEach { ingredient ->
+            // ensure there is no unnamed ingredient
+            if (ingredient.displayedName.isBlank() || ingredient.displayedName.all { it == ' ' }) ingredients.toMutableList().remove(ingredient)
+            // remove any trailing white space at the end of ingredient names
+            ingredient.displayedName = ingredient.displayedName.trimEnd()
+            // add the standardized name of each ingredient
+            ingredient.standName = standardizeName(ingredient.displayedName)
         }
     }
 

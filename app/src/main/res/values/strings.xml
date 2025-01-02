@@ -6,6 +6,7 @@
     <string name="alert_deleteCatFridge">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Liste de Courses\".</string>
     <string name="alert_deleteCatGroceries">Attention: cette action va également supprimer cette catégorie et tous ces éléments dans \"Mon Frigo\".</string>
     <string name="alert_exitDraft">Si tu quittes cette page, les modifications apportées à ton brouillon seront perdues.</string>
+    <string name="alert_exitRecipeEdit">Si tu quittes cette page, les modifications apportées à ta recette seront perdues.</string>
     <string name="alert_exitRecipe">Si tu quittes cette page, ta recette sera perdue.\nTu peux l\'ajouter à tes brouillons pour revenir dessus plus tard.</string>
     <string name="alert_termsConditions">
         Cette application est à usage strictement privé: installe-la seulement si Alice te l\'a donnée.\n

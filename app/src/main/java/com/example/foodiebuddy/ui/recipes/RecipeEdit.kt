@@ -119,7 +119,10 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
         } else {
             EditRecipe(
                 context = context,
-                onGoBack = { showAlert.value = true },
+                onGoBack = {
+                    if (dataEdited.value) showAlert.value = true
+                    else navigationActions.goBack()
+                },
                 title = stringResource(R.string.title_editRecipe),
                 name = nameState,
                 picture = pictureState,
@@ -143,12 +146,34 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 // no draft option when editing an existing recipe
                 onDraftSave = {},
                 onSave = {
-                    // todo
+                    loadingData.value = true
+                    recipeVM.updateRecipe(
+                        nameState.value,
+                        pictureState.value,
+                        pictureEdited.value,
+                        pictureRemoved.value,
+                        instructionsState,
+                        ingredientsState,
+                        portionState.intValue,
+                        perPersonState.value,
+                        originState.value,
+                        dietState.value,
+                        tagsState,
+                        { if (it) {
+                            handleError(context, "Could not update recipe")
+                            loadingData.value = false
+                        } }
+                    ) {
+                        navigationActions.goBack()
+                        loadingData.value = false
+                    }
                 },
                 onDelete = { showDeleteAlert.value = true }
             )
             BackHandler {
-                showAlert.value = true
+                if (dataEdited.value) showAlert.value = true
+                else navigationActions.goBack()
+
             }
             // alert for deleting the recipe
             if (showDeleteAlert.value) {
@@ -175,12 +200,12 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
             if (showAlert.value) {
                 DialogWindow(
                     visible = showAlert,
-                    content = stringResource(R.string.alert_exitRecipe),
+                    content = stringResource(R.string.alert_exitRecipeEdit),
                     confirmText = stringResource(R.string.button_quit),
                     confirmColour = Color.Red
                 ) {
                     showAlert.value = false
-                    navigationActions.navigateTo(Route.RECIPES_HOME)
+                    navigationActions.goBack()
                 }
             }
         }
