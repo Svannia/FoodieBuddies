@@ -38,16 +38,16 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
     /**
     * Creates a new Recipe document.
     *
-    * @property userID UID of the user who created the recipe
-    * @property name title of the recipe
-    * @property picture picture of the recipe (empty URI if there is no picture)
-    * @property instructions list of strings where each element represents a step of the cooking instructions
-    * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
-    * @property portion number that indicates for how many servings this recipe is designed
-    * @property perPerson if true, the portion is per person, if false it is per piece
-    * @property origin origin tag from Origin enum
-    * @property diet diet tag from Diet enum
-    * @property tags list of tags from Tag enum
+    * @param userID UID of the user who created the recipe
+    * @param name title of the recipe
+    * @param picture picture of the recipe (empty URI if there is no picture)
+    * @param instructions list of strings where each element represents a step of the cooking instructions
+    * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+    * @param portion number that indicates for how many servings this recipe is designed
+    * @param perPerson if true, the portion is per person, if false it is per piece
+    * @param origin origin tag from Origin enum
+    * @param diet diet tag from Diet enum
+    * @param tags list of tags from Tag enum
     * @param isError block that runs if there is an error executing the function
     * @param callBack block that runs after DB was updated, returning the recipe's ID
     */
@@ -65,8 +65,9 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         isError: (Boolean) -> Unit,
         callBack: (String) -> Unit
     ) {
-        processListData(ingredients, instructions)
-        db.createRecipe(userID, name, picture, instructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
+        val filteredInstructions = instructions.toMutableList()
+        processListData(ingredients, filteredInstructions)
+        db.createRecipe(userID, name, picture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
             callBack(it)
         }
     }
@@ -109,6 +110,23 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         }
     }
 
+    /**
+     * Updates an existing Recipe document.
+     *
+     * @param name title of the recipe
+     * @param picture picture of the recipe (empty URI if there is no picture)
+     * @param updatePicture whether or not the Storage picture should be updated
+     * @param removePicture whether or not the Storage picture should be deleted
+     * @param instructions list of strings where each element represents a step of the cooking instructions
+     * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @param portion number that indicates for how many servings this recipe is designed
+     * @param perPerson if true, the portion is per person, if false it is per piece
+     * @param origin origin tag from Origin enum
+     * @param diet diet tag from Diet enum
+     * @param tags list of tags from Tag enum
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated, returning the recipe's ID
+     */
     fun updateRecipe(
         name: String,
         picture: Uri,
@@ -125,8 +143,10 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         callBack: () -> Unit
     ) {
         if (recipeID != null) {
-            processListData(ingredients, instructions)
-            db.updateRecipe(recipeData.value.owner, recipeID, name, picture, updatePicture, removePicture, instructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
+            val filteredInstructions = instructions.toMutableList()
+            processListData(ingredients, filteredInstructions)
+            Log.d("Debug", "instructions outside are ${instructions.last()}")
+            db.updateRecipe(recipeData.value.owner, recipeID, name, picture, updatePicture, removePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
             {
                 fetchRecipeData({ isError(it) }) { callBack() }
             }
@@ -172,6 +192,13 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         }
     }
 
+    /**
+     * Deletes this Recipe document.
+     *
+     * @param userID ID of the recipe's owner
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
     fun deleteRecipe(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         if (recipeID != null) {
             db.deleteRecipe(userID, recipeID, { isError(it) }) { callBack() }
@@ -181,9 +208,15 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         }
     }
 
-    private fun processListData(ingredients: List<RecipeIngredient>, instructions: List<String>) {
+    /**
+     * Processes the ingredients and instructions lists to make sure they don't contain empty strings or only whitespaces.
+     *
+     * @param ingredients list of RecipeIngredient objects
+     * @param instructions list of strings
+     */
+    private fun processListData(ingredients: List<RecipeIngredient>, instructions: MutableList<String>) {
         // remove any empty instruction step
-        instructions.filter { instruction -> instruction.isNotBlank() && !instruction.all { it == ' ' } }
+        instructions.removeAll { it.isBlank() }
         ingredients.forEach { ingredient ->
             // ensure there is no unnamed ingredient
             if (ingredient.displayedName.isBlank() || ingredient.displayedName.all { it == ' ' }) ingredients.toMutableList().remove(ingredient)
@@ -191,6 +224,9 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
             ingredient.displayedName = ingredient.displayedName.trimEnd()
             // add the standardized name of each ingredient
             ingredient.standName = standardizeName(ingredient.displayedName)
+        }
+        instructions.forEach {
+            Log.d("Debug", "instructions in function are $it")
         }
     }
 

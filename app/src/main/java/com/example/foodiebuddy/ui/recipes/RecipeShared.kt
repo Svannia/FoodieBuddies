@@ -312,6 +312,7 @@ fun EditRecipe(
             // portion
             item {
                 val perExpanded = remember { mutableStateOf(false) }
+                // row with number field for portion and dropdown field for "per person" or "per piece"
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -368,6 +369,7 @@ fun EditRecipe(
                     Spacer(modifier = Modifier.size(24.dp))
                     Text("*", style = MyTypography.bodyLarge, color = Color.Red)
                 }
+                // if the dropdown menu is clicked -> can choose "person" or "piece"
                 if (perExpanded.value) {
                     Box(
                         modifier = Modifier

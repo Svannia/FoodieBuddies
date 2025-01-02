@@ -444,6 +444,14 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     }
 }
 
+/**
+ * Adjusts all ingredients quantities depending on the custom portion number.
+ *
+ * @param customPortion portion chosen by the user
+ * @param originalPortion original portion for the original recipe
+ * @param customQuantities mutable list containing only the quantities of all ingredients
+ * @param ingredients original list of ingredients
+ */
 private fun adjustIngredients(customPortion: Int, originalPortion: Int, customQuantities: MutableList<Float>, ingredients: List<RecipeIngredient>) {
     customQuantities.forEachIndexed { index, _ ->
         customQuantities[index] = ingredients[index].quantity * customPortion / originalPortion

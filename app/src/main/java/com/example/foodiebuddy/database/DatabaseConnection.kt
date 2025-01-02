@@ -1163,16 +1163,16 @@ class DatabaseConnection {
     /**
      * Creates a new Recipe document.
      *
-     * @property userID UID of the user who created the recipe
-     * @property name title of the recipe
-     * @property picture picture of the recipe (empty URI if there is no picture)
-     * @property instructions list of strings where each element represents a step of the cooking instructions
-     * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
-     * @property portion number that indicates for how many servings this recipe is designed
-     * @property perPerson if true, the portion is per person, if false it is per piece
-     * @property origin origin tag from Origin enum
-     * @property diet diet tag from Diet enum
-     * @property tags list of tags from Tag enum
+     * @param userID UID of the user who created the recipe
+     * @param name title of the recipe
+     * @param picture picture of the recipe (empty URI if there is no picture)
+     * @param instructions list of strings where each element represents a step of the cooking instructions
+     * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @param portion number that indicates for how many servings this recipe is designed
+     * @param perPerson if true, the portion is per person, if false it is per piece
+     * @param origin origin tag from Origin enum
+     * @param diet diet tag from Diet enum
+     * @param tags list of tags from Tag enum
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after DB was updated, returning the recipe's ID
      */
@@ -1340,6 +1340,25 @@ class DatabaseConnection {
         }
     }
 
+    /**
+     * Updates an existing Recipe document.
+     *
+     * @param userID ID of the owner of the recipe
+     * @param recipeID ID of the recipe to update
+     * @param name title of the recipe
+     * @param picture picture of the recipe (empty URI if there is no picture)
+     * @param updatePicture whether or not the Storage picture should be updated
+     * @param removePicture whether or not the Storage picture should be deleted
+     * @param instructions list of strings where each element represents a step of the cooking instructions
+     * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @param portion number that indicates for how many servings this recipe is designed
+     * @param perPerson if true, the portion is per person, if false it is per piece
+     * @param origin origin tag from Origin enum
+     * @param diet diet tag from Diet enum
+     * @param tags list of tags from Tag enum
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated, returning the recipe's ID
+     */
     fun updateRecipe(
         userID: String,
         recipeID: String,
@@ -1748,6 +1767,12 @@ class DatabaseConnection {
      */
     private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID/recipePicture.jpg"
 
+    /**
+     * Retrieves the data path in Storage to access a recipe's data.
+     *
+     * @param userID ID of the user
+     * @return path in Storage
+     */
     private fun recipePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID"
 
     /**
@@ -1795,6 +1820,14 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Deletes a recipe's picture from the Storage.
+     *
+     * @param userID ID of the recipe's owner
+     * @param recipeID ID of the recipe
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun deleteRecipePicture(userID: String, recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val folderRef = storage.child(recipePath(userID, recipeID))
         folderRef.listAll()
