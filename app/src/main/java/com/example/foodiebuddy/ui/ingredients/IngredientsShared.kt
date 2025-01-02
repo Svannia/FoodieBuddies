@@ -649,16 +649,25 @@ fun standardizeName(ingredient: String): String {
     // removes trailing whitespaces and plural "s", and puts the entire word in lowercase
     val name = ingredient.trimEnd()
     val words = name.split(" ", "'").map { it.lowercase().removeSuffix("s") }
+    val result = mutableListOf<String>()
 
-    val result = mutableListOf(words[0])
+    // choose a first word that doesnt contain a quantity
+    var firstWord = words[0]
+    var index = 0
+    while (firstWord.any { it.isDigit() }) {
+        index++
+        if (index >= words.size) return ""
+        firstWord = words[index]
+    }
+    result.add(firstWord)
 
     // loop over all the ingredient's words to only keep the most important ones
-    var i = 0
+    var i = index
     var addNextWord = false
     while (i < words.size) {
         val currentWord = words[i]
 
-        if (currentWord in particles || currentWord in nouns) {
+        if (currentWord in particles || currentWord in nouns || currentWord.any { it.isDigit() }) {
             addNextWord = true
         }
         else if (addNextWord) {

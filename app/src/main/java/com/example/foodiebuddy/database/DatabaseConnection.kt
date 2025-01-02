@@ -1500,7 +1500,7 @@ class DatabaseConnection {
                         if (remaining <= 0) {
                             isError(errorOccurred)
                             if (!errorOccurred) {
-                                Log.d("MyDB", "Successfully deleted all user's recipes")
+                                Log.d("MyDB", "Successfully deleted all user's reciapes")
                             }
                         }
                     }
