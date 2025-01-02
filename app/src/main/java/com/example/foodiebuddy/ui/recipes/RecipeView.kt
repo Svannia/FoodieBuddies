@@ -2,8 +2,12 @@ package com.example.foodiebuddy.ui.recipes
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -14,8 +18,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -27,11 +33,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Diet
@@ -76,6 +86,10 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val tags = remember { mutableStateListOf<Tag>() }
     val favouriteOf = remember { mutableStateListOf<String>() }
 
+    val customPortion = remember { mutableIntStateOf(1) }
+    val customQuantities = remember { mutableStateListOf<Float>()
+    }
+
     LaunchedEffect(Unit) {
         loadingData.value = true
         recipeVM.fetchRecipeData({
@@ -93,7 +107,10 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 instructions.addAll(recipe.instructions)
                 ingredients.clear()
                 ingredients.addAll(recipe.ingredients)
+                customQuantities.clear()
+                customQuantities.addAll(recipe.ingredients.map { it.quantity })
                 portion.intValue = recipe.portion
+                customPortion.intValue = recipe.portion
                 perPerson.value = recipe.perPerson
                 origin.value = recipe.origin
                 diet.value = recipe.diet
@@ -124,7 +141,10 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             instructions.addAll(recipeData.instructions)
             ingredients.clear()
             ingredients.addAll(recipeData.ingredients)
+            customQuantities.clear()
+            customQuantities.addAll(recipeData.ingredients.map { it.quantity })
             portion.intValue = recipeData.portion
+            customPortion.intValue = recipeData.portion
             perPerson.value = recipeData.perPerson
             origin.value = recipeData.origin
             diet.value = recipeData.diet
@@ -168,7 +188,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             SquareImage(
                                 size = LocalConfiguration.current.screenWidthDp.dp,
                                 picture = picture.value,
-                                contentDescription = stringResource(R.string.desc_recipePicture))
+                                contentDescription = stringResource(R.string.desc_recipePicture)
+                            )
                         }
                     }
                     // title, creator and tags
@@ -177,7 +198,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                            verticalArrangement = Arrangement.spacedBy(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             // recipe name
                             Text(text = name.value, style = MyTypography.titleMedium)
@@ -189,7 +211,10 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             // list of tags
                             FlowRow(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    8.dp,
+                                    Alignment.CenterHorizontally
+                                ),
                                 verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 if (origin.value != Origin.NONE) {
@@ -213,14 +238,18 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.Center
                         ) {
                             // star icon
                             IconButton(
                                 onClick = {
                                     if (isFavourite) {
                                         recipeVM.removeUserFromFavourites(uid, {
-                                            if (it) handleError(context, "Could not remove favourite")
+                                            if (it) handleError(
+                                                context,
+                                                "Could not remove favourite"
+                                            )
                                         }) {}
                                     } else {
                                         recipeVM.addUserToFavourites(uid, {
@@ -240,10 +269,110 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             }
                             // accompanying text
                             Text(
-                                text =  if (isFavourite) stringResource(R.string.txt_removeFav)
-                                        else stringResource(R.string.txt_addFav),
+                                text = if (isFavourite) stringResource(R.string.txt_removeFav)
+                                else stringResource(R.string.txt_addFav),
                                 style = MyTypography.bodySmall
                             )
+                        }
+                    }
+                    // ingredients title
+                    item {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringResource(R.string.title_ingredients),
+                            style = MyTypography.titleMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    // portion functionality
+                    item {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            // row with custom portion setter
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                // minus button
+                                IconButton(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.inversePrimary,
+                                            RoundedCornerShape(20)
+                                        )
+                                        .padding(6.dp),
+                                    onClick = {
+                                        if (customPortion.intValue > 1) {
+                                            customPortion.intValue--
+                                            adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients)
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.minus),
+                                        contentDescription = stringResource(R.string.desc_remove)
+                                    )
+                                }
+                                // portion indicator
+                                Column(verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally)
+                                {
+                                    Text(
+                                        text = customPortion.intValue.toString(),
+                                        style = MyTypography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                                    )
+                                    Text(
+                                        text = if (perPerson.value) {
+                                            if (customPortion.intValue > 1) stringResource(R.string.txt_people)
+                                            else stringResource(R.string.txt_person)
+                                        } else {
+                                            if (customPortion.intValue > 1) stringResource(R.string.txt_pieces)
+                                            else stringResource(R.string.txt_piece)
+                                        },
+                                        style = MyTypography.bodyMedium
+                                    )
+                                }
+                                // plus button
+                                IconButton(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .border(
+                                            1.dp,
+                                            MaterialTheme.colorScheme.inversePrimary,
+                                            RoundedCornerShape(20)
+                                        )
+                                        .padding(6.dp),
+                                    onClick = {
+                                        if (customPortion.intValue < 20) {
+                                            customPortion.intValue++
+                                            adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients)
+                                        }
+                                    }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.plus),
+                                        contentDescription = stringResource(R.string.desc_add)
+                                    )
+                                }
+                            }
+                            // eventual portion reset
+                            if (customPortion.intValue != portion.intValue) {
+                                Text(
+                                    modifier = Modifier.clickable {
+                                        customPortion.intValue = portion.intValue
+                                        customQuantities.clear()
+                                        customQuantities.addAll(ingredients.map { it.quantity })
+                                    },
+                                    text = stringResource(R.string.txt_resetQty),
+                                    style = MyTypography.bodySmall.copy(textDecoration = TextDecoration.Underline)
+                                )
+                            }
+                            Spacer(modifier = Modifier.size(16.dp))
                         }
                     }
                     // list of ingredients
@@ -254,17 +383,15 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 .padding(horizontal = 16.dp),
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Spacer(modifier = Modifier.size(16.dp))
-                            Text(text = stringResource(R.string.title_ingredients), style = MyTypography.titleMedium)
-                            ingredients.forEach { ingredient ->
+                            ingredients.forEachIndexed { index, ingredient ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
                                         text =
-                                        formatQuantity(ingredient.quantity) + "  "
-                                            + formatUnit(ingredient.unit, ingredient.quantity, context),
+                                        formatQuantity(customQuantities[index]) + "  "
+                                            + formatUnit(ingredient.unit, customQuantities[index], context),
                                         style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                         modifier = Modifier.weight(1.5f)
                                     )
@@ -276,10 +403,50 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                     )
                                 }
                             }
+                            Spacer(modifier = Modifier.size(16.dp))
+                        }
+                    }
+                    // instructions title
+                    item {
+                        Text(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringResource(R.string.title_recipeInstructions),
+                            style = MyTypography.titleMedium,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                    // instruction steps
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            instructions.forEachIndexed { index, step ->
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically))
+                                {
+                                    Text(
+                                        text = stringResource(R.string.title_stepNb, index+1),
+                                        style = MyTypography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                                    )
+                                    Text(
+                                        text = step,
+                                        style = MyTypography.bodyMedium,
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-        }
+            }
+    }
+}
+
+private fun adjustIngredients(customPortion: Int, originalPortion: Int, customQuantities: MutableList<Float>, ingredients: List<RecipeIngredient>) {
+    customQuantities.forEachIndexed { index, _ ->
+        customQuantities[index] = ingredients[index].quantity * customPortion / originalPortion
     }
 }
 

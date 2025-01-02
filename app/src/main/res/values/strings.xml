@@ -45,6 +45,7 @@
     <string name="button_termsConditions">Appuie pour accepter les Terms et Conditions (obligatoire)</string>
 
     <string name="desc_add">bouton ajouter</string>
+    <string name="desc_remove">bouton enlever</string>
     <string name="desc_appLogo">logo app</string>
     <string name="desc_burgerMenu">menu</string>
     <string name="desc_changePicture">changer photo</string>
@@ -200,4 +201,6 @@
     <string name="txt_pieces">pièces</string>
     <string name="txt_piece">pièce</string>
     <string name="button_deleteRecipe">Supprimer la recette</string>
+    <string name="desc_reset">bouton reset</string>
+    <string name="txt_resetQty">Revenir aux quantités d\'origine</string>
 </resources>

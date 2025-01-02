@@ -667,9 +667,16 @@ fun standardizeName(ingredient: String): String {
     while (i < words.size) {
         val currentWord = words[i]
 
-        if (currentWord in particles || currentWord in nouns || currentWord.any { it.isDigit() }) {
+        // if the current word is in nouns -> add it and add the next one
+        if (currentWord in nouns) {
+            result.add(currentWord)
             addNextWord = true
         }
+        // if the current word is a particle or contains a digit or parenthesis -> skip and add the next one
+        else if (currentWord in particles || currentWord.any { it.isDigit() || it == '(' || it == ')' }) {
+            addNextWord = true
+        }
+        // if previous word required next to be added -> add current word
         else if (addNextWord) {
             result.add(currentWord)
             addNextWord = false

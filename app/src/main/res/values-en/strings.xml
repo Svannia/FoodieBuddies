@@ -44,6 +44,7 @@
     <string name="button_termsConditions">Tap to accept Terms and Conditions (mandatory)</string>
 
     <string name="desc_add">add button</string>
+    <string name="desc_remove">remove button</string>
     <string name="desc_appLogo">app logo</string>
     <string name="desc_burgerMenu">burger menu</string>
     <string name="desc_changePicture">change picture</string>
@@ -199,4 +200,6 @@
     <string name="txt_pieces">pieces</string>
     <string name="txt_piece">piece</string>
     <string name="button_deleteRecipe">Delete the recipe</string>
+    <string name="desc_reset">reset button</string>
+    <string name="txt_resetQty">Reset the original quantities</string>
 </resources>
