@@ -2,12 +2,10 @@ package com.example.foodiebuddy.ui.recipes
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -19,6 +17,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -275,6 +274,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             )
                         }
                     }
+                    item { Spacer(modifier = Modifier.size(16.dp)) }
                     // ingredients title
                     item {
                         Text(
@@ -284,6 +284,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             textAlign = TextAlign.Center
                         )
                     }
+                    item { Spacer(modifier = Modifier.size(8.dp)) }
                     // portion functionality
                     item {
                         Column(
@@ -403,9 +404,41 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                     )
                                 }
                             }
-                            Spacer(modifier = Modifier.size(16.dp))
                         }
                     }
+                    // add ingredients to groceries
+                    item {
+                        Button(
+                            onClick = { navigationActions.navigateTo("${Route.SHOP_RECIPE}/$recipeID") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(20)
+                                )
+                                .background(
+                                    color = Color.Transparent,
+                                    shape = RoundedCornerShape(20)
+                                ),
+                            shape = RoundedCornerShape(20)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.cart_add),
+                                contentDescription = stringResource(R.string.desc_shop),
+                                tint = MaterialTheme.colorScheme.inversePrimary
+                            )
+                            Spacer(modifier = Modifier.size(16.dp))
+                            Text(
+                                text = stringResource(R.string.button_addToGroceries),
+                                style = MyTypography.bodyMedium,
+                                color = MaterialTheme.colorScheme.inversePrimary
+                            )
+                        }
+                    }
+                    item { Spacer(modifier = Modifier.size(16.dp)) }
                     // instructions title
                     item {
                         Text(
@@ -415,6 +448,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             textAlign = TextAlign.Center
                         )
                     }
+                    item { Spacer(modifier = Modifier.size(8.dp)) }
                     // instruction steps
                     item {
                         Column(
@@ -439,6 +473,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             }
                         }
                     }
+                    item { Spacer(modifier = Modifier.size(16.dp)) }
                 }
             }
     }

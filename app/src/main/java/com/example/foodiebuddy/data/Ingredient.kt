@@ -17,7 +17,7 @@ data class OwnedIngredient(
     val uid: String,
     val displayedName: String,
     val standName: String,
-    val category: String,
+    var category: String,
     var isTicked: Boolean
 ) {
     companion object {
@@ -73,6 +73,18 @@ data class RecipeIngredient(
      */
     fun isEmpty(): Boolean {
         return this == empty()
+    }
+
+    /**
+     * Converts a RecipeIngredient into an OwnedIngredient
+     *
+     * @param
+     * @param
+     * @param
+     * @return
+     */
+    fun toOwned(category: String): OwnedIngredient {
+        return OwnedIngredient("", this.displayedName, this.standName, category, false)
     }
 }
 

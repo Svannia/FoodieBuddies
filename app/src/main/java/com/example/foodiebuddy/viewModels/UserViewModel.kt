@@ -406,6 +406,36 @@ constructor(private val userID: String ?= null) : ViewModel() {
     }
 
     /**
+     * Checks if some user owns an ingredient and, if it does, returns its emplacement (groceries or fridge and which category).
+     * This check is approximate as it compares standardized names.
+     *
+     * @param ingredient standardized name of the ingredient looked for
+     * @param isError block that runs if there is an error executing the function
+     * @param onResult block that runs if the function succeeded, returning;
+     * whether or not the ingredient exists, and information about the match as a Triple (isInFridge, Category, displayName)
+     */
+    fun ingredientExistsWhere(ingredient: String, isError: (Boolean) -> Unit, onResult: (Boolean, List<Triple<Boolean, String, String>>) -> Unit) {
+        if (userID != null) {
+            // only fetches data if user exists
+            db.ingredientExistsWhere(
+                userID = userID,
+                ingredientName = ingredient,
+                onSuccess = { ingredientExists, matches ->
+                    isError(false)
+                    onResult(ingredientExists, matches)
+                },
+                onFailure = { e ->
+                    isError(true)
+                    Log.d("UserVM", "Failed to check ingredient existence with error $e")
+                }
+            )
+        } else {
+            isError(true)
+            Log.d("UserVM", "Failed to check ingredient existence: ID is null")
+        }
+    }
+
+    /**
      * Checks if some user owns an ingredient with given name in given category.
      *
      * @param category category the ingredient should be in

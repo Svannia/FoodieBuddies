@@ -653,6 +653,111 @@ class DatabaseConnection {
     // ingredients
 
     /**
+     * Checks if some user owns an ingredient and, if it does, returns its emplacement (groceries or fridge and which category).
+     * This check is approximate as it compares standardized names.
+     *
+     * @param userID ID of the user
+     * @param ingredientName standardized name of the ingredient looked for
+     * @param onSuccess block that runs if the check succeeds (whether or not the ingredient exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun ingredientExistsWhere(userID: String, ingredientName: String, onSuccess: (Boolean, List<Triple<Boolean, String, String>>) -> Unit, onFailure: (Exception) -> Unit) {
+        userPersonalCollection.document(userID).get()
+            .addOnSuccessListener outerListener@ { document ->
+                if (document != null && document.exists()) {
+                    // set up global variables needed for entire function run
+                    val fields = listOf(FRIDGE, GROCERIES)
+                    var remainingFields = fields.size
+                    val matches = mutableListOf<Triple<Boolean, String, String>>()
+                    var errorOccurred = false
+
+                    // check existence in both fridge and groceries
+                    fields.forEach { field ->
+                        // fetch document field
+                        val map = document.get(field) as? Map<String, List<DocumentReference>>
+                        if (map != null) {
+                            if (map.isEmpty()) {
+                                // if the field is empty -> return no matches
+                                onSuccess(false, emptyList())
+                                return@outerListener
+                            }
+
+                            // check the lists of ingredient references of the entire field
+                            val allIngredients = map.values.flatten()
+                            if (allIngredients.isEmpty()) {
+                                remainingFields--
+                                if (remainingFields <= 0) {
+                                    if (errorOccurred) onFailure(IllegalStateException("An ingredient failed"))
+                                    else {
+                                        onSuccess(matches.isNotEmpty(), matches)
+                                        Log.d("MyDB", "Successfully collected matches $matches")
+                                        return@outerListener
+                                    }
+                                }
+                            }
+
+                            // check all ingredients of this field
+                            var remainingRefs = allIngredients.size
+                            allIngredients.forEach { ref ->
+                                // fetch ingredient reference
+                                ref.get()
+                                    .addOnSuccessListener { ingredient ->
+                                        // if the ingredient was correctly fetched -> check for stand name equality
+                                        val standName = ingredient.getString(STAND_NAME)
+                                        if (standName == ingredientName) {
+                                            // if names are equal -> add new pair to matches
+                                            matches.add(Triple(
+                                                field == FRIDGE,
+                                                ingredient.getString(CATEGORY) ?: "",
+                                                ingredient.getString(DISPLAY_NAME) ?: "")
+                                            )
+                                            Log.d("MyDB", "Successfully found a match")
+                                        }
+                                        remainingRefs--
+                                        if (remainingRefs <= 0) {
+                                            remainingFields--
+                                            if (remainingFields <= 0) {
+                                                if (errorOccurred) onFailure(IllegalStateException("An ingredient failed"))
+                                                else {
+                                                    onSuccess(matches.isNotEmpty(), matches)
+                                                    Log.d("MyDB", "Successfully collected matches $matches")
+                                                }
+                                            }
+                                        }
+                                    }
+                                    .addOnFailureListener { e ->
+                                        // if failed to fetch ingredient reference -> error
+                                        remainingRefs--
+                                        errorOccurred = true
+                                        onFailure(e)
+                                        Log.d("MyDB", "Failed to check ingredient existence; failure to fetch ingredient ref with error $e")
+                                        if (remainingRefs <= 0) {
+                                            remainingFields--
+                                            if (remainingFields <= 0) onFailure(e)
+                                        }
+                                    }
+
+
+                            }
+                        } else {
+                            // if document field could not be fetched -> error
+                            onFailure(IllegalStateException("Failed to fetch maps in UserPersonal document"))
+                            Log.d("MyDB", "Failed to check ingredient existence because userPersonal document maps are null")
+                        }
+                    }
+
+                } else {
+                    onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
+                    Log.d("MyDB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
+                }
+            }
+            .addOnFailureListener { e ->
+                onFailure(e)
+                Log.d("MyDB", "Failed to check ingredient existence because could not access userPersonal with error $e")
+            }
+    }
+
+    /**
      * Checks if some user owns an ingredient with given name in given category, in their groceries list.
      *
      * @param userID ID of the user

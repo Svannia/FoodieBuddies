@@ -13,6 +13,7 @@ object Route {
     const val RECIPE = "Recipe"
     const val RECIPE_CREATE = "RecipeCreate"
     const val RECIPE_EDIT = "EditRecipe"
+    const val SHOP_RECIPE = "ShopRecipe"
     const val DRAFTS = "Drafts"
     const val EDIT_DRAFT = "EditDraft"
     const val GROCERIES = "Groceries"

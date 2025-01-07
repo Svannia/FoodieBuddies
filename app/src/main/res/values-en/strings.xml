@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <resources>
     <string name="alert_clearList">Are you sure you want to clear this list?\nThis action cannot be undone.</string>
-    <string name="alert_deleteRecipe">Are you sure you want to delete this recipe?\nThis action cannot be undone.</string>
     <string name="alert_deleteAccount">Are you sure you want to delete your account?\nThis cannot be undone.</string>
     <string name="alert_deleteCatFridge">Warning: this action will also delete this category and all its elements in \"Groceries list\"</string>
     <string name="alert_deleteCatGroceries">Warning: this action will also delete this category and all its elements in \"My Fridge\"</string>
+    <string name="alert_deleteRecipe">Are you sure you want to delete this recipe?\nThis action cannot be undone.</string>
     <string name="alert_exitDraft">If you exit now, the modifications that you have made on this draft will be lost.</string>
-    <string name="alert_exitRecipeEdit">If you exit now, the modifications that you have made on this recipe will be lost.</string>
     <string name="alert_exitRecipe">If you exit now, this recipe will be lost.\nYou can save it to your drafts to get back on it later.</string>
+    <string name="alert_exitRecipeEdit">If you exit now, the modifications that you have made on this recipe will be lost.</string>
     <string name="alert_termsConditions">
         This app is strictly for private use: only install it if you received it from Alice.\n
         \nDo not share the installation file without Alice\'s approval. If she finds an unauthorized account, she will delete it immediately.\n
@@ -19,11 +19,13 @@
     <string name="button_accept">Accept</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
     <string name="button_addRecipePicture">Add a picture</string>
+    <string name="button_addToGroceries">Add ingredients to the groceries</string>
     <string name="button_cancel">Cancel</string>
     <string name="button_changeImage">Gallery</string>
     <string name="button_clearList">Clear entire list</string>
     <string name="button_delete">Delete</string>
     <string name="button_deleteAccount">Delete account</string>
+    <string name="button_deleteRecipe">Delete the recipe</string>
     <string name="button_drafts">My Drafts</string>
     <string name="button_edit">Edit</string>
     <string name="button_modifyProfilePicture">Edit your profile picture</string>
@@ -45,7 +47,6 @@
     <string name="button_termsConditions">Tap to accept Terms and Conditions (mandatory)</string>
 
     <string name="desc_add">add button</string>
-    <string name="desc_remove">remove button</string>
     <string name="desc_appLogo">app logo</string>
     <string name="desc_burgerMenu">burger menu</string>
     <string name="desc_changePicture">change picture</string>
@@ -60,7 +61,9 @@
     <string name="desc_loading">loading</string>
     <string name="desc_profilePic">profile picture</string>
     <string name="desc_recipePicture">recipe picture</string>
+    <string name="desc_remove">remove button</string>
     <string name="desc_removePicture">remove picture</string>
+    <string name="desc_reset">reset button</string>
     <string name="desc_shop">"add to groceries" button</string>
     <string name="desc_takePicture">take picture</string>
     <string name="desc_textFieldIcon">text field icon</string>
@@ -165,16 +168,22 @@
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_favouriteOnly">Only favourite recipes</string>
+    <string name="txt_for">For</string>
     <string name="txt_me">Me</string>
     <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
     <string name="txt_noDrafts">You don\'t have any saved draft for now.</string>
     <string name="txt_noRecipes">There are no recipes on the app for now!</string>
     <string name="txt_noResults">There are no recipes corresponding to those filters.</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
+    <string name="txt_people">people</string>
+    <string name="txt_person">person</string>
+    <string name="txt_piece">piece</string>
+    <string name="txt_pieces">pieces</string>
     <string name="txt_quantity">Quantity</string>
     <string name="txt_recipeCreator">Created by %1$s</string>
     <string name="txt_recipeRequirements">Fields marked with a red asterisk are mandatory.</string>
     <string name="txt_removeFav">In Favourites - Tap to remove</string>
+    <string name="txt_resetQty">Reset the original quantities</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
     <string name="txt_systemLight">Light</string>
@@ -195,12 +204,11 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="txt_for">For</string>
-    <string name="txt_people">people</string>
-    <string name="txt_person">person</string>
-    <string name="txt_pieces">pieces</string>
-    <string name="txt_piece">piece</string>
-    <string name="button_deleteRecipe">Delete the recipe</string>
-    <string name="desc_reset">reset button</string>
-    <string name="txt_resetQty">Reset the original quantities</string>
+    <string name="title_addToGroceries">Add to Groceries</string>
+    <string name="txt_yourFridge">your Fridge</string>
+    <string name="txt_yourGroceries">your Groceries list</string>
+    <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
+    <string name="txt_youHave">"You have "</string>
+    <string name="desc_help">help button</string>
+    <string name="txt_categoryHelp">Category</string>
 </resources>

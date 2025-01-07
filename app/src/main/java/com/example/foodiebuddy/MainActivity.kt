@@ -30,6 +30,7 @@ import com.example.foodiebuddy.ui.account.CreateAccount
 import com.example.foodiebuddy.ui.account.Profile
 import com.example.foodiebuddy.ui.ingredients.FridgeHome
 import com.example.foodiebuddy.ui.ingredients.GroceriesHome
+import com.example.foodiebuddy.ui.ingredients.ShopRecipe
 import com.example.foodiebuddy.ui.recipes.Drafts
 import com.example.foodiebuddy.ui.recipes.EditDraft
 import com.example.foodiebuddy.ui.recipes.RecipeCreate
@@ -226,7 +227,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
-
+                        composable(
+                            route = "${Route.SHOP_RECIPE}/{recipeID}",
+                            arguments = listOf(navArgument("recipeID") { type = NavType.StringType })
+                        ) { backStackEntry ->
+                            val currentUser = remember { auth.currentUser }
+                            if (currentUser != null) {
+                                val recipeID = backStackEntry.arguments?.getString("recipeID")
+                                val recipeVM: RecipeViewModel = viewModel { RecipeViewModel(recipeID) }
+                                ShopRecipe(userVM, recipeVM, navigationActions)
+                                Log.d("Compose", "Successfully composed screen Shop Recipe for recipeID $recipeID")
+                            }
+                        }
 
                         // Composables for groceries-related routes
                         composable(Route.GROCERIES) {
