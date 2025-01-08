@@ -55,6 +55,7 @@ import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.ui.LoadingPage
+import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
@@ -163,17 +164,18 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             navExtraActions = {},
             topBarIcons = {
                 // only show Edit button if the current user is this recipe's creator
+                var canEdit = false
                 if (uid == "" || ownerID.value.isBlank()) {
                     handleError(context, "Could not compare UID of current user and recipe owner")
                 } else if (uid == ownerID.value) {
-                    Text(
-                        text = stringResource(R.string.button_edit),
-                        style = MyTypography.bodySmall,
-                        modifier = Modifier.clickable {
-                            navigationActions.navigateTo("${Route.RECIPE_EDIT}/$recipeID")
-                        }
-                    )
+                    canEdit = true
                 }
+                val options = mutableListOf<Pair<String, () -> Unit>>()
+                if (canEdit) options.add(stringResource(R.string.button_edit) to {})
+                options.add(stringResource(R.string.button_notes) to {})
+                options.add(stringResource(R.string.button_pdf) to {})
+
+                OptionsMenu(R.drawable.options, *options.toTypedArray())
             }) { paddingValues ->
                 LazyColumn(
                     modifier = Modifier

@@ -212,4 +212,6 @@
     <string name="desc_help">help button</string>
     <string name="txt_category">Category</string>
     <string name="button_shop">Add to Groceries</string>
+    <string name="button_notes">Add notes</string>
+    <string name="button_pdf">Save as PDF</string>
 </resources>

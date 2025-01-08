@@ -213,4 +213,6 @@
     <string name="desc_help">bouton aide</string>
     <string name="txt_category">Catégorie</string>
     <string name="button_shop">Ajouter aux Courses</string>
+    <string name="button_notes">Ajouter des notes</string>
+    <string name="button_pdf">Télécharger le PDF</string>
 </resources>
