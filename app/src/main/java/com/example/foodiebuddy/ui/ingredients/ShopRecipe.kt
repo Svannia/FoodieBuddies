@@ -1,6 +1,5 @@
 package com.example.foodiebuddy.ui.ingredients
 
-import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -18,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -31,11 +28,9 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
@@ -45,7 +40,8 @@ import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.ui.LoadingPage
-import com.example.foodiebuddy.ui.SecondaryScreen
+import com.example.foodiebuddy.ui.recipes.BottomSaveBar
+import com.example.foodiebuddy.ui.recipes.RecipeSecondaryScreen
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
@@ -64,6 +60,8 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val fridge = remember { mutableStateOf(userPersonal.fridge) }
     val existingIngredients = remember { mutableStateMapOf<String, List<Triple<Boolean, String, String>>>() }
     val ingredientsToAdd = remember { mutableStateListOf<OwnedIngredient>() }
+    val isEnabled = remember { mutableStateOf(ingredientsToAdd.all { it.category != PLACEHOLDER } && ingredientsToAdd.isNotEmpty()) }
+
 
     LaunchedEffect(Unit) {
         loadingData.value = true
@@ -119,11 +117,25 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
 
     if (loadingData.value) LoadingPage()
     else {
-        SecondaryScreen(
-            title = stringResource(R.string.title_addToGroceries),
-            navigationActions = navigationActions,
-            navExtraActions = {},
-            topBarIcons = {}
+        RecipeSecondaryScreen(
+            title = stringResource(R.string.title_recipeIngredients),
+            onGoBack = { navigationActions.goBack() },
+            actions = {},
+            bottomBar = {
+                BottomSaveBar(stringResource(R.string.button_shop), isEnabled.value) {
+                    loadingData.value = true
+                    val newItems: Map<String, List<OwnedIngredient>> = ingredientsToAdd.groupBy { it.category }
+                    userVM.addIngredients(newItems, false, {
+                        if (it) {
+                            handleError(context, "Could not add new ingredients to groceries")
+                            loadingData.value = false
+                        }
+                    }) {
+                        navigationActions.goBack()
+                        loadingData.value = false
+                    }
+                }
+            }
         ) { paddingValues ->
             LazyColumn(
                 modifier = Modifier
@@ -185,10 +197,13 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 } else {
                                     ingredientsToAdd.add(ingredient.toOwned(PLACEHOLDER))
                                 }
+                                isEnabled.value = ingredientsToAdd.all { it.category != PLACEHOLDER } && ingredientsToAdd.isNotEmpty()
                             }
                         )
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(top = 10.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 10.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // name of the ingredient
@@ -199,11 +214,12 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             Box{
                                 OutlinedTextField(
                                     modifier = Modifier
-                                        .width(150.dp)
+                                        .width(250.dp)
                                         .clickable { expanded.value = true },
                                     value = chosenCategory.value,
                                     textStyle = MyTypography.bodyMedium,
                                     onValueChange = {},
+                                    label = { Text(stringResource(R.string.txt_category)) },
                                     enabled = false,
                                     colors = TextFieldDefaults.colors(
                                         disabledIndicatorColor = MaterialTheme.colorScheme.primary,
@@ -227,11 +243,13 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                             },
                                             onClick = {
                                                 chosenCategory.value = category
-                                                ingredientsToAdd.find { it.displayedName == ingredient.displayedName }
-                                                    ?.let {
-                                                        it.category = category
-                                                    }
+                                                val alreadyInList = ingredientsToAdd.find { it.displayedName == ingredient.displayedName }
+                                                if (alreadyInList != null) alreadyInList.category = category
+                                                else ingredientsToAdd.add(
+                                                    OwnedIngredient("", ingredient.displayedName, ingredient.standName, category, false)
+                                                )
                                                 isTicked.value = true
+                                                isEnabled.value = ingredientsToAdd.all { it.category != PLACEHOLDER } && ingredientsToAdd.isNotEmpty()
                                                 expanded.value = false
                                             }
                                         )

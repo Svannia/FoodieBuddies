@@ -950,7 +950,7 @@ fun <T> TagDropDown(
 }
 
 /**
- * Save button for filters that always stays at the bottom of the screen.
+ * Save button that always stays at the bottom of the screen.
  *
  * @param saveText text to be displayed in the button
  * @param onSave block to run when pressing the button

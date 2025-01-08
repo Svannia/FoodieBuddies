@@ -205,11 +205,12 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
-    <string name="title_addToGroceries">Ajouter aux Courses</string>
+    <string name="title_recipeIngredients">Ingrédients</string>
     <string name="txt_yourFridge">ton Frigo</string>
     <string name="txt_yourGroceries">tes Courses</string>
     <string name="txt_existingIngredient">\"%1$s\" sous %2$s dans %3$s</string>
     <string name="txt_youHave">"Tu as "</string>
     <string name="desc_help">bouton aide</string>
-    <string name="txt_categoryHelp">Catégorie</string>
+    <string name="txt_category">Catégorie</string>
+    <string name="button_shop">Ajouter aux Courses</string>
 </resources>

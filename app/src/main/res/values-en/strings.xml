@@ -204,11 +204,12 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="title_addToGroceries">Add to Groceries</string>
+    <string name="title_recipeIngredients">Ingredients</string>
     <string name="txt_yourFridge">your Fridge</string>
     <string name="txt_yourGroceries">your Groceries list</string>
     <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
     <string name="txt_youHave">"You have "</string>
     <string name="desc_help">help button</string>
-    <string name="txt_categoryHelp">Category</string>
+    <string name="txt_category">Category</string>
+    <string name="button_shop">Add to Groceries</string>
 </resources>
