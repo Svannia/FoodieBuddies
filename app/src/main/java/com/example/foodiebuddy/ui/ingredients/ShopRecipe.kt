@@ -6,13 +6,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -32,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.OwnedIngredient
@@ -39,6 +44,8 @@ import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
+import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.recipes.BottomSaveBar
 import com.example.foodiebuddy.ui.recipes.RecipeSecondaryScreen
@@ -58,6 +65,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val ingredients = remember { mutableStateListOf<RecipeIngredient>() }
     val groceries = remember { mutableStateOf(userPersonal.groceryList) }
     val fridge = remember { mutableStateOf(userPersonal.fridge) }
+    val newNames = remember { mutableStateListOf<String>() }
     val existingIngredients = remember { mutableStateMapOf<String, List<Triple<Boolean, String, String>>>() }
     val ingredientsToAdd = remember { mutableStateListOf<OwnedIngredient>() }
     val isEnabled = remember { mutableStateOf(ingredientsToAdd.all { it.category != PLACEHOLDER } && ingredientsToAdd.isNotEmpty()) }
@@ -75,6 +83,8 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             if (recipe != Recipe.empty()) {
                 ingredients.clear()
                 ingredients.addAll(recipe.ingredients)
+                newNames.clear()
+                newNames.addAll(ingredients.map { it.displayedName })
                 ingredientsToAdd.addAll(recipe.ingredients.map { it.toOwned(PLACEHOLDER) })
                 userVM.fetchUserPersonal({
                     if (it) {
@@ -107,6 +117,8 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
         if (recipeData != Recipe.empty()) {
             ingredients.clear()
             ingredients.addAll(recipeData.ingredients)
+            newNames.clear()
+            newNames.addAll(ingredients.map { it.displayedName })
         }
     }
 
@@ -124,6 +136,14 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             bottomBar = {
                 BottomSaveBar(stringResource(R.string.button_shop), isEnabled.value) {
                     loadingData.value = true
+                    ingredientsToAdd.forEach { ingredient ->
+                        val index = ingredients.indexOfFirst { it.displayedName == ingredient.displayedName }
+                        val newName = newNames[index]
+                        if (newName.isNotBlank()) {
+                            ingredient.displayedName = newName
+                            ingredient.standName = standardizeName(newName)
+                        }
+                    }
                     val newItems: Map<String, List<OwnedIngredient>> = ingredientsToAdd.groupBy { it.category }
                     userVM.addIngredients(newItems, false, {
                         if (it) {
@@ -131,7 +151,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             loadingData.value = false
                         }
                     }) {
-                        navigationActions.goBack()
+                        navigationActions.navigateTo(Route.GROCERIES)
                         loadingData.value = false
                     }
                 }
@@ -143,7 +163,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     .padding(paddingValues),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(ingredients, key = {it.id}) { ingredient ->
+                itemsIndexed(ingredients) { index, ingredient ->
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -178,13 +198,11 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                     )
                             }
                         }
-                        val chosenCategory = remember {
-                            mutableStateOf(
+                        val chosenCategory = remember { mutableStateOf(
                                 if (isTicked.value) ingredientsToAdd.find { it.displayedName == ingredient.displayedName }?.category
                                     ?: PLACEHOLDER
                                 else PLACEHOLDER
-                            )
-                        }
+                        )}
 
                         // checkbox that is automatically unchecked if a similar enough ingredient is found in fridge/groceries
                         Checkbox(
@@ -203,11 +221,20 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(top = 10.dp),
+                                .padding(top = 0.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // name of the ingredient
-                            Text(text = ingredient.displayedName, style = MyTypography.bodyLarge)
+                            CustomTextField(
+                                value = newNames[index],
+                                onValueChange = { newNames[index] = it },
+                                icon = -1,
+                                placeHolder = ingredient.displayedName,
+                                singleLine = true,
+                                maxLength = 21,
+                                showMaxChara = false,
+                                width = 250.dp
+                            )
 
                             // dropdown menu to choose in which category to put the ingredient
                             val expanded = remember { mutableStateOf(false) }
@@ -245,9 +272,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                                 chosenCategory.value = category
                                                 val alreadyInList = ingredientsToAdd.find { it.displayedName == ingredient.displayedName }
                                                 if (alreadyInList != null) alreadyInList.category = category
-                                                else ingredientsToAdd.add(
-                                                    OwnedIngredient("", ingredient.displayedName, ingredient.standName, category, false)
-                                                )
+                                                else ingredientsToAdd.add(ingredient.toOwned(category))
                                                 isTicked.value = true
                                                 isEnabled.value = ingredientsToAdd.all { it.category != PLACEHOLDER } && ingredientsToAdd.isNotEmpty()
                                                 expanded.value = false
@@ -269,6 +294,18 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             Spacer(modifier = Modifier.size(8.dp))
                         }
                     }
+                }
+                // spacing for the keyboard (cuz doing things properly with ime paddings fucks things up)
+                item {
+                    Spacer(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            (WindowInsets.ime
+                                .asPaddingValues()
+                                .calculateBottomPadding()
+                                    - paddingValues.calculateBottomPadding())
+                                .coerceAtLeast(0.dp)
+                        ))
                 }
             }
         }

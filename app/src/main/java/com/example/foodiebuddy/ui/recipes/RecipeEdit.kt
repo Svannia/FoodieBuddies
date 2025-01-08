@@ -176,25 +176,26 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
 
             }
             // alert for deleting the recipe
+
             if (showDeleteAlert.value) {
                 DialogWindow(
                     visible = showDeleteAlert,
                     content = stringResource(R.string.alert_deleteRecipe),
                     confirmText = stringResource(R.string.button_delete),
-                    confirmColour = Color.Red
-                ) {
-                    showDeleteAlert.value = true
-                    loadingData.value = true
-                    recipeVM.deleteRecipe(recipeData.owner, {
-                        if (it) {
-                            handleError(context, "Could not delete recipe")
+                    confirmColour = Color.Red,
+                    onConfirm = {
+                        showDeleteAlert.value = false
+                        loadingData.value = true
+                        recipeVM.deleteRecipe(recipeData.owner, {
+                            if (it) {
+                                handleError(context, "Could not delete recipe")
+                                loadingData.value = false
+                            }
+                        }) {
                             loadingData.value = false
+                            navigationActions.navigateTo(Route.RECIPES_HOME)
                         }
-                    }) {
-                        loadingData.value = false
-                        navigationActions.navigateTo(Route.RECIPES_HOME)
-                    }
-                }
+                    })
             }
             // alert for leaving the recipe edition page
             if (showAlert.value) {

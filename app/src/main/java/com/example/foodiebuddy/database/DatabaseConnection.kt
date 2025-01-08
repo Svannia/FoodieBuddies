@@ -1628,35 +1628,82 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Deletes a user's recipe.
+     *
+     * @param userID ID of the user who created the recipe
+     * @param recipeID ID of the recipe to delete
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     fun deleteRecipe(userID: String, recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        // delete the recipe document
-        recipesCollection
-            .document(recipeID)
-            .delete()
-            .addOnSuccessListener {
-                // if document was safely deleted -> delete eventual picture
-                deleteRecipePicture(userID, recipeID, { isError(it) } ) {
-                    // once picture deletion is successful -> decrease creator's recipes counter
-                    userDataCollection.document(userID)
-                        .update(NUMBER_RECIPES, FieldValue.increment(-1))
-                        .addOnSuccessListener {
-                            isError(false)
-                            callBack()
-                            Log.d("MyDB", "Successfully finished recipe deletion process")
-                        }
-                        .addOnFailureListener { e ->
-                            isError(true)
-                            Log.d("MyDB", "Failed to decrement recipes counter with error $e")
-                        }
+        // check if there is a picture that needs to be removed
+        recipesCollection.document(recipeID).get()
+            .addOnSuccessListener { document ->
+                if (document != null && document.exists()) {
+                    if ( (document.getString(PICTURE) ?: "").isBlank() ) {
+                        // no picture -> only delete recipe document
+                        recipesCollection.document(recipeID).delete()
+                            .addOnSuccessListener {
+                                // once picture deletion is successful -> decrease creator's recipes counter
+                                userDataCollection.document(userID)
+                                    .update(NUMBER_RECIPES, FieldValue.increment(-1))
+                                    .addOnSuccessListener {
+                                        isError(false)
+                                        callBack()
+                                        Log.d("MyDB", "Successfully finished recipe deletion process")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        isError(true)
+                                        Log.d("MyDB", "Failed to decrement recipes counter with error $e")
+                                    }
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("MyDB", "Failed to delete recipe with error $e")
+                            }
+                    } else {
+                        // there is a picture -> delete recipe document and its picture
+                        recipesCollection
+                            .document(recipeID)
+                            .delete()
+                            .addOnSuccessListener {
+                                // if document was safely deleted -> delete picture
+                                deleteRecipePicture(userID, recipeID, { isError(it) } ) {
+                                    // once picture deletion is successful -> decrease creator's recipes counter
+                                    userDataCollection.document(userID)
+                                        .update(NUMBER_RECIPES, FieldValue.increment(-1))
+                                        .addOnSuccessListener {
+                                            isError(false)
+                                            callBack()
+                                            Log.d("MyDB", "Successfully finished recipe deletion process")
+                                        }
+                                        .addOnFailureListener { e ->
+                                            isError(true)
+                                            Log.d("MyDB", "Failed to decrement recipes counter with error $e")
+                                        }
+                                }
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("MyDB", "Failed to delete recipe with error $e")
+                            }
+                    }
+                } else {
+                    isError(true)
+                    Log.d("MyDB", "Failed to delete recipe because could not fetch document")
                 }
             }
-            .addOnFailureListener { e ->
-                isError(true)
-                Log.d("MyDB", "Failed to delete recipe with error $e")
-            }
-
     }
 
+    /**
+     * Deletes every recipe created by a user.
+     * This is only meant to be used when a user deletes their account.
+     *
+     * @param userID ID of the user who is deleting their account
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun deleteAllUserRecipes(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         recipesCollection
             .whereEqualTo(OWNER, userID).get()

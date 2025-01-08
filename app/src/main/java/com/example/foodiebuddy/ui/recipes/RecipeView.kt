@@ -171,7 +171,9 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     canEdit = true
                 }
                 val options = mutableListOf<Pair<String, () -> Unit>>()
-                if (canEdit) options.add(stringResource(R.string.button_edit) to {})
+                if (canEdit) options.add(stringResource(R.string.button_edit) to {
+                    navigationActions.navigateTo("${Route.RECIPE_EDIT}/$recipeID")
+                })
                 options.add(stringResource(R.string.button_notes) to {})
                 options.add(stringResource(R.string.button_pdf) to {})
 

@@ -15,8 +15,8 @@ import java.util.UUID
  */
 data class OwnedIngredient(
     val uid: String,
-    val displayedName: String,
-    val standName: String,
+    var displayedName: String,
+    var standName: String,
     var category: String,
     var isTicked: Boolean
 ) {
