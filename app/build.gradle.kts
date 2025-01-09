@@ -97,4 +97,9 @@ dependencies {
     implementation("androidx.datastore:datastore-core:1.0.0")
     implementation("com.google.code.gson:gson:2.10.1")
 
+    // pdf file
+    implementation("com.itextpdf:itext7-core:7.2.5")
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.0")
+
 }

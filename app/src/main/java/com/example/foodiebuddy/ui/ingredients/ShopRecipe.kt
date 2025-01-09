@@ -206,6 +206,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
 
                         // checkbox that is automatically unchecked if a similar enough ingredient is found in fridge/groceries
                         Checkbox(
+                            modifier = Modifier.padding(top = 5.dp),
                             checked = isTicked.value,
                             onCheckedChange = {
                                 isTicked.value = !isTicked.value
@@ -219,9 +220,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                             }
                         )
                         Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 0.dp),
+                            modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             // name of the ingredient

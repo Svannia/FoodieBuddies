@@ -2,6 +2,7 @@ package com.example.foodiebuddy.data
 
 import android.content.Context
 import com.example.foodiebuddy.R
+import java.text.DecimalFormat
 import java.util.UUID
 
 /**
@@ -133,5 +134,39 @@ fun Measure.plural(context: Context): String {
             else singular + "s"
         }
         else -> context.getString(measuresMap[this] ?: R.string.unit_none)
+    }
+}
+
+/**
+ * Formats the ingredient quantity to remove useless decimal points and change frequent decimal quantities into fractions.
+ *
+ * @param quantity quantity to format as a float
+ * @return formatted string
+ */
+fun formatQuantity(quantity: Float): String {
+    return when {
+        quantity == 0f -> ""
+        quantity % 1 == 0f -> quantity.toInt().toString()
+        quantity % 1 == 0.5f -> if (quantity.toInt() == 0) "½" else "${quantity.toInt()}½"
+        quantity % 1 == 0.25f -> if (quantity.toInt() == 0) "¼" else "${quantity.toInt()}¼"
+        quantity % 1 == 0.75f -> if (quantity.toInt() == 0) "¾" else "${quantity.toInt()}¾"
+        else -> {
+            val decimalFormat = DecimalFormat("#.##")
+            decimalFormat.format(quantity)
+        }
+    }
+}
+
+/**
+ * Formats the ingredient unit of measure to remove NONE units and add plural form when necessary.
+ *
+ * @param unit Measure objects to format
+ * @param quantity quantity to check for plural form
+ * @return formatted string
+ */
+fun formatUnit(unit: Measure, quantity: Float, context: Context): String {
+    return if (unit == Measure.NONE) "" else {
+        if (quantity > 1f) unit.plural(context)
+        else unit.getString(context)
     }
 }

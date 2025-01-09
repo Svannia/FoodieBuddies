@@ -6,11 +6,13 @@ package com.example.foodiebuddy.data
  * @property uid of the user
  * @property groceryList maps a user's grocery list: entry keys are categories, values are lists of ingredients
  * @property fridge maps a user's "my fridge": entry keys are categories, values are lists of ingredients
+ * @property notes maps recipeIDs to this user's notes on that recipe
  */
 data class UserPersonal(
     val uid: String,
     val groceryList: Map<String, List<OwnedIngredient>>,
-    val fridge: Map<String, List<OwnedIngredient>>
+    val fridge: Map<String, List<OwnedIngredient>>,
+    val notes: Map<String, String>
 ) {
     companion object {
         /**
@@ -19,7 +21,7 @@ data class UserPersonal(
          * @return empty UserPersonal object.
          */
         fun empty(): UserPersonal {
-            return UserPersonal("", emptyMap(), emptyMap())
+            return UserPersonal("", emptyMap(), emptyMap(), emptyMap())
         }
     }
     /**

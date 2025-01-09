@@ -23,6 +23,7 @@
     <string name="button_cancel">Cancel</string>
     <string name="button_changeImage">Gallery</string>
     <string name="button_clearList">Clear entire list</string>
+    <string name="button_confirm">Confirm</string>
     <string name="button_delete">Delete</string>
     <string name="button_deleteAccount">Delete account</string>
     <string name="button_deleteRecipe">Delete the recipe</string>
@@ -31,7 +32,9 @@
     <string name="button_modifyProfilePicture">Edit your profile picture</string>
     <string name="button_modifyRecipePicture">Edit your picture</string>
     <string name="button_newRecipe">New Recipe</string>
+    <string name="button_notes">Personal notes</string>
     <string name="button_options">options</string>
+    <string name="button_pdf">Save as PDF</string>
     <string name="button_publish">Publish</string>
     <string name="button_quit">Leave</string>
     <string name="button_removeImage">Remove</string>
@@ -40,6 +43,7 @@
     <string name="button_saveDraft">Save to drafts</string>
     <string name="button_seeResults">Show results</string>
     <string name="button_sendToFridge">Send ticked items to Fridge</string>
+    <string name="button_shop">Add to Groceries</string>
     <string name="button_signIn">Log in</string>
     <string name="button_signOut">Log out</string>
     <string name="button_takePicture">Camera</string>
@@ -58,6 +62,7 @@
     <string name="desc_filters">filters</string>
     <string name="desc_goBack">go back</string>
     <string name="desc_googleLogo">google logo</string>
+    <string name="desc_help">help button</string>
     <string name="desc_loading">loading</string>
     <string name="desc_profilePic">profile picture</string>
     <string name="desc_recipePicture">recipe picture</string>
@@ -90,6 +95,7 @@
     <string name="field_keywords">What are you searching for?</string>
     <string name="field_maxChar">max. %1$s characters</string>
     <string name="field_none">-</string>
+    <string name="field_notes">Write your personal notes about this recipe. Only you can see this.</string>
     <string name="field_recipeInstructions">Enter the instructions for you recipe</string>
     <string name="field_recipeName">Enter your recipe name</string>
     <string name="field_username">Username</string>
@@ -137,6 +143,7 @@
     <string name="title_createRecipe">Create a new recipe</string>
     <string name="title_creator">Creator</string>
     <string name="title_diet">Diet</string>
+    <string name="title_download">Download this recipe as a PDF</string>
     <string name="title_editDraft">Edit your Draft</string>
     <string name="title_editRecipe">Edit your recipe</string>
     <string name="title_filters">Filters</string>
@@ -146,9 +153,11 @@
     <string name="title_ingredients">Ingredients</string>
     <string name="title_language">Language</string>
     <string name="title_miscellaneous">Miscellaneous</string>
+    <string name="title_notes">Personal Notes</string>
     <string name="title_notifications">Notifications</string>
     <string name="title_origin">Origin</string>
     <string name="title_recipe">Recipe</string>
+    <string name="title_recipeIngredients">Ingredients</string>
     <string name="title_recipeInstructions">Instructions</string>
     <string name="title_recipeName">Recipe name</string>
     <string name="title_recipes">Recipes</string>
@@ -158,6 +167,7 @@
     <string name="title_theme">Theme</string>
 
     <string name="toast_categoryName">This category already exists</string>
+    <string name="toast_downloaded">File downloaded! Check your Downloads folder.</string>
     <string name="toast_ingredientExists">This article is already in your groceries list.</string>
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
     <string name="toast_savedDraft">Your draft has been saved.</string>
@@ -165,8 +175,10 @@
 
     <string name="txt_addFav">Add to Favourites</string>
     <string name="txt_allIngredientsOnly">Only if I have the ingredients</string>
+    <string name="txt_category">Category</string>
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
+    <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
     <string name="txt_favouriteOnly">Only favourite recipes</string>
     <string name="txt_for">For</string>
     <string name="txt_me">Me</string>
@@ -175,6 +187,7 @@
     <string name="txt_noRecipes">There are no recipes on the app for now!</string>
     <string name="txt_noResults">There are no recipes corresponding to those filters.</string>
     <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
+    <string name="txt_pdfImageError">Image could not be loaded</string>
     <string name="txt_people">people</string>
     <string name="txt_person">person</string>
     <string name="txt_piece">piece</string>
@@ -189,6 +202,9 @@
     <string name="txt_systemLight">Light</string>
     <string name="txt_unit">Unit</string>
     <string name="txt_unnamed">Unnamed</string>
+    <string name="txt_youHave">"You have "</string>
+    <string name="txt_yourFridge">your Fridge</string>
+    <string name="txt_yourGroceries">your Groceries list</string>
 
     <string name="unit_bouquet">bunch</string>
     <string name="unit_cc">tsp</string>
@@ -204,14 +220,4 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="title_recipeIngredients">Ingredients</string>
-    <string name="txt_yourFridge">your Fridge</string>
-    <string name="txt_yourGroceries">your Groceries list</string>
-    <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
-    <string name="txt_youHave">"You have "</string>
-    <string name="desc_help">help button</string>
-    <string name="txt_category">Category</string>
-    <string name="button_shop">Add to Groceries</string>
-    <string name="button_notes">Add notes</string>
-    <string name="button_pdf">Save as PDF</string>
 </resources>

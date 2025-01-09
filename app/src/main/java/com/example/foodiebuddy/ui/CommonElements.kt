@@ -593,6 +593,80 @@ fun DialogWindow(
 }
 
 /**
+ * Creates a dialog window that can pop and be dismissed; it contains a long field to input text.
+ * Warning: always call this function after all other composable elements in code, so that it appears on top of the screen.
+ *
+ * @param visible whether or not this window should be visible
+ * @param confirmText text within the confirm button
+ * @param confirmColour colour of the confirm text and button
+ * @param onConfirm block that runs if the confirm button is pressed
+ * @param content content of the dialog window
+ */
+@Composable
+fun InputDialogWindow(
+    visible: MutableState<Boolean>,
+    confirmText: String,
+    confirmColour: Color,
+    onConfirm: () -> Unit,
+    content: @Composable (() -> Unit)
+) {
+    AlertDialog(
+        onDismissRequest = { visible.value = false },
+        text = content,
+        confirmButton = {
+            TextButton(
+                modifier = Modifier
+                    .border(
+                        width = 2.dp,
+                        color = confirmColour,
+                        shape = RoundedCornerShape(50)
+                    )
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(50)
+                    ),
+                onClick = onConfirm,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(
+                    text = confirmText,
+                    style = MyTypography.bodyLarge,
+                    color = confirmColour
+                )
+            }
+        },
+        dismissButton = {
+            TextButton(
+                modifier = Modifier
+                    .border(
+                        width = 2.dp,
+                        color = MaterialTheme.colorScheme.inversePrimary,
+                        shape = RoundedCornerShape(50)
+                    )
+                    .background(
+                        color = Color.Transparent,
+                        shape = RoundedCornerShape(50)
+                    ),
+                onClick = { visible.value = false },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(50)
+            ) {
+                Text(
+                    text = stringResource(R.string.button_cancel),
+                    style = MyTypography.bodyLarge,
+                    color = MaterialTheme.colorScheme.inversePrimary
+                )
+            }
+        }
+    )
+}
+
+/**
  * Element that creates an icon button that opens a drop-down menu of options when pressed.
  *
  * @param icon identifier for the icon to be used as the IconButton

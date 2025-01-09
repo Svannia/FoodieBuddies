@@ -266,7 +266,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
     }
 
 
-    // personal information (fridge and groceries)
+    // personal information (fridge, groceries and notes)
     /**
      * Fetches all personal data of this ViewModel's user.
      *
@@ -713,6 +713,43 @@ constructor(private val userID: String ?= null) : ViewModel() {
         } else {
             isError(true)
             Log.d("UserVM", "Failed to check ingredient existence: userID is null")
+        }
+    }
+
+    /**
+     * Updates the notes for a given recipe.
+     *
+     * @param recipeID ID of the recipe that the note is attached to
+     * @param note written by the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
+    fun updateNotes(recipeID: String, note: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            db.updateNotes(userID, recipeID, note, { isError(it) }) {
+                fetchUserPersonal({ isError(it) }) { callBack()}
+            }
+        } else {
+            isError(true)
+            Log.d("UserVM", "Failed to update notes: userID is null")
+        }
+    }
+
+    /**
+     * Deletes the note for a given recipe.
+     *
+     * @param recipeID ID of the recipe that the note was attached to
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
+    fun deleteNote(recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        if (userID != null) {
+            db.deleteNote(userID, recipeID, { isError(it) }) {
+                fetchUserPersonal({ isError(it) }) { callBack()}
+            }
+        } else {
+            isError(true)
+            Log.d("UserVM", "Failed to delete note: userID is null")
         }
     }
 }

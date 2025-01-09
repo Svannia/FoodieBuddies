@@ -28,6 +28,7 @@ private const val NUMBER_RECIPES = "numberRecipes"
 
 private const val GROCERIES = "groceryList"
 private const val FRIDGE = "fridge"
+private const val NOTES = "notes"
 
 private const val OWNER = "owner"
 private const val DISPLAY_NAME = "displayName"
@@ -317,7 +318,7 @@ class DatabaseConnection {
      */
     private fun createPersonal(userID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // the initial document only contains empty lists or maps
-        val user = hashMapOf(GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap())
+        val user = hashMapOf(GROCERIES to emptyMap<String, List<String>>(), FRIDGE to emptyMap(), NOTES to emptyMap<String, String>())
         // add the new document to userPersonal, setting its reference to be the user UID
         userPersonalCollection
             .document(userID)
@@ -366,11 +367,15 @@ class DatabaseConnection {
                     fetchIngredient(ref) { if (it) errorOccurred = true }
                 }
             }
+            // fetch the map of notes
+            val notes = document.get(NOTES) as? Map<String, String> ?: emptyMap()
+            val formattedNotes = notes.toMutableMap()
+            formattedNotes.replaceAll { _, value -> value.replace("\\n", "\n") }
             // Create and return the UserPersonal object
             isError(errorOccurred)
             if (!errorOccurred) {
                 Log.d("MyDB", "Successfully fetched user personal")
-                UserPersonal(userID, groceryList, fridgeList)
+                UserPersonal(userID, groceryList, fridgeList, formattedNotes)
             } else {
                 Log.d("MyDB", "Failed to fetch user personal: failed to fetch some ingredient")
                 UserPersonal.empty()
@@ -646,6 +651,94 @@ class DatabaseConnection {
             .addOnFailureListener { e ->
                 isError(true)
                 Log.d("MyDB", "Failed to retrieve userPersonal for $owner with error $e")
+            }
+    }
+
+    /**
+     * Updates the notes field of a userPersonal document by either adding a new entry or updating an existing one.
+     *
+     * @param userID ID of the user who wrote the note
+     * @param recipeID ID of the recipe that the note is attached to
+     * @param note written by the user
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
+    fun updateNotes(userID: String, recipeID: String, note: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val userRef = userPersonalCollection.document(userID)
+
+        userRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // replace or add the new note value for the recipeID key
+                    val currentNotes = document.get(NOTES) as? Map<String, String> ?: emptyMap()
+                    val updatedNotes = currentNotes.toMutableMap()
+                    val formattedNote = note.replace("\n", "\\n")
+                    updatedNotes[recipeID] = formattedNote
+
+                    userRef.update(NOTES, updatedNotes)
+                        .addOnSuccessListener {
+                            isError(false)
+                            callBack()
+                            Log.d("MyDB", "Successfully updated notes")
+                        }
+                        .addOnFailureListener { e ->
+                            isError(true)
+                            Log.d("MyDB", "Failed to updates notes field with error $e")
+                        }
+                } else {
+                    isError(true)
+                    Log.d("MyDB", "Failed to updates notes: userPersonal document does not exist")
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to fetch userPersonal document with error $e")
+            }
+    }
+
+    /**
+     * Deletes some user's note for a given recipe.
+     *
+     * @param userID ID of the user who deletes their note
+     * @param recipeID ID of the recipe that the note was attached to
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after the DB was updated
+     */
+    fun deleteNote(userID: String, recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val userRef = userPersonalCollection.document(userID)
+
+        userRef.get()
+            .addOnSuccessListener { document ->
+                if (document.exists()) {
+                    // delete the map entry with recipeID key
+                    val currentNotes = document.get(NOTES) as? Map<String, String> ?: emptyMap()
+                    val updatedNotes = currentNotes.toMutableMap()
+
+                    if (updatedNotes.containsKey(recipeID)) {
+                        updatedNotes.remove(recipeID)
+                        userRef.update(NOTES, updatedNotes)
+                            .addOnSuccessListener {
+                                isError(false)
+                                callBack()
+                                Log.d("MyDB", "Successfully removed note")
+                            }
+                            .addOnFailureListener { e ->
+                                isError(true)
+                                Log.d("MyDB", "Failed to updates notes field with error $e")
+                            }
+                    } else {
+                        isError(false)
+                        callBack()
+                        Log.d("MyDB", "Successfully finished note deletion: the note already did not exist")
+                    }
+                } else {
+                    isError(true)
+                    Log.d("MyDB", "Failed to updates notes: userPersonal document does not exist")
+                }
+            }
+            .addOnFailureListener { e ->
+                isError(true)
+                Log.d("MyDB", "Failed to fetch userPersonal document with error $e")
             }
     }
 
@@ -1417,7 +1510,7 @@ class DatabaseConnection {
                     val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
                     val formattedInstructions = mutableListOf<String>()
                     instructions.forEach {
-                        val formattedStep = it.replace("\\n", "\n")
+                        val formattedStep: String = it.replace("\\n", "\n")
                         formattedInstructions.add(formattedStep)
                     }
                     val ingredients = (document.get(INGREDIENTS) as? List<Map<String, Any>>)?.map { map ->
