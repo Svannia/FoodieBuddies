@@ -220,4 +220,8 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
+    <string name="txt_quantitiesFor">Quantities for %1$s %2$s</string>
+    <string name="txt_credits">Created by %1$s on %2$s</string>
+    <string name="txt_includeImage">Include the image</string>
+    <string name="txt_includeNotes">Include the Personal Notes</string>
 </resources>

@@ -584,7 +584,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     onConfirm = {
                         showDownload.value = false
                         loadingData.value = true
-                        val filePath = getFilePath(context, name.value, downloadImage.value, downloadNotes.value)
+                        val filePath = getFilePath(name.value, downloadImage.value, downloadNotes.value)
                         createRecipePdf(
                             context,
                             filePath,
@@ -604,8 +604,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(text = stringResource(R.string.title_download), style = MyTypography.titleSmall)
-                        if (picture.value != Uri.EMPTY) DownloadOption(downloadImage, "Include the image")
-                        if (note.value.isNotBlank()) DownloadOption(downloadNotes, "Include the Personal Notes")
+                        if (picture.value != Uri.EMPTY) DownloadOption(downloadImage, stringResource(R.string.txt_includeImage))
+                        if (note.value.isNotBlank()) DownloadOption(downloadNotes, stringResource(R.string.txt_includeNotes))
                     }
                 }
             }

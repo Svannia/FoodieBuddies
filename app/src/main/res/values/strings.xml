@@ -193,6 +193,7 @@
     <string name="txt_person">personne</string>
     <string name="txt_piece">pièce</string>
     <string name="txt_pieces">pièces</string>
+    <string name="txt_quantitiesFor">Quantités pour %1$s %2$s</string>
     <string name="txt_quantity">Quantité</string>
     <string name="txt_recipeCreator">Créée par %1$s</string>
     <string name="txt_recipeRequirements">Les champs marqués par un astérisque rouge sont obligatoires.</string>
@@ -221,4 +222,7 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
+    <string name="txt_credits">Créée par %1$s sur %2$s</string>
+    <string name="txt_includeImage">Inclure l\'image</string>
+    <string name="txt_includeNotes">Inclure les Notes Personnelles</string>
 </resources>

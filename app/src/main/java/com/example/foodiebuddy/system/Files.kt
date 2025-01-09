@@ -81,7 +81,12 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
         .setBold()
         .setMarginBottom(18f)
 
-    val credits = Paragraph("Created by $username on ${context.getString(R.string.app_name)}")
+    val credits = Paragraph(
+        context.getString(
+            R.string.txt_credits,
+            username,
+            context.getString(R.string.app_name)
+        ))
         .setFontSize(18f)
         .setItalic()
 
@@ -99,6 +104,21 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
 
     // ingredients
     document.add(Paragraph(context.getString(R.string.title_ingredients)).setFontSize(26f).setBold())
+    // portion
+    val portionUnit = if (recipe.perPerson) {
+        if (recipe.portion > 1) context.getString(R.string.txt_people)
+        else context.getString(R.string.txt_person)
+    } else {
+        if (recipe.portion > 1) context.getString(R.string.txt_pieces)
+        else context.getString(R.string.txt_piece)
+    }
+    document.add(Paragraph(
+        context.getString(
+            R.string.txt_quantitiesFor,
+            recipe.portion.toString(),
+            portionUnit
+        )).setFontSize(18f))
+    // list of ingredients
     val ingredientTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 3f))).useAllAvailableWidth()
     for (ingredient in recipe.ingredients) {
         val quantity = formatQuantity(ingredient.quantity)
@@ -134,14 +154,13 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
 /**
  * Creates a filePath with a name that contains information about the recipe's title and the download options chosen.
  *
- * @param context to access environment
  * @param title of the recipe
  * @param image whether or not to add option "image" in the file name
  * @param notes whether or not to add option "notes" in the file name
  * @return directory and name of the new filePath
  */
-fun getFilePath(context: Context, title: String, image: Boolean, notes: Boolean): String {
-    val directory = context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS)
+fun getFilePath(title: String, image: Boolean, notes: Boolean): String {
+    val directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
     var fileName = title
     if (image) fileName += "_image"
     if (notes) fileName += "_notes"
