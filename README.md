@@ -1,4 +1,4 @@
-# FoodieBuddy
+# FoodieBuddies
 A private Android app for close friends, where we can share everyday food recipes, manage ingredients inventory, groceries, and meal prep.
 
 ## Features
