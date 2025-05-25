@@ -25,6 +25,7 @@ fun AccountEdit(userViewModel: UserViewModel, navigationActions: NavigationActio
     val userData by userViewModel.userData.collectAsState()
 
     val nameState = rememberSaveable { mutableStateOf(userData.username) }
+    val validUsernameState = remember { mutableStateOf(false) }
     val currentPicture = rememberSaveable { mutableStateOf(userData.picture) }
     val pictureState = remember { mutableStateOf(userData.picture) }
     val bioState = rememberSaveable { mutableStateOf(userData.bio) }
@@ -91,6 +92,18 @@ fun AccountEdit(userViewModel: UserViewModel, navigationActions: NavigationActio
                 navigationActions,
                 navExtraActions = {},
                 nameState,
+                checkUsername = {
+                    userViewModel.usernameAvailable(
+                        nameState.value,
+                        onSuccess = { usernameAvailable ->
+                            validUsernameState.value = usernameAvailable
+                        },
+                        onFailure = { e ->
+                            handleError(context,"Failed to check username existence", e)
+                        }
+                    )
+                },
+                validUsernameState,
                 pictureState,
                 defaultPicture.value,
                 bioState,

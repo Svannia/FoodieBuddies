@@ -126,7 +126,7 @@ class DatabaseConnection {
         val defaultPicture = getDefaultPicture()
         // process the input data to create a document
         val formattedBio = bio.replace("\n", "\\n")
-        val user = hashMapOf(USERNAME to username, BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
+        val user = hashMapOf(USERNAME to username.trimEnd(), BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
         // create the new userData document
         userDataCollection
             .document(userID)
@@ -206,7 +206,7 @@ class DatabaseConnection {
     fun updateUser(userID: String, username: String, picture: Uri, bio: String, updatePicture: Boolean, removePicture: Boolean, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // only user and bio text fields can be modified by the user
         val formattedBio = bio.replace("\n", "\\n")
-        val task = hashMapOf(USERNAME to username, BIO to formattedBio)
+        val task = hashMapOf(USERNAME to username.trimEnd(), BIO to formattedBio)
         // update those modifications to the document
         userDataCollection
             .document(userID)
@@ -235,6 +235,23 @@ class DatabaseConnection {
                 isError(true)
                 Timber.tag("MyDB").d( "Failed to update user data with error $e")
             }
+    }
+
+    /**
+     * Checks if a username is already taken in the database.
+     *
+     * @param username username to check
+     * @param onSuccess block that runs if the check succeeds (whether or not the username exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun usernameAvailable(username: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        userDataCollection
+            .whereEqualTo(USERNAME, username.trimEnd())
+            .get()
+            .addOnSuccessListener { documents ->
+                onSuccess(documents.isEmpty)
+            }
+            .addOnFailureListener { e -> onFailure(e)}
     }
 
     /**

@@ -34,8 +34,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
@@ -62,6 +66,8 @@ import timber.log.Timber
  * @param navigationActions to handle screen navigation
  * @param navExtraActions extra actions taken when navigation back
  * @param name state containing the username
+ * @param checkUsername block to run, to check if the username is already taken
+ * @param validUsername whether this username is already taken
  * @param picture state containing an Uri for the profile picture
  * @param defaultPicture default picture Uri needed for small UI changes
  * @param bio state containing the bio
@@ -79,6 +85,8 @@ fun EditAccount(
     navigationActions: NavigationActions,
     navExtraActions: () -> Unit,
     name: MutableState<String>,
+    checkUsername: () -> Unit,
+    validUsername: MutableState<Boolean>,
     picture: MutableState<Uri>,
     defaultPicture: Uri,
     bio: MutableState<String>,
@@ -149,18 +157,32 @@ fun EditAccount(
                 }
                 // text field to change the username
                 item {
-                    CustomTextField(
-                        value = name.value,
-                        onValueChange = {
-                            if (dataEdited != null) { dataEdited.value = true }
-                            name.value = it
-                        },
-                        icon = R.drawable.user,
-                        placeHolder = stringResource(R.string.field_username),
-                        singleLine = true,
-                        maxLength = 15,
-                        width = 300.dp
-                    )
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CustomTextField(
+                            value = name.value,
+                            onValueChange = {
+                                if (dataEdited != null) {
+                                    dataEdited.value = true
+                                }
+                                name.value = it
+                                checkUsername()
+                            },
+                            icon = R.drawable.user,
+                            placeHolder = stringResource(R.string.field_username),
+                            singleLine = true,
+                            maxLength = 15,
+                            width = 300.dp
+                        )
+                        Text(
+                            text = if (validUsername.value && name.value.isNotEmpty()) "Valid username" else "This username is empty or already taken",
+                            style = MyTypography.bodySmall.copy(fontStyle = FontStyle.Italic),
+                            color = if (validUsername.value && name.value.isNotEmpty()) ValidGreen else Color.Red,
+                        )
+                    }
                 }
                 // text field to change the bio
                 item {
@@ -198,7 +220,7 @@ fun EditAccount(
                 item {
                     val isEnabled = dataEdited?.value ?: true
                     val termsNeedAccepting = if (dataEdited == null) termsAccepted.value else true
-                    SaveButton(name.value.isNotEmpty() && isEnabled && termsNeedAccepting) { onSave() }
+                    SaveButton(name.value.isNotEmpty() && validUsername.value && isEnabled && termsNeedAccepting) { onSave() }
                 }
             }
             // terms and conditions dialog window

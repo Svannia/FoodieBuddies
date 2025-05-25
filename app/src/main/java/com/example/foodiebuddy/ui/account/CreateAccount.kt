@@ -1,6 +1,7 @@
 package com.example.foodiebuddy.ui.account
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +13,7 @@ import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.viewModels.UserViewModel
+import timber.log.Timber
 
 @Composable
 fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationActions) {
@@ -22,6 +24,7 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
     // userViewModel
     val currentPicture = rememberSaveable { mutableStateOf(Uri.EMPTY) }
     val nameState = rememberSaveable { mutableStateOf("") }
+    val validUsernameState = remember { mutableStateOf(false) }
     val pictureState = remember { mutableStateOf(currentPicture.value) }
     val bioState = rememberSaveable { mutableStateOf("") }
 
@@ -61,6 +64,18 @@ fun CreateAccount(userViewModel: UserViewModel, navigationActions: NavigationAct
                 deleteAuthentication(context)
             },
             nameState,
+            checkUsername = {
+                userViewModel.usernameAvailable(
+                    nameState.value,
+                    onSuccess = { usernameAvailable ->
+                        validUsernameState.value = usernameAvailable
+                    },
+                    onFailure = { e ->
+                        handleError(context,"Failed to check username existence", e)
+                    }
+                )
+            },
+            validUsernameState,
             pictureState,
             defaultPicture.value,
             bioState,

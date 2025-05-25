@@ -9,6 +9,8 @@ import com.example.foodiebuddy.data.RecipeFilters
 import com.example.foodiebuddy.data.User
 import com.example.foodiebuddy.data.UserPersonal
 import com.example.foodiebuddy.database.DatabaseConnection
+import com.example.foodiebuddy.errors.handleError
+import com.example.foodiebuddy.navigation.Route
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -165,6 +167,19 @@ constructor(private val userID: String ?= null) : ViewModel() {
             isError(true)
             Timber.tag("UserVM").d( "Failed to update user: ID is null")
         }
+    }
+
+    /**
+     * Checks if a username is already taken in the database.
+     *
+     * @param username username to check
+     * @param onSuccess block that runs if the check succeeds (whether or not the username exists)
+     * @param onFailure block that runs if there is an error executing the function
+     */
+    fun usernameAvailable(username: String, onSuccess: (Boolean) -> Unit, onFailure: (Exception) -> Unit) {
+        db.usernameAvailable(username,
+            onSuccess = { onSuccess(it) },
+            onFailure = { onFailure(it) })
     }
 
     /**
