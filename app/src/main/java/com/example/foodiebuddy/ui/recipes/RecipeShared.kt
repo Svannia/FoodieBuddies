@@ -2,7 +2,6 @@ package com.example.foodiebuddy.ui.recipes
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -330,7 +329,6 @@ fun EditRecipe(
                     CustomNumberField(
                         value = portion.intValue,
                         onValueChange = {
-                            Log.d("Debug", "number has value $it")
                             portion.intValue = it as Int
                                         },
                         isInteger = true,

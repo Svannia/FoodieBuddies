@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.database
 
 import android.net.Uri
-import android.util.Log
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Measure
 import com.example.foodiebuddy.data.Origin
@@ -20,6 +19,7 @@ import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.tasks.await
+import timber.log.Timber
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
@@ -84,10 +84,10 @@ class DatabaseConnection {
     fun getCurrentUserID(): String {
         val userID = FirebaseAuth.getInstance().currentUser?.uid
         return if (userID != null) {
-            Log.d("MyDB", "Successfully identified user $userID")
+            Timber.tag("MyDB").d( "Successfully identified user $userID")
             userID
         } else {
-            Log.d("MyDB", "Failed to identify user")
+            Timber.tag("MyDB").d( "Failed to identify user")
             ""
         }
     }
@@ -133,7 +133,7 @@ class DatabaseConnection {
             .set(user)
             .addOnSuccessListener {
                 isError(false)
-                Log.d("MyDB", "Successfully created user")
+                Timber.tag("MyDB").d( "Successfully created user")
 
                 // if the user input their own profile picture -> add it to the storage (the new path is automatically created)
                 if (picture != defaultPicture) {
@@ -141,7 +141,7 @@ class DatabaseConnection {
                         // create a document for the new user's personal data
                         createPersonal(userID, { isError(it) }) {
                             callBack()
-                            Log.d("MyDB", "Successfully finished user creation process")
+                            Timber.tag("MyDB").d( "Successfully finished user creation process")
                         }
                     }
                 // else -> copy the default profile picture in the new user's storage path
@@ -150,14 +150,14 @@ class DatabaseConnection {
                         // create a document for the new user's personal data
                         createPersonal(userID,{ isError(it) }) {
                             callBack()
-                            Log.d("MyDB", "Successfully finished user creation process")
+                            Timber.tag("MyDB").d( "Successfully finished user creation process")
                         }
                     }
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to create user with error $e")
+                Timber.tag("MyDB").d( "Failed to create user with error $e")
             }
     }
 
@@ -170,7 +170,7 @@ class DatabaseConnection {
     suspend fun fetchUserData(userID: String, isError: (Boolean) -> Unit): User {
         if (userID.isEmpty()) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch user data because userID $userID is empty")
+            Timber.tag("MyDB").d( "Failed to fetch user data because userID $userID is empty")
             return User.empty()
         }
 
@@ -182,11 +182,11 @@ class DatabaseConnection {
             val bio = document.getString(BIO) ?: ""
             val formattedBio = bio.replace("\\n", "\n")
             isError(false)
-            Log.d("MyDB", "Successfully fetched user data")
+            Timber.tag("MyDB").d( "Successfully fetched user data")
             User(userID, username, picture, numberRecipes, formattedBio)
         } else {
             isError(true)
-            Log.d("MyDB", "Failed to fetch user data for userID $userID")
+            Timber.tag("MyDB").d( "Failed to fetch user data for userID $userID")
             User.empty()
         }
     }
@@ -216,24 +216,24 @@ class DatabaseConnection {
                 if (removePicture) {
                     copyDefaultPicture(userID, { isError(it) }) {
                         callBack()
-                        Log.d("MyDB", "Successfully updated user data with default picture")
+                        Timber.tag("MyDB").d( "Successfully updated user data with default picture")
                     }
                 }
                 else if (updatePicture) {
                     updateUserPicture(userID, picture, { isError(it) }) {
                         callBack()
-                        Log.d("MyDB", "Successfully updated user data with new picture")
+                        Timber.tag("MyDB").d( "Successfully updated user data with new picture")
                     }
                 }
                 else {
                     isError(false)
                     callBack()
-                    Log.d("MyDB", "Successfully updated user data without new picture")
+                    Timber.tag("MyDB").d( "Successfully updated user data without new picture")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to update user data with error $e")
+                Timber.tag("MyDB").d( "Failed to update user data with error $e")
             }
     }
 
@@ -259,7 +259,7 @@ class DatabaseConnection {
                             // in all recipes, remove this user from the list favouriteOf
                             removeUserFromAllFavourites(userID, { isError(it) }) {
                                 callBack()
-                                Log.d("MyDB", "Successfully deleted user $userID")
+                                Timber.tag("MyDB").d( "Successfully deleted user $userID")
                             }
                         }
                     }
@@ -267,7 +267,7 @@ class DatabaseConnection {
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to delete user with error $e")
+                Timber.tag("MyDB").d( "Failed to delete user with error $e")
             }
     }
 
@@ -280,7 +280,7 @@ class DatabaseConnection {
     suspend fun fetchAllUsers(userID: String, isError: (Boolean) -> Unit): List<User> {
         if (userID.isEmpty()) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch all users because userID is empty")
+            Timber.tag("MyDB").d( "Failed to fetch all users because userID is empty")
             return emptyList()
         }
 
@@ -295,12 +295,12 @@ class DatabaseConnection {
                     val bio = document.getString(BIO) ?: ""
                     val formattedBio = bio.replace("\\n", "\n")
                     isError(false)
-                    Log.d("MyDB", "Successfully fetched all user data")
+                    Timber.tag("MyDB").d( "Successfully fetched all user data")
                     User(document.id, username, picture, numberRecipes, formattedBio)
                 }
         } catch (e: Exception) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch all users data")
+            Timber.tag("MyDB").d( "Failed to fetch all users data")
             emptyList()
         }
     }
@@ -326,11 +326,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("MyDB", "Successfully created user personal")
+                Timber.tag("MyDB").d( "Successfully created user personal")
             }
             .addOnFailureListener {e ->
                 isError(true)
-                Log.d("MyDB", "Failed to create user personal with error $e")
+                Timber.tag("MyDB").d( "Failed to create user personal with error $e")
             }
     }
 
@@ -344,7 +344,7 @@ class DatabaseConnection {
         // check that a correct userID was given
         if (userID.isEmpty()) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch user personal because userID is empty")
+            Timber.tag("MyDB").d( "Failed to fetch user personal because userID is empty")
             return UserPersonal.empty()
         }
 
@@ -374,15 +374,15 @@ class DatabaseConnection {
             // Create and return the UserPersonal object
             isError(errorOccurred)
             if (!errorOccurred) {
-                Log.d("MyDB", "Successfully fetched user personal")
+                Timber.tag("MyDB").d( "Successfully fetched user personal")
                 UserPersonal(userID, groceryList, fridgeList, formattedNotes)
             } else {
-                Log.d("MyDB", "Failed to fetch user personal: failed to fetch some ingredient")
+                Timber.tag("MyDB").d( "Failed to fetch user personal: failed to fetch some ingredient")
                 UserPersonal.empty()
             }
         } else {
             isError(true)
-            Log.d("MyDB", "Failed to fetch user personal: document does not exist")
+            Timber.tag("MyDB").d( "Failed to fetch user personal: document does not exist")
             UserPersonal.empty()
         }
     }
@@ -407,7 +407,7 @@ class DatabaseConnection {
                 // once all ingredients deletion is complete ->
                 batch.commit()
                     .addOnSuccessListener {
-                        Log.d("MyDB", "Successfully deleted ingredients owned by user")
+                        Timber.tag("MyDB").d( "Successfully deleted ingredients owned by user")
                         // delete the userPersonal document of the user to be deleted
                         userPersonalCollection
                             .document(userID)
@@ -415,20 +415,20 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 callBack()
                                 isError(false)
-                                Log.d("MyDB", "Successfully deleted user personal")
+                                Timber.tag("MyDB").d( "Successfully deleted user personal")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to delete user personal with error $e")
+                                Timber.tag("MyDB").d( "Failed to delete user personal with error $e")
                             }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to delete ingredients owned by user with error $e")
+                        Timber.tag("MyDB").d( "Failed to delete ingredients owned by user with error $e")
                     }
             }.addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to fetch ingredients owned by user with error $e")
+                Timber.tag("MyDB").d( "Failed to fetch ingredients owned by user with error $e")
             }
     }
 
@@ -455,11 +455,11 @@ class DatabaseConnection {
                 .addOnSuccessListener {
                     isError(false)
                     callBack()
-                    Log.d("MyDB", "Successfully added the empty category $category")
+                    Timber.tag("MyDB").d( "Successfully added the empty category $category")
                 }
                 .addOnFailureListener { e ->
                     isError(true)
-                    Log.d("MyDB", "Failed to add empty category $category with error $e")
+                    Timber.tag("MyDB").d( "Failed to add empty category $category with error $e")
                 }
          // if there are new ingredients to be added ->
          } else {
@@ -474,17 +474,17 @@ class DatabaseConnection {
                          remaining--
                          if (remaining <= 0) {
                              isError(true)
-                             Log.d("MyDB", "Failed to add new category $category")
+                             Timber.tag("MyDB").d( "Failed to add new category $category")
                          }
                      }
                  }) {
                      remaining--
                      if (remaining <= 0) {
                          isError(errorOccurred)
-                         if (errorOccurred) Log.d("MyDB", "Failed to add new category $category")
+                         if (errorOccurred) Timber.tag("MyDB").d( "Failed to add new category $category")
                          else {
                              callBack()
-                             Log.d("MyDB", "Successfully added new category $category")
+                             Timber.tag("MyDB").d( "Successfully added new category $category")
                          }
                      }
                 }
@@ -519,11 +519,11 @@ class DatabaseConnection {
                     allIngredients.forEach { ref ->
                         ref.update(CATEGORY, new)
                             .addOnSuccessListener {
-                                Log.d("MyDB", "Successfully updated category of ingredient $ref")
+                                Timber.tag("MyDB").d( "Successfully updated category of ingredient $ref")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to update category of ingredient $ref with error $e")
+                                Timber.tag("MyDB").d( "Failed to update category of ingredient $ref with error $e")
                             }
                     }
 
@@ -544,18 +544,18 @@ class DatabaseConnection {
                     )).addOnSuccessListener {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Successfully updated category in groceryList and fridge")
+                        Timber.tag("MyDB").d( "Successfully updated category in groceryList and fridge")
                     }.addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to update category with error: $e")
+                        Timber.tag("MyDB").d( "Failed to update category with error: $e")
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to update category: user personal document does not exist")
+                    Timber.tag("MyDB").d( "Failed to update category: user personal document does not exist")
                 }
             }.addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to get user personal document with error $e")
+                Timber.tag("MyDB").d( "Failed to get user personal document with error $e")
             }
     }
 
@@ -606,11 +606,11 @@ class DatabaseConnection {
                                                 .addOnSuccessListener {
                                                     isError(false)
                                                     callBack()
-                                                    Log.d("MyDB", "Successfully deleted category $category")
+                                                    Timber.tag("MyDB").d( "Successfully deleted category $category")
                                                 }
                                                 .addOnFailureListener { e ->
                                                     isError(true)
-                                                    Log.d("MyDB", "Failed to delete category $category with $e")
+                                                    Timber.tag("MyDB").d( "Failed to delete category $category with $e")
                                                 }
                                         }
                                     }
@@ -621,7 +621,7 @@ class DatabaseConnection {
                                     if (remaining <= 0) {
                                         isError(true)
                                     }
-                                    Log.d("MyDB", "Failed to delete ingredient with error $e")
+                                    Timber.tag("MyDB").d( "Failed to delete ingredient with error $e")
                                 }
                         }
                     // if there are no ingredients to delete ->
@@ -636,21 +636,21 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 isError(false)
                                 callBack()
-                                Log.d("MyDB", "Successfully deleted category $category")
+                                Timber.tag("MyDB").d( "Successfully deleted category $category")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to delete category $category with $e")
+                                Timber.tag("MyDB").d( "Failed to delete category $category with $e")
                             }
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to delete category $category because it does not exist")
+                    Timber.tag("MyDB").d( "Failed to delete category $category because it does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to retrieve userPersonal for $owner with error $e")
+                Timber.tag("MyDB").d( "Failed to retrieve userPersonal for $owner with error $e")
             }
     }
 
@@ -679,20 +679,20 @@ class DatabaseConnection {
                         .addOnSuccessListener {
                             isError(false)
                             callBack()
-                            Log.d("MyDB", "Successfully updated notes")
+                            Timber.tag("MyDB").d( "Successfully updated notes")
                         }
                         .addOnFailureListener { e ->
                             isError(true)
-                            Log.d("MyDB", "Failed to updates notes field with error $e")
+                            Timber.tag("MyDB").d( "Failed to updates notes field with error $e")
                         }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to updates notes: userPersonal document does not exist")
+                    Timber.tag("MyDB").d( "Failed to updates notes: userPersonal document does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to fetch userPersonal document with error $e")
+                Timber.tag("MyDB").d( "Failed to fetch userPersonal document with error $e")
             }
     }
 
@@ -720,25 +720,25 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 isError(false)
                                 callBack()
-                                Log.d("MyDB", "Successfully removed note")
+                                Timber.tag("MyDB").d( "Successfully removed note")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to updates notes field with error $e")
+                                Timber.tag("MyDB").d( "Failed to updates notes field with error $e")
                             }
                     } else {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Successfully finished note deletion: the note already did not exist")
+                        Timber.tag("MyDB").d( "Successfully finished note deletion: the note already did not exist")
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to updates notes: userPersonal document does not exist")
+                    Timber.tag("MyDB").d( "Failed to updates notes: userPersonal document does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to fetch userPersonal document with error $e")
+                Timber.tag("MyDB").d( "Failed to fetch userPersonal document with error $e")
             }
     }
 
@@ -783,7 +783,7 @@ class DatabaseConnection {
                                     if (errorOccurred) onFailure(IllegalStateException("An ingredient failed"))
                                     else {
                                         onSuccess(matches.isNotEmpty(), matches)
-                                        Log.d("MyDB", "Successfully collected matches $matches")
+                                        Timber.tag("MyDB").d( "Successfully collected matches $matches")
                                         return@outerListener
                                     }
                                 }
@@ -804,7 +804,7 @@ class DatabaseConnection {
                                                 ingredient.getString(CATEGORY) ?: "",
                                                 ingredient.getString(DISPLAY_NAME) ?: "")
                                             )
-                                            Log.d("MyDB", "Successfully found a match")
+                                            Timber.tag("MyDB").d( "Successfully found a match")
                                         }
                                         remainingRefs--
                                         if (remainingRefs <= 0) {
@@ -813,7 +813,7 @@ class DatabaseConnection {
                                                 if (errorOccurred) onFailure(IllegalStateException("An ingredient failed"))
                                                 else {
                                                     onSuccess(matches.isNotEmpty(), matches)
-                                                    Log.d("MyDB", "Successfully collected matches $matches")
+                                                    Timber.tag("MyDB").d( "Successfully collected matches $matches")
                                                 }
                                             }
                                         }
@@ -823,7 +823,7 @@ class DatabaseConnection {
                                         remainingRefs--
                                         errorOccurred = true
                                         onFailure(e)
-                                        Log.d("MyDB", "Failed to check ingredient existence; failure to fetch ingredient ref with error $e")
+                                        Timber.tag("MyDB").d( "Failed to check ingredient existence; failure to fetch ingredient ref with error $e")
                                         if (remainingRefs <= 0) {
                                             remainingFields--
                                             if (remainingFields <= 0) onFailure(e)
@@ -835,18 +835,18 @@ class DatabaseConnection {
                         } else {
                             // if document field could not be fetched -> error
                             onFailure(IllegalStateException("Failed to fetch maps in UserPersonal document"))
-                            Log.d("MyDB", "Failed to check ingredient existence because userPersonal document maps are null")
+                            Timber.tag("MyDB").d( "Failed to check ingredient existence because userPersonal document maps are null")
                         }
                     }
 
                 } else {
                     onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
-                    Log.d("MyDB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
+                    Timber.tag("MyDB").d( "Failed to check ingredient existence because userPersonal document is null or does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 onFailure(e)
-                Log.d("MyDB", "Failed to check ingredient existence because could not access userPersonal with error $e")
+                Timber.tag("MyDB").d( "Failed to check ingredient existence because could not access userPersonal with error $e")
             }
     }
 
@@ -872,7 +872,7 @@ class DatabaseConnection {
                         // if the there are no ingredients in this category -> ingredient does not exist
                         if (ingredientRefs.isEmpty()) {
                             onSuccess(false)
-                            Log.d("MyDB", "Successfully found that ingredient does not exist")
+                            Timber.tag("MyDB").d( "Successfully found that ingredient does not exist")
                             return@outerListener
                         }
                         // else loop over ingredient until it is found or none is found
@@ -885,7 +885,7 @@ class DatabaseConnection {
                                     if (found) return@addOnSuccessListener
                                     val displayName = ingredient.getString(DISPLAY_NAME)
                                     if (displayName == ingredientName) {
-                                        Log.d("MyDB", "Successfully found that ingredient exists")
+                                        Timber.tag("MyDB").d( "Successfully found that ingredient exists")
                                         onSuccess(true)
                                         found = true
                                     }
@@ -893,10 +893,10 @@ class DatabaseConnection {
                                     if (remaining <= 0) {
                                         if (errorOccurred) {
                                             onFailure(IllegalStateException("Checking some ingredient failed"))
-                                            Log.d("MyDB", "Failed to check ingredient existence because fetching some ingredient ref failed")
+                                            Timber.tag("MyDB").d( "Failed to check ingredient existence because fetching some ingredient ref failed")
                                         } else {
                                             onSuccess(found)
-                                            Log.d("MyDB", "Successfully finished looking for ingredient existence")
+                                            Timber.tag("MyDB").d( "Successfully finished looking for ingredient existence")
                                         }
                                     }
                                 }
@@ -906,21 +906,21 @@ class DatabaseConnection {
                                     if (remaining <= 0) {
                                         onFailure(e)
                                     }
-                                    Log.d("MyDB", "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
+                                    Timber.tag("MyDB").d( "Failed to check ingredient existence because fetching ingredient ref failed with error $e")
                                 }
                         }
                     } else {
                         onFailure(IllegalStateException("List of ingredient references is null"))
-                        Log.d("MyDB", "Failed to check ingredient existence because ingredient references are null")
+                        Timber.tag("MyDB").d( "Failed to check ingredient existence because ingredient references are null")
                     }
                 } else {
                     onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
-                    Log.d("MyDB", "Failed to check ingredient existence because userPersonal document is null or does not exist")
+                    Timber.tag("MyDB").d( "Failed to check ingredient existence because userPersonal document is null or does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 onFailure(e)
-                Log.d("MyDB", "Failed to check ingredient existence because could not access userPersonal with error $e")
+                Timber.tag("MyDB").d( "Failed to check ingredient existence because could not access userPersonal with error $e")
             }
     }
 
@@ -935,7 +935,7 @@ class DatabaseConnection {
     fun recipesWithOwnedIngredients(userID: String, allRecipes: MutableList<Recipe>, onSuccess: (List<Recipe>) -> Unit, onFailure: (Exception) -> Unit) {
         // check that the list of recipes isn't empty
         if (allRecipes.isEmpty()) {
-            Log.d("MyDB", "Successfully found that list of recipes is empty")
+            Timber.tag("MyDB").d( "Successfully found that list of recipes is empty")
             onSuccess(allRecipes)
         } else {
             // access the user personal data
@@ -948,7 +948,7 @@ class DatabaseConnection {
 
                         // if user doesn't own any ingredients -> filter recipes that don't have any ingredients
                         if (ingredientRefs.isEmpty()) {
-                            Log.d("MyDB", "Successfully found that user does not own any ingredients")
+                            Timber.tag("MyDB").d( "Successfully found that user does not own any ingredients")
                             val filteredRecipes = allRecipes.filter { recipe ->
                                 recipe.ingredients.isEmpty()
                             }
@@ -978,17 +978,17 @@ class DatabaseConnection {
                                 .addOnFailureListener { e ->
                                     // don't keep on filtering other ingredients -> fail function
                                     onFailure(e)
-                                    Log.d("MyDB", "Failed to fetch ingredient with error $e")
+                                    Timber.tag("MyDB").d( "Failed to fetch ingredient with error $e")
                                 }
                         }
                     } else {
                         onFailure(IllegalStateException("UserPersonal document is null or does not exist"))
-                        Log.d("MyDB", "Failed to filter recipes by owned ingredients: userPersonal document is null")
+                        Timber.tag("MyDB").d( "Failed to filter recipes by owned ingredients: userPersonal document is null")
                     }
                 }
                 .addOnFailureListener { e ->
                     onFailure(e)
-                    Log.d("MyDB", "Failed to filter recipes by owned ingredients: couldn't get document with error $e")
+                    Timber.tag("MyDB").d( "Failed to filter recipes by owned ingredients: couldn't get document with error $e")
                 }
         }
     }
@@ -1014,7 +1014,7 @@ class DatabaseConnection {
         ingredientsCollection
             .add(ingredient)
             .addOnSuccessListener {
-                Log.d("MyDB", "Successfully created ingredient")
+                Timber.tag("MyDB").d( "Successfully created ingredient")
                 // if the new ingredient was correctly added ->
                 userPersonalCollection
                     .document(owner)
@@ -1027,16 +1027,16 @@ class DatabaseConnection {
                     .addOnSuccessListener {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Successfully added the ingredient reference")
+                        Timber.tag("MyDB").d( "Successfully added the ingredient reference")
                     }
                     .addOnFailureListener {e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to add ingredient reference with error $e")
+                        Timber.tag("MyDB").d( "Failed to add ingredient reference with error $e")
                     }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to create ingredient with error $e")
+                Timber.tag("MyDB").d( "Failed to create ingredient with error $e")
             }
     }
 
@@ -1054,11 +1054,11 @@ class DatabaseConnection {
             val category = document.getString(CATEGORY) ?: ""
             val isTicked = document.getBoolean(IS_TICKED) ?: false
             isError(false)
-            Log.d("MyDB", "Successfully fetched ingredient")
+            Timber.tag("MyDB").d( "Successfully fetched ingredient")
             OwnedIngredient(ref.id, displayName, standName, category, isTicked)
         } else {
             isError(true)
-            Log.d("MyDB", "Failed to fetch ingredient because document does not exist")
+            Timber.tag("MyDB").d( "Failed to fetch ingredient because document does not exist")
             OwnedIngredient.empty()
         }
 
@@ -1079,11 +1079,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("MyDB", "Successfully updated ingredient tick")
+                Timber.tag("MyDB").d( "Successfully updated ingredient tick")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to update ingredient tick with error $e")
+                Timber.tag("MyDB").d( "Failed to update ingredient tick with error $e")
             }
     }
 
@@ -1106,23 +1106,23 @@ class DatabaseConnection {
             .update(targetField, FieldValue.arrayRemove(ref))
             .addOnSuccessListener {
                 isError(false)
-                Log.d("MyDB", "Successfully deleted ingredient ref")
+                Timber.tag("MyDB").d( "Successfully deleted ingredient ref")
 
                 // if the reference was correctly removed -> delete the ingredient document
                 ref.delete()
                     .addOnSuccessListener {
                         isError(false)
-                        Log.d("MyDB", "Successfully deleted ingredient")
+                        Timber.tag("MyDB").d( "Successfully deleted ingredient")
                         callBack()
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to delete ingredient with error $e")
+                        Timber.tag("MyDB").d( "Failed to delete ingredient with error $e")
                     }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to delete ingredient ref from user with error $e")
+                Timber.tag("MyDB").d( "Failed to delete ingredient ref from user with error $e")
             }
     }
 
@@ -1149,7 +1149,7 @@ class DatabaseConnection {
                     if (targetMap.isEmpty()) {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Successfully cleared ingredients: map $targetField is already empty")
+                        Timber.tag("MyDB").d( "Successfully cleared ingredients: map $targetField is already empty")
                         return@addOnSuccessListener
                     }
 
@@ -1164,10 +1164,10 @@ class DatabaseConnection {
                             remainingCat--
                             if (remainingCat <= 0) {
                                 isError(errorOccurred)
-                                if (errorOccurred) Log.d("MyDB", "Failed to clear all ingredients")
+                                if (errorOccurred) Timber.tag("MyDB").d( "Failed to clear all ingredients")
                                 else {
                                     callBack()
-                                    Log.d("MyDB", "Successfully cleared all ingredients for $targetField")
+                                    Timber.tag("MyDB").d( "Successfully cleared all ingredients for $targetField")
                                 }
                             }
                         } else {
@@ -1183,16 +1183,16 @@ class DatabaseConnection {
                                                     remainingCat--
                                                     if (remainingCat <= 0) {
                                                         isError(errorOccurred)
-                                                        if (errorOccurred) Log.d("MyDB", "Failed to clear all ingredients")
+                                                        if (errorOccurred) Timber.tag("MyDB").d( "Failed to clear all ingredients")
                                                         else {
                                                             callBack()
-                                                            Log.d("MyDB", "Successfully cleared all ingredients for $targetField")
+                                                            Timber.tag("MyDB").d( "Successfully cleared all ingredients for $targetField")
                                                         }
                                                     }
                                                 }
                                                 .addOnFailureListener { e ->
                                                     isError(true)
-                                                    Log.d("MyDB", "Failed to delete references in category $category with error $e")
+                                                    Timber.tag("MyDB").d( "Failed to delete references in category $category with error $e")
                                                 }
                                         }
                                     }
@@ -1205,19 +1205,19 @@ class DatabaseConnection {
                                                 isError(true)
                                             }
                                         }
-                                        Log.d("MyDB", "Failed to delete ingredient with error $e")
+                                        Timber.tag("MyDB").d( "Failed to delete ingredient with error $e")
                                     }
                             }
                         }
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to clear ingredients: user personal document does not exist")
+                    Timber.tag("MyDB").d( "Failed to clear ingredients: user personal document does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to clear ingredients with error $e")
+                Timber.tag("MyDB").d( "Failed to clear ingredients with error $e")
             }
     }
 
@@ -1245,7 +1245,7 @@ class DatabaseConnection {
                     if (remainingItems <= 0) {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Successfully completed transfer: groceries list is empty")
+                        Timber.tag("MyDB").d( "Successfully completed transfer: groceries list is empty")
                         return@addOnSuccessListener
                     }
 
@@ -1273,10 +1273,10 @@ class DatabaseConnection {
                                                             FRIDGE, newFridge
                                                         )
                                                     isError(errorOccurred)
-                                                    if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
+                                                    if (errorOccurred) Timber.tag("MyDB").d( "Failed to transfer all items to fridge")
                                                     else {
                                                         callBack()
-                                                        Log.d("MyDB", "Successfully finished transferring items")
+                                                        Timber.tag("MyDB").d( "Successfully finished transferring items")
                                                     }
                                                 }
                                             },
@@ -1293,7 +1293,7 @@ class DatabaseConnection {
                                                         )
                                                     isError(true)
                                                 }
-                                                Log.d("MyDB", "Failed to check if ingredient already exists in fridge with error $e")
+                                                Timber.tag("MyDB").d( "Failed to check if ingredient already exists in fridge with error $e")
                                             }
                                         )
                                     } else {
@@ -1306,10 +1306,10 @@ class DatabaseConnection {
                                                     FRIDGE, newFridge
                                                 )
                                             isError(errorOccurred)
-                                            if (errorOccurred) Log.d("MyDB", "Failed to transfer all items to fridge")
+                                            if (errorOccurred) Timber.tag("MyDB").d( "Failed to transfer all items to fridge")
                                             else {
                                                 callBack()
-                                                Log.d("MyDB", "Successfully finished transferring items")
+                                                Timber.tag("MyDB").d( "Successfully finished transferring items")
                                             }
                                         }
                                     }
@@ -1325,18 +1325,18 @@ class DatabaseConnection {
                                             )
                                         isError(true)
                                     }
-                                    Log.d("MyDB", "Failed to transfer items because $ref does not exist with error $e")
+                                    Timber.tag("MyDB").d( "Failed to transfer items because $ref does not exist with error $e")
                                 }
                         }
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to transfer items to fridge: user personal document does not exist")
+                    Timber.tag("MyDB").d( "Failed to transfer items to fridge: user personal document does not exist")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to transfer items to fridge with error $e")
+                Timber.tag("MyDB").d( "Failed to transfer items to fridge with error $e")
             }
     }
 
@@ -1412,34 +1412,34 @@ class DatabaseConnection {
         recipesCollection
             .add(recipe)
             .addOnSuccessListener { document ->
-                Log.d("MyDB", "Successfully created recipe")
+                Timber.tag("MyDB").d( "Successfully created recipe")
 
                 // increment the user's counter for created recipes
                 userDataCollection.document(userID)
                     .update(NUMBER_RECIPES, FieldValue.increment(1))
                     .addOnSuccessListener {
-                        Log.d("MyDB", "Successfully incremented recipes counter")
+                        Timber.tag("MyDB").d( "Successfully incremented recipes counter")
                         // add recipe picture to storage if not Uri.EMPTY
                         if (picture != Uri.EMPTY) {
                             updateRecipePicture(userID, document.id, picture, { isError(it) }) {
                                 isError(false)
                                 callBack(document.id)
-                                Log.d("MyDB", "Successfully finished recipe creation process")
+                                Timber.tag("MyDB").d( "Successfully finished recipe creation process")
                             }
                         } else {
                             isError(false)
                             callBack(document.id)
-                            Log.d("MyDB", "Successfully finished recipe creation process")
+                            Timber.tag("MyDB").d( "Successfully finished recipe creation process")
                         }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to increment recipes counter with error $e")
+                        Timber.tag("MyDB").d( "Failed to increment recipes counter with error $e")
                     }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to create new recipe with error $e")
+                Timber.tag("MyDB").d( "Failed to create new recipe with error $e")
             }
     }
 
@@ -1452,7 +1452,7 @@ class DatabaseConnection {
     suspend fun fetchRecipeData(recipeID: String, isError: (Boolean) -> Unit): Recipe {
         if (recipeID.isEmpty()) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch recipe data because recipeID is empty")
+            Timber.tag("MyDB").d( "Failed to fetch recipe data because recipeID is empty")
             return Recipe.empty()
         }
 
@@ -1487,7 +1487,7 @@ class DatabaseConnection {
             Recipe(document.id, owner, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
         } else {
             isError(true)
-            Log.d("MyDB", "Failed to fetch recipe data")
+            Timber.tag("MyDB").d( "Failed to fetch recipe data")
             Recipe.empty()
         }
     }
@@ -1533,7 +1533,7 @@ class DatabaseConnection {
                 }
         } catch (e: Exception) {
             isError(true)
-            Log.d("MyDB", "Failed to fetch all recipes with error $e")
+            Timber.tag("MyDB").d( "Failed to fetch all recipes with error $e")
             emptyList()
         }
     }
@@ -1600,22 +1600,22 @@ class DatabaseConnection {
                     deleteRecipePicture(userID, recipeID, { isError(it) }) {
                         isError(false)
                         callBack()
-                        Log.d("MyDB", "Successfully updated recipe with removed picture")
+                        Timber.tag("MyDB").d( "Successfully updated recipe with removed picture")
                     }
                 } else if (updatePicture) {
                     updateRecipePicture(userID, recipeID, picture, { isError(it) }) {
                         callBack()
-                        Log.d("MyDB", "Successfully updated recipe with new picture")
+                        Timber.tag("MyDB").d( "Successfully updated recipe with new picture")
                     }
                 } else {
                     isError(false)
                     callBack()
-                    Log.d("MyDB", "Successfully updated recipe data without picture change")
+                    Timber.tag("MyDB").d( "Successfully updated recipe data without picture change")
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to update recipe with error $e")
+                Timber.tag("MyDB").d( "Failed to update recipe with error $e")
             }
     }
 
@@ -1635,11 +1635,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("MyDB", "Successfully added user to favourites")
+                Timber.tag("MyDB").d( "Successfully added user to favourites")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to add user to favourites with error $e")
+                Timber.tag("MyDB").d( "Failed to add user to favourites with error $e")
             }
     }
 
@@ -1658,11 +1658,11 @@ class DatabaseConnection {
             .addOnSuccessListener {
                 isError(false)
                 callBack()
-                Log.d("MyDB", "Successfully removed user from recipe favouritesOf")
+                Timber.tag("MyDB").d( "Successfully removed user from recipe favouritesOf")
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to remove user from favourites with error $e")
+                Timber.tag("MyDB").d( "Failed to remove user from favourites with error $e")
             }
     }
 
@@ -1683,7 +1683,7 @@ class DatabaseConnection {
                 if (recipes.isEmpty()) {
                     isError(false)
                     callBack()
-                    Log.d("MyDB", "Successfully found that user had no favourites")
+                    Timber.tag("MyDB").d( "Successfully found that user had no favourites")
                     return@addOnSuccessListener
                 }
 
@@ -1699,17 +1699,17 @@ class DatabaseConnection {
                             if (remaining <= 0) {
                                 isError(true)
                             }
-                            Log.d("MyDB", "Failed to remove user from recipe $id")
+                            Timber.tag("MyDB").d( "Failed to remove user from recipe $id")
                         }
                     }) {
                         remaining--
                         if (remaining <= 0) {
                             isError(errorOccurred)
                             if (errorOccurred) {
-                                Log.d("MyDB", "Failed to remove user from some recipe")
+                                Timber.tag("MyDB").d( "Failed to remove user from some recipe")
                             } else {
                                 callBack()
-                                Log.d("MyDB","Successfully removed user from recipe favourites")
+                                Timber.tag("MyDB").d("Successfully removed user from recipe favourites")
                             }
                         }
                     }
@@ -1717,7 +1717,7 @@ class DatabaseConnection {
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to query all recipes with user in their favourites with error $e")
+                Timber.tag("MyDB").d( "Failed to query all recipes with user in their favourites with error $e")
             }
     }
 
@@ -1744,16 +1744,16 @@ class DatabaseConnection {
                                     .addOnSuccessListener {
                                         isError(false)
                                         callBack()
-                                        Log.d("MyDB", "Successfully finished recipe deletion process")
+                                        Timber.tag("MyDB").d( "Successfully finished recipe deletion process")
                                     }
                                     .addOnFailureListener { e ->
                                         isError(true)
-                                        Log.d("MyDB", "Failed to decrement recipes counter with error $e")
+                                        Timber.tag("MyDB").d( "Failed to decrement recipes counter with error $e")
                                     }
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to delete recipe with error $e")
+                                Timber.tag("MyDB").d( "Failed to delete recipe with error $e")
                             }
                     } else {
                         // there is a picture -> delete recipe document and its picture
@@ -1769,22 +1769,22 @@ class DatabaseConnection {
                                         .addOnSuccessListener {
                                             isError(false)
                                             callBack()
-                                            Log.d("MyDB", "Successfully finished recipe deletion process")
+                                            Timber.tag("MyDB").d( "Successfully finished recipe deletion process")
                                         }
                                         .addOnFailureListener { e ->
                                             isError(true)
-                                            Log.d("MyDB", "Failed to decrement recipes counter with error $e")
+                                            Timber.tag("MyDB").d( "Failed to decrement recipes counter with error $e")
                                         }
                                 }
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to delete recipe with error $e")
+                                Timber.tag("MyDB").d( "Failed to delete recipe with error $e")
                             }
                     }
                 } else {
                     isError(true)
-                    Log.d("MyDB", "Failed to delete recipe because could not fetch document")
+                    Timber.tag("MyDB").d( "Failed to delete recipe because could not fetch document")
                 }
             }
     }
@@ -1817,7 +1817,7 @@ class DatabaseConnection {
                     deleteRecipe(userID, id, {
                         if (it) {
                             errorOccurred = true
-                            Log.d("MyDB", "Failed to delete recipe $id")
+                            Timber.tag("MyDB").d( "Failed to delete recipe $id")
                             remaining--
                             if (remaining <= 0) isError(true)
                         }
@@ -1826,7 +1826,7 @@ class DatabaseConnection {
                         if (remaining <= 0) {
                             isError(errorOccurred)
                             if (!errorOccurred) {
-                                Log.d("MyDB", "Successfully deleted all user's recipes")
+                                Timber.tag("MyDB").d( "Successfully deleted all user's recipes")
                             }
                         }
                     }
@@ -1834,7 +1834,7 @@ class DatabaseConnection {
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to fetch recipes with given userID as owner, with error $e")
+                Timber.tag("MyDB").d( "Failed to fetch recipes with given userID as owner, with error $e")
             }
     }
 
@@ -1877,26 +1877,26 @@ class DatabaseConnection {
                                     .addOnSuccessListener {
                                         isError(false)
                                         callBack()
-                                        Log.d("MyDB", "Successfully added user profile picture")
+                                        Timber.tag("MyDB").d( "Successfully added user profile picture")
                                     }
                                     .addOnFailureListener { e ->
                                         isError(true)
-                                        Log.d("MyDB", "Failed to update user profile picture with error $e")
+                                        Timber.tag("MyDB").d( "Failed to update user profile picture with error $e")
                                     }
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to add user profile picture with error $e")
+                                Timber.tag("MyDB").d( "Failed to add user profile picture with error $e")
                             }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to add user profile picture with error: $e")
+                        Timber.tag("MyDB").d( "Failed to add user profile picture with error: $e")
                     }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to copy default picture bytes with error $e")
+                Timber.tag("MyDB").d( "Failed to copy default picture bytes with error $e")
             }
     }
 
@@ -1922,25 +1922,24 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 isError(false)
                                 callBack()
-                                Log.d("MyDB", "Successfully updated user profile picture")
+                                Timber.tag("MyDB").d( "Successfully updated user profile picture")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to update user profile picture with error $e")
+                                Timber.tag("MyDB").d( "Failed to update user profile picture with error $e")
                             }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to download picture URI with error $e")
+                        Timber.tag("MyDB").d( "Failed to download picture URI with error $e")
                     }
             }
             .addOnFailureListener { e ->
                 val errorCode = (e as? StorageException)?.errorCode
                 val httpErrorCode = (e as? StorageException)?.httpResultCode
                 isError(true)
-                Log.d("MyDB", "Failed to update user profile picture with error $e\n" +
-                        "errorCode is $errorCode\n" +
-                        "and http status is $httpErrorCode")
+                Timber.tag("MyDB").d("Failed to update user profile picture with error \n %s errorCode is %d \nand http status is %d",
+                    e.toString(), errorCode, httpErrorCode)
             }
     }
 
@@ -1982,10 +1981,10 @@ class DatabaseConnection {
                         if (remaining <= 0) {
                             isError(errorOccurred)
                             if (errorOccurred) {
-                                Log.d("MyDB", "Failed to delete stored files")
+                                Timber.tag("MyDB").d( "Failed to delete stored files")
                             } else {
                                 callBack()
-                                Log.d("MyDB", "Successfully deleted stored files")
+                                Timber.tag("MyDB").d( "Successfully deleted stored files")
                             }
                         }
                     }.addOnFailureListener { e ->
@@ -1994,12 +1993,12 @@ class DatabaseConnection {
                         if (remaining <= 0) {
                             isError(true)
                         }
-                        Log.d("MyDB", "Failed to delete stored files with error $e")
+                        Timber.tag("MyDB").d( "Failed to delete stored files with error $e")
                     }
                 }
             }.addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to list stored files with error $e")
+                Timber.tag("MyDB").d( "Failed to list stored files with error $e")
             }
     }
 
@@ -2043,25 +2042,24 @@ class DatabaseConnection {
                             .addOnSuccessListener {
                                 isError(false)
                                 callBack()
-                                Log.d("MyDB", "Successfully updated recipe picture")
+                                Timber.tag("MyDB").d( "Successfully updated recipe picture")
                             }
                             .addOnFailureListener { e ->
                                 isError(true)
-                                Log.d("MyDB", "Failed to update recipe picture with error $e")
+                                Timber.tag("MyDB").d( "Failed to update recipe picture with error $e")
                             }
                     }
                     .addOnFailureListener { e ->
                         isError(true)
-                        Log.d("MyDB", "Failed to download picture URI with error $e")
+                        Timber.tag("MyDB").d( "Failed to download picture URI with error $e")
                     }
             }
             .addOnFailureListener { e ->
                 val errorCode = (e as? StorageException)?.errorCode
                 val httpErrorCode = (e as? StorageException)?.httpResultCode
                 isError(true)
-                Log.d("MyDB", "Failed to update recipe picture with error $e\n" +
-                        "errorCode is $errorCode\n" +
-                        "and http status is $httpErrorCode")
+                Timber.tag("MyDB").d("Failed to update user profile picture with error \n %s errorCode is %d \nand http status is %d",
+                    e.toString(), errorCode, httpErrorCode)
             }
     }
 
@@ -2086,10 +2084,10 @@ class DatabaseConnection {
                             if (remaining <= 0) {
                                 isError(errorOccurred)
                                 if (errorOccurred) {
-                                    Log.d("MyDB", "Failed to deleted stored file")
+                                    Timber.tag("MyDB").d( "Failed to deleted stored file")
                                 } else {
                                     callBack()
-                                    Log.d("MyDB", "Successfully deleted stored files for recipe")
+                                    Timber.tag("MyDB").d( "Successfully deleted stored files for recipe")
                                 }
                             }
                         }
@@ -2097,13 +2095,13 @@ class DatabaseConnection {
                             remaining--
                             errorOccurred = true
                             if (remaining <= 0) isError(true)
-                            Log.d("MyDB", "Failed to delete stored file with error $e")
+                            Timber.tag("MyDB").d( "Failed to delete stored file with error $e")
                         }
                 }
             }
             .addOnFailureListener { e ->
                 isError(true)
-                Log.d("MyDB", "Failed to list stored files with error $e")
+                Timber.tag("MyDB").d( "Failed to list stored files with error $e")
             }
     }
 

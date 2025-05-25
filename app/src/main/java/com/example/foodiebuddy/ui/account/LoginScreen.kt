@@ -2,7 +2,6 @@ package com.example.foodiebuddy.ui.account
 
 import android.app.Activity
 import android.content.Context
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -40,6 +39,7 @@ import com.firebase.ui.auth.AuthUI
 import com.firebase.ui.auth.FirebaseAuthUIActivityResultContract
 import com.firebase.ui.auth.data.model.FirebaseAuthUIAuthenticationResult
 import com.google.firebase.auth.FirebaseAuth
+import timber.log.Timber
 
 @Composable
 fun LoginScreen(navigationActions: NavigationActions) {
@@ -128,11 +128,11 @@ private fun onSignInResult(result: FirebaseAuthUIAuthenticationResult, context: 
                     // if the user already exists -> navigate to home page
                     if (userExists) {
                         navigationActions.navigateTo(Route.RECIPES_HOME, true)
-                        Log.d("Login", "Successfully logged in app for user $userID")
+                        Timber.tag("Login").d( "Successfully logged in app for user $userID")
                     // if the user does not exist yet -> navigate to account creation
                     } else {
                         navigationActions.navigateTo(Route.CREATE_ACCOUNT)
-                        Log.d("Login", "Successfully started creating account for user $userID")
+                        Timber.tag("Login").d( "Successfully started creating account for user $userID")
                     }
                 },
                 // in case checking for user existence failed

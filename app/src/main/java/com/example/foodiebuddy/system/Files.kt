@@ -4,7 +4,6 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
-import android.util.Log
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.formatQuantity
@@ -26,6 +25,7 @@ import java.io.IOException
 import java.io.InputStream
 import com.itextpdf.kernel.font.PdfFontFactory
 import com.itextpdf.layout.borders.Border
+import timber.log.Timber
 import java.util.concurrent.CountDownLatch
 
 /**
@@ -187,7 +187,7 @@ private fun uriToPdfImage(context: Context, imageUri: Uri): Image? {
         }
         Image(ImageDataFactory.create(imagePath))
     } catch (e: Exception) {
-        Log.d("Error", "$e")
+        Timber.tag("Error").d( "$e")
         handleError(context, "Could not convert uri to pdf image")
         null
     }

@@ -1,9 +1,9 @@
 package com.example.foodiebuddy.errors
 
 import android.content.Context
-import android.util.Log
 import android.widget.Toast
 import com.example.foodiebuddy.R
+import timber.log.Timber
 
 /**
  * In case of an error, call this function to display a Toast to the user.
@@ -18,9 +18,9 @@ import com.example.foodiebuddy.R
 fun handleError(context: Context, errorMssg: String, e: Exception ?= null) {
     if (!isNetworkAvailable(context)) {
         Toast.makeText(context, context.getString(R.string.toast_internetCo), Toast.LENGTH_SHORT).show()
-        Log.d("Error", "Network connection issue")
+        Timber.tag("Error").d( "Network connection issue")
     } else {
         Toast.makeText(context, context.getString(R.string.toast_unknownError), Toast.LENGTH_SHORT).show()
-        Log.d("Error","$errorMssg ${e?.let { "with error: $it" }}")
+        Timber.tag("Error").d("$errorMssg ${e?.let { "with error: $it" }}")
     }
 }

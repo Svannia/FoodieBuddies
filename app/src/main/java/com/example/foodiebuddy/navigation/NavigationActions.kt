@@ -1,7 +1,7 @@
 package com.example.foodiebuddy.navigation
 
-import android.util.Log
 import androidx.navigation.NavHostController
+import timber.log.Timber
 
 open class NavigationActions(private val navController: NavHostController) {
 
@@ -22,7 +22,7 @@ open class NavigationActions(private val navController: NavHostController) {
                     popUpTo(0)
                 }
             }
-            Log.d("NavAction","Navigated to route $route")
+            Timber.tag("NavAction").d("Navigated to route $route")
         }
     }
 
@@ -41,19 +41,19 @@ open class NavigationActions(private val navController: NavHostController) {
                     launchSingleTop = true
                     restoreState = true
                 }
-                Log.d("NavAction","Navigated back to Login because of empty backStack")
+                Timber.tag("NavAction").d("Navigated back to Login because of empty backStack")
                 // else -> go to Home page
             } else {
                 navController.navigate(Route.RECIPES_HOME) {
                     launchSingleTop = true
                     restoreState = true
                 }
-                Log.d("NavAction","Navigated back to RecipesHome because of empty backStack")
+                Timber.tag("NavAction").d("Navigated back to RecipesHome because of empty backStack")
             }
         // base case (there is a previous route) -> pop it from the backstack
         } else if (previousRoute != currentRoute) {
             navController.popBackStack()
-            Log.d("NavAction","Popped backstack")
+            Timber.tag("NavAction").d("Popped backstack")
         }
     }
 }

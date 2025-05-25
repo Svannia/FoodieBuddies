@@ -26,6 +26,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.example.foodiebuddy.database.ThemeChoice
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
+import com.example.foodiebuddy.system.TelegramBot
 import com.example.foodiebuddy.system.convertNameToTag
 import com.example.foodiebuddy.system.convertTagToName
 import com.example.foodiebuddy.system.getCurrentLocale
@@ -54,6 +56,7 @@ import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
+import kotlinx.coroutines.launch
 
 private const val HEIGHT = 52
 private const val OFFSET = 45
@@ -84,6 +87,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
 
     // variables for bug reporting
     val bugReport = remember { mutableStateOf("") }
+    val coroutineScope = rememberCoroutineScope()
 
     // display the loading screen if some values are changing
     if (loading.value) {
@@ -211,11 +215,18 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                     confirmText = stringResource(R.string.button_accept),
                     confirmColour = ValidGreen,
                     onConfirm = {
+                        if (bugReport.value.isNotEmpty()) {
+                            coroutineScope.launch {
+                                val success = TelegramBot.sendMessage("Bug report: ${bugReport.value}")
+                                if (success) {
+                                    Toast.makeText(context, context.getString(R.string.toast_bugReport), Toast.LENGTH_SHORT).show()
+                                } else {
+                                    handleError(context, "Failed to send bug report")
+                                }
+                            }
+                        }
                         bugReport.value = bugReport.value.trimEnd()
                         reportVisible.value = false
-                        if (bugReport.value.isNotEmpty()) {
-                            // todo: send bug report -> send bug description input by user and log.txt file
-                            Toast.makeText(context, context.getString(R.string.toast_bugReport), Toast.LENGTH_SHORT).show()}
                     }
                 ) {
                     // title for Report a bug, input text field and log.txt explanation

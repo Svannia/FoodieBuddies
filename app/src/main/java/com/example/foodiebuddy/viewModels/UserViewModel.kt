@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.viewModels
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.OwnedIngredient
@@ -13,6 +12,7 @@ import com.example.foodiebuddy.database.DatabaseConnection
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -72,7 +72,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 db.createUser(userID, username, picture, bio, { isError(it) }) { callBack() }
             } else {
                 isError(true)
-                Log.d("UserVM", "Failed to create user: ID is null")
+                Timber.tag("UserVM").d( "Failed to create user: ID is null")
             }
         }
     }
@@ -99,17 +99,17 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         }
                     } else {
                         isError(true)
-                        Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
+                        Timber.tag("UserVM").d( "Failed to retrieve user data: user does not exist.")
                     }
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
+                    Timber.tag("UserVM").d( "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to fetch user data: ID is null")
+            Timber.tag("UserVM").d( "Failed to fetch user data: ID is null")
         }
     }
 
@@ -126,12 +126,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
                     }
                 } else {
                     isError(true)
-                    Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
+                    Timber.tag("UserVM").d( "Failed to retrieve user data: user does not exist.")
                 }
             },
             onFailure = { e ->
                 isError(true)
-                Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
+                Timber.tag("UserVM").d( "Failed to check user existence when fetching in VM with error $e")
             }
         )
     }
@@ -163,7 +163,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         }  else {
             isError(true)
-            Log.d("UserVM", "Failed to update user: ID is null")
+            Timber.tag("UserVM").d( "Failed to update user: ID is null")
         }
     }
 
@@ -187,7 +187,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.deleteUser(userID, { isError(it) }) { callBack() }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to delete user: ID is null")
+            Timber.tag("UserVM").d( "Failed to delete user: ID is null")
         }
     }
 
@@ -215,17 +215,17 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         }
                     } else {
                         isError(true)
-                        Log.d("UserVM", "Failed to retrieve all users: user does not exist.")
+                        Timber.tag("UserVM").d( "Failed to retrieve all users: user does not exist.")
                     }
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
+                    Timber.tag("UserVM").d( "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to fetch all users data: ID is null")
+            Timber.tag("UserVM").d( "Failed to fetch all users data: ID is null")
         }
     }
 
@@ -289,17 +289,17 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         }
                     } else {
                         isError(true)
-                        Log.d("UserVM", "Failed to retrieve user data: user does not exist.")
+                        Timber.tag("UserVM").d( "Failed to retrieve user data: user does not exist.")
                     }
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("UserVM", "Failed to check user existence when fetching in VM with error $e")
+                    Timber.tag("UserVM").d( "Failed to check user existence when fetching in VM with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to fetch user personal: ID is null")
+            Timber.tag("UserVM").d( "Failed to fetch user personal: ID is null")
         }
     }
 
@@ -331,7 +331,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                         isError(true)
                                     }
                                 }
-                                Log.d("UserVM", "Failed to update categories: error in DB")
+                                Timber.tag("UserVM").d( "Failed to update categories: error in DB")
                             }
                         }) {
                             remaining--
@@ -339,7 +339,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             if (remaining <= 0) {
                                 editCategoryNames(editedCategories, { if (it) errorOccurred = true }) {
                                     isError(errorOccurred)
-                                    if (errorOccurred) Log.d("UserVM", "Failed to update categories: error in DB")
+                                    if (errorOccurred) Timber.tag("UserVM").d( "Failed to update categories: error in DB")
                                     else callBack()
                                 }
                             }
@@ -351,7 +351,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 }
             } else {
                 isError(true)
-                Log.d("UserVM", "Failed to update categories: userID is null")
+                Timber.tag("UserVM").d( "Failed to update categories: userID is null")
             }
         }
     }
@@ -379,14 +379,14 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                 isError(true)
                                 fetchUserPersonal({}, {})
                             }
-                            Log.d("UserVM", "Failed to delete categories")
+                            Timber.tag("UserVM").d( "Failed to delete categories")
                         }
                     }) {
                         remaining--
                         if (remaining <= 0) {
                             if (errorOccurred) {
                                 isError(true)
-                                Log.d("UserVM", "Failed to delete categories")
+                                Timber.tag("UserVM").d( "Failed to delete categories")
                                 fetchUserPersonal({}, {})
                             } else {
                                 fetchUserPersonal( { isError(it) } ) { callBack() }
@@ -401,7 +401,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("UserVM", "Could not delete categories: userID is null")
+            Timber.tag("UserVM").d( "Could not delete categories: userID is null")
         }
     }
 
@@ -426,12 +426,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("UserVM", "Failed to check ingredient existence with error $e")
+                    Timber.tag("UserVM").d( "Failed to check ingredient existence with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to check ingredient existence: ID is null")
+            Timber.tag("UserVM").d( "Failed to check ingredient existence: ID is null")
         }
     }
 
@@ -458,12 +458,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("UserVM", "Failed to check ingredient existence with error $e")
+                    Timber.tag("UserVM").d( "Failed to check ingredient existence with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to check ingredient existence: ID is null")
+            Timber.tag("UserVM").d( "Failed to check ingredient existence: ID is null")
         }
     }
 
@@ -498,14 +498,14 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                                 isError(true)
                                             }
                                         }
-                                        Log.d("UserVM", "Failed to add ingredient")
+                                        Timber.tag("UserVM").d( "Failed to add ingredient")
                                     }
                                 }) {
                                     remaining--
                                     if (remaining <= 0) {
                                         remainingItems--
                                         if (remainingItems <= 0) {
-                                            if (errorOccurred) Log.d("UserVM", "Failed to add ingredient")
+                                            if (errorOccurred) Timber.tag("UserVM").d( "Failed to add ingredient")
                                             else callBack()
                                         }
                                     }
@@ -515,7 +515,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         } else { remainingItems--
                             if (remainingItems <= 0) {
                                 isError(errorOccurred)
-                                if (errorOccurred) Log.d("UserVM", "Failed to add ingredients")
+                                if (errorOccurred) Timber.tag("UserVM").d( "Failed to add ingredients")
                                 else callBack()
                             }
                         }
@@ -527,7 +527,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 }
             } else {
                 isError(true)
-                Log.d("UserVM", "Failed to add ingredients: userID is null")
+                Timber.tag("UserVM").d( "Failed to add ingredients: userID is null")
             }
         }
     }
@@ -547,7 +547,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to update ingredient tick: userID is null")
+            Timber.tag("UserVM").d( "Failed to update ingredient tick: userID is null")
         }
     }
 
@@ -579,7 +579,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                             isError(true)
                                         }
                                     }
-                                    Log.d("UserVM", "Failed to delete ingredient")
+                                    Timber.tag("UserVM").d( "Failed to delete ingredient")
                                 }
                             }){
                                 remaining--
@@ -587,7 +587,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                                     remainingItems--
                                     if (remainingItems <= 0) {
                                         isError(errorOccurred)
-                                        if (errorOccurred) Log.d("UserVM", "Failed to delete ingredient")
+                                        if (errorOccurred) Timber.tag("UserVM").d( "Failed to delete ingredient")
                                         else callBack()
                                     }
                                 }
@@ -598,7 +598,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
                         remainingItems--
                         if (remainingItems <= 0) {
                             isError(errorOccurred)
-                            if (errorOccurred) Log.d("UserVM", "Failed to delete ingredient")
+                            if (errorOccurred) Timber.tag("UserVM").d( "Failed to delete ingredient")
                             else callBack()
                         }
                     }
@@ -610,7 +610,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to delete ingredient: userID is null")
+            Timber.tag("UserVM").d( "Failed to delete ingredient: userID is null")
         }
     }
 
@@ -636,14 +636,14 @@ constructor(private val userID: String ?= null) : ViewModel() {
                             if (remaining <= 0) {
                                 isError(true)
                             }
-                            Log.d("UserVM", "Failed to edit category names")
+                            Timber.tag("UserVM").d( "Failed to edit category names")
                         }
                     })
                     {
                         remaining--
                         if (remaining <= 0) {
                             isError(errorOccurred)
-                            if (errorOccurred) Log.d("UserVM", "Failed to edit category names")
+                            if (errorOccurred) Timber.tag("UserVM").d( "Failed to edit category names")
                             else callBack()
                         }
                     }
@@ -655,7 +655,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to edit category name: userID is null")
+            Timber.tag("UserVM").d( "Failed to edit category name: userID is null")
         }
     }
 
@@ -671,7 +671,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.clearIngredients(userID, isInFridge, { isError(it) }) { callBack() }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to clear all ingredients: userID is null")
+            Timber.tag("UserVM").d( "Failed to clear all ingredients: userID is null")
         }
     }
 
@@ -686,7 +686,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             db.groceriesToFridge(userID, { isError(it) }) { callBack() }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to transfer items to fridge: userID is null")
+            Timber.tag("UserVM").d( "Failed to transfer items to fridge: userID is null")
         }
     }
 
@@ -707,12 +707,12 @@ constructor(private val userID: String ?= null) : ViewModel() {
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("UserVM", "Failed to check ingredient existence with error $e")
+                    Timber.tag("UserVM").d( "Failed to check ingredient existence with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to check ingredient existence: userID is null")
+            Timber.tag("UserVM").d( "Failed to check ingredient existence: userID is null")
         }
     }
 
@@ -731,7 +731,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to update notes: userID is null")
+            Timber.tag("UserVM").d( "Failed to update notes: userID is null")
         }
     }
 
@@ -749,7 +749,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("UserVM", "Failed to delete note: userID is null")
+            Timber.tag("UserVM").d( "Failed to delete note: userID is null")
         }
     }
 }

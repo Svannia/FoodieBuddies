@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.viewModels
 
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.Diet
@@ -14,6 +13,7 @@ import com.example.foodiebuddy.ui.ingredients.standardizeName
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import javax.inject.Inject
 
 /**
@@ -96,17 +96,17 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
                         }
                     } else {
                         isError(true)
-                        Log.d("RecipeVM", "Failed to retrieve recipe data: recipe does not exist.")
+                        Timber.tag("RecipeVM").d( "Failed to retrieve recipe data: recipe does not exist.")
                     }
                 },
                 onFailure = { e ->
                     isError(true)
-                    Log.d("RecipeVM", "Failed to check recipe existence when fetching in VM with error $e")
+                    Timber.tag("RecipeVM").d( "Failed to check recipe existence when fetching in VM with error $e")
                 }
             )
         } else {
             isError(true)
-            Log.d("RecipeVM", "Failed to fetch recipe data: ID is null")
+            Timber.tag("RecipeVM").d( "Failed to fetch recipe data: ID is null")
         }
     }
 
@@ -145,14 +145,13 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         if (recipeID != null) {
             val filteredInstructions = instructions.toMutableList()
             processListData(ingredients, filteredInstructions)
-            Log.d("Debug", "instructions outside are ${instructions.last()}")
             db.updateRecipe(recipeData.value.owner, recipeID, name, picture, updatePicture, removePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
             {
                 fetchRecipeData({ isError(it) }) { callBack() }
             }
         } else {
             isError(true)
-            Log.d("RecipeVM", "Could not update recipe: recipeID is null")
+            Timber.tag("RecipeVM").d( "Could not update recipe: recipeID is null")
         }
     }
 
@@ -170,7 +169,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("RecipeVM", "Could not add user to favourites: recipeID is null")
+            Timber.tag("RecipeVM").d( "Could not add user to favourites: recipeID is null")
         }
     }
 
@@ -188,7 +187,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
             }
         } else {
             isError(true)
-            Log.d("RecipeVM", "Could not remove user from favourites: recipeID is null")
+            Timber.tag("RecipeVM").d( "Could not remove user from favourites: recipeID is null")
         }
     }
 
@@ -204,7 +203,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
             db.deleteRecipe(userID, recipeID, { isError(it) }) { callBack() }
         } else {
             isError(true)
-            Log.d("RecipeVM", "Failed to delete recipe: ID is null")
+            Timber.tag("RecipeVM").d( "Failed to delete recipe: ID is null")
         }
     }
 
@@ -224,9 +223,6 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
             ingredient.displayedName = ingredient.displayedName.trimEnd()
             // add the standardized name of each ingredient
             ingredient.standName = standardizeName(ingredient.displayedName)
-        }
-        instructions.forEach {
-            Log.d("Debug", "instructions in function are $it")
         }
     }
 

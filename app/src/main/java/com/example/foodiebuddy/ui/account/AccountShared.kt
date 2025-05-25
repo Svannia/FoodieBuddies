@@ -2,7 +2,6 @@ package com.example.foodiebuddy.ui.account
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -53,6 +52,7 @@ import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.firebase.ui.auth.AuthUI
 import com.google.firebase.auth.FirebaseAuth
+import timber.log.Timber
 
 /**
  * Screen that allows the user to edit their profile information.
@@ -260,7 +260,7 @@ fun deleteAuthentication(context: Context) {
     user?.delete()
         ?.addOnCompleteListener {
             if (it.isSuccessful) {
-                Log.d("Login", "Successfully deleted authenticated user")
+                Timber.tag("Login").d( "Successfully deleted authenticated user")
             } else {
                 handleError(context, "Could not delete authenticated user")
             }
@@ -275,7 +275,7 @@ fun deleteAuthentication(context: Context) {
 fun signOut(context: Context) {
     AuthUI.getInstance().signOut(context).addOnCompleteListener{
         if (it.isSuccessful) {
-            Log.d("Login", "Successfully signed out")
+            Timber.tag("Login").d( "Successfully signed out")
         } else {
             handleError(context, "Could not delete sign out user")
         }
