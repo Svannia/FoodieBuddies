@@ -44,6 +44,7 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationActions) {
     val screenState = remember { mutableStateOf(ScreenState.VIEWING) }
     val loading = remember { mutableStateOf(false) }
+    val userData by userViewModel.userData.collectAsState()
 
     // pressing the Android back button on this screen does not change it
     BackHandler {
@@ -218,11 +219,15 @@ fun GroceriesHome(userViewModel: UserViewModel, navigationActions: NavigationAct
                             }
                             // spacing for the keyboard (cuz doing things properly with ime paddings fucks things up)
                             item {
-                                Spacer(modifier = Modifier.fillMaxWidth().height(
-                                    (WindowInsets.ime.asPaddingValues().calculateBottomPadding()
-                                            - paddingValues.calculateBottomPadding())
-                                        .coerceAtLeast(0.dp)
-                                ))
+                                Spacer(modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(
+                                        (WindowInsets.ime
+                                            .asPaddingValues()
+                                            .calculateBottomPadding()
+                                                - paddingValues.calculateBottomPadding())
+                                            .coerceAtLeast(0.dp)
+                                    ))
                             }
                         }
 

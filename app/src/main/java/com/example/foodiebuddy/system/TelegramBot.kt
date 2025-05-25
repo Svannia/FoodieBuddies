@@ -2,29 +2,66 @@ package com.example.foodiebuddy.system
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import timber.log.Timber
+import java.io.File
+import java.io.OutputStream
 import java.net.HttpURLConnection
 import java.net.URL
-import java.net.URLEncoder
+import com.example.foodiebuddy.BuildConfig
 
 object TelegramBot {
-    private const val BOT_TOKEN = "7932493120:AAGlnyxtGQ2BOu6Gs17O2z6Zym1PRrMfZSc"
-    private const val CHAT_ID = "1357658600"
+    private const val BOT_TOKEN = BuildConfig.TELEGRAM_BOT_TOKEN
+    private const val CHAT_ID = BuildConfig.TELEGRAM_CHAT_ID
 
-    suspend fun sendMessage(message: String): Boolean {
+    suspend fun sendBugReport(username: String, message: String, logFile: File): Boolean {
         return withContext(Dispatchers.IO) {
             try {
-                val encodedMessage = URLEncoder.encode(message, "UTF-8")
-                val urlString = "https://api.telegram.org/bot$BOT_TOKEN/sendMessage?chat_id=$CHAT_ID&text=$encodedMessage"
-                val url = URL(urlString)
+                val boundary = "----FoodieBuddiesBoundary${System.currentTimeMillis()}"
+                val url = URL("https://api.telegram.org/bot$BOT_TOKEN/sendDocument")
                 val connection = url.openConnection() as HttpURLConnection
-                connection.requestMethod = "GET"
+                connection.requestMethod = "POST"
+                connection.doOutput = true
+                connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
+
+                val outputStream = connection.outputStream
+                writeMultipart(outputStream, boundary, username, message, logFile)
+                outputStream.flush()
+                outputStream.close()
+
                 val responseCode = connection.responseCode
                 connection.disconnect()
                 responseCode == 200
             } catch (e: Exception) {
-                e.printStackTrace()
+                Timber.tag("Error").d("Failed to send bug report with error:\n$e")
                 false
             }
         }
+    }
+
+    private fun writeMultipart(output: OutputStream, boundary: String, username: String, message: String, logFile: File) {
+        val lineEnd = "\r\n"
+        val twoHyphens = "--"
+
+        output.write(
+            (twoHyphens + boundary + lineEnd +
+                    "Content-Disposition: form-data; name=\"caption\"" + lineEnd +
+                    lineEnd + "From $username:\n$message" + lineEnd).toByteArray()
+        )
+
+        output.write(
+            (twoHyphens + boundary + lineEnd +
+                    "Content-Disposition: form-data; name=\"chat_id\"" + lineEnd +
+                    lineEnd + CHAT_ID + lineEnd).toByteArray()
+        )
+
+        output.write(
+            (twoHyphens + boundary + lineEnd +
+                    "Content-Disposition: form-data; name=\"document\"; filename=\"log.txt\"" + lineEnd +
+                    "Content-Type: text/plain" + lineEnd +
+                    lineEnd).toByteArray()
+        )
+
+        logFile.inputStream().copyTo(output)
+        output.write((lineEnd + twoHyphens + boundary + twoHyphens + lineEnd).toByteArray())
     }
 }

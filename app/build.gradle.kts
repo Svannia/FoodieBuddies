@@ -1,7 +1,17 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.jetbrains.kotlin.android)
     id("com.android.application")
     id("com.google.gms.google-services")
+}
+
+val secretsPropsFile = rootProject.file("secrets.properties")
+val secretsProps = Properties().apply {
+    if (secretsPropsFile.exists()) {
+        load(FileInputStream(secretsPropsFile))
+    }
 }
 
 android {
@@ -19,6 +29,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        buildConfigField("String", "TELEGRAM_BOT_TOKEN", "\"${secretsProps.getProperty("telegramBotToken") ?: ""}\"")
+        buildConfigField("String", "TELEGRAM_CHAT_ID", "\"${secretsProps.getProperty("telegramChatId") ?: ""}\"")
     }
 
     buildTypes {
@@ -39,6 +52,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.1"
@@ -104,5 +118,4 @@ dependencies {
 
     // Timber to store logs
     implementation("com.jakewharton.timber:timber:5.0.1")
-
 }

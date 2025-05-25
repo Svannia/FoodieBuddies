@@ -20,6 +20,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -27,6 +28,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +58,10 @@ import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
 
 private const val HEIGHT = 52
 private const val OFFSET = 45
@@ -88,6 +93,15 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
     // variables for bug reporting
     val bugReport = remember { mutableStateOf("") }
     val coroutineScope = rememberCoroutineScope()
+    val userData by userViewModel.userData.collectAsState()
+    val nameState = rememberSaveable { mutableStateOf(userData.username) }
+    LaunchedEffect(Unit) {
+        userViewModel.fetchUserData({
+            if (it) { handleError(context, "Could not fetch user data") }
+        }){
+            nameState.value = userData.username
+        }
+    }
 
     // display the loading screen if some values are changing
     if (loading.value) {
@@ -217,11 +231,14 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                     onConfirm = {
                         if (bugReport.value.isNotEmpty()) {
                             coroutineScope.launch {
-                                val success = TelegramBot.sendMessage("Bug report: ${bugReport.value}")
-                                if (success) {
-                                    Toast.makeText(context, context.getString(R.string.toast_bugReport), Toast.LENGTH_SHORT).show()
-                                } else {
-                                    handleError(context, "Failed to send bug report")
+                                val success = TelegramBot.sendBugReport(nameState.value, bugReport.value, File(context.filesDir, "log.txt"))
+
+                                withContext(Dispatchers.Main) {
+                                    if (success) {
+                                        Toast.makeText(context, context.getString(R.string.toast_bugReport), Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        handleError(context, "Failed to send bug report")
+                                    }
                                 }
                             }
                         }

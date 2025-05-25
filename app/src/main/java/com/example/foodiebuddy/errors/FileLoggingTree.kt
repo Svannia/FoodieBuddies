@@ -23,6 +23,7 @@ class FileLoggingTree(
 
     @SuppressLint("LogNotTimber")
     override fun log(priority: Int, tag: String?, message: String, t: Throwable?) {
+        Log.d(tag, message)
         val logMessage = "[${dateFormat.format(Date())}] ${tag ?: "General"}: $message\n"
         try {
             logFile.appendText(logMessage)

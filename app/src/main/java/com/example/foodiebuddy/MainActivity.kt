@@ -6,8 +6,10 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -56,14 +58,36 @@ class MainActivity : ComponentActivity() {
         auth = FirebaseAuth.getInstance()
         val db = DatabaseConnection()
 
-        val logFile = File(cacheDir, "log.txt")
+        val logFile = File(filesDir, "log.txt")
         Timber.plant(FileLoggingTree(logFile))
-
         Timber.i("---------------- App started ----------------")
 
         setContent {
             val offDataVM: OfflineDataViewModel = viewModel()
             val currentTheme by offDataVM.currentTheme.collectAsState()
+
+            val firebaseAuth = remember { FirebaseAuth.getInstance() }
+            val currentUserState = remember { mutableStateOf(firebaseAuth.currentUser) }
+
+            DisposableEffect(firebaseAuth) {
+                val listener = FirebaseAuth.AuthStateListener { auth ->
+                    currentUserState.value = auth.currentUser
+                }
+                firebaseAuth.addAuthStateListener(listener)
+
+                onDispose {
+                    firebaseAuth.removeAuthStateListener(listener)
+                }
+            }
+
+            val currentUser = currentUserState.value
+            val userID = currentUser?.uid
+
+            val userVM = if (userID != null) {
+                remember(userID) { UserViewModel(userID) }
+            } else {
+                remember { UserViewModel() }
+            }
 
             FoodieBuddyTheme(themeChoice = currentTheme) {
                 Surface(
@@ -75,16 +99,10 @@ class MainActivity : ComponentActivity() {
                     val navController = rememberNavController()
                     val navigationActions = NavigationActions(navController)
 
-                    var userVM: UserViewModel = viewModel()
-
                     NavHost(navController, startDestination) {
                         composable(Route.START) {
-                            val currentUser = remember { auth.currentUser }
                             // if there currently exists an authenticated user ->
                             if (currentUser != null) {
-                                userVM = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 Timber.d("Login", "Logging in with user ${currentUser.uid}")
                                 // check if the user profile exists ->
                                 db.userExists(
@@ -116,22 +134,16 @@ class MainActivity : ComponentActivity() {
 
                         // Composables for account-related routes
                         composable(Route.LOGIN) {
-                            userVM = viewModel()
                             LoginScreen(navigationActions)
                             Timber.d("Compose", "Successfully composed screen Login screen")
                         }
                         composable(Route.CREATE_ACCOUNT) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                userVM = viewModel {
-                                    UserViewModel(currentUser.uid)
-                                }
                                 CreateAccount(userVM, navigationActions)
                                 Timber.d("Compose", "Successfully composed screen Create Account")
                             }
                         }
                         composable(Route.PROFILE) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 Profile(userVM, navigationActions)
                                 Timber.d("Compose", "Successfully composed screen Profile")
@@ -141,24 +153,22 @@ class MainActivity : ComponentActivity() {
                             route = "${Route.PROFILE}/{userID}",
                             arguments = listOf(navArgument("userID") { type = NavType.StringType })) {
                                 backStackEntry ->
-                            val userID =
+                            val thisUserID =
                                 backStackEntry.arguments?.getString("userID")
-                            if (userID != null) {
+                            if (thisUserID != null) {
                                 val userViewModel: UserViewModel = viewModel {
-                                    UserViewModel(userID) }
+                                    UserViewModel(thisUserID) }
                                 Profile(userViewModel, navigationActions)
-                                Timber.d("Compose", "Successfully composed screen Profile of user $userID")
+                                Timber.d("Compose", "Successfully composed screen Profile of user $thisUserID")
                             }
                         }
                         composable(Route.ACCOUNT_SETTINGS) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 AccountEdit(userVM, navigationActions)
                                 Timber.d("Compose", "Successfully composed screen Account Settings")
                             }
                         }
                         composable(Route.BUDDIES) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 Buddies(userVM, navigationActions)
                                 Timber.d("Compose", "Successfully composed screen Buddies")
@@ -168,13 +178,7 @@ class MainActivity : ComponentActivity() {
 
                         // Composables for recipes-related routes
                         composable(Route.RECIPES_HOME) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
-                                if (userVM.getVmUid().isEmpty()) {
-                                    userVM = viewModel {
-                                        UserViewModel(currentUser.uid)
-                                    }
-                                }
                                 RecipesHome(userVM, navigationActions)
                                 Timber.d("Compose", "Successfully composed screen Recipes Home")
                             }
@@ -193,7 +197,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable(Route.RECIPE_CREATE) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null)
                             {
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel() }
@@ -205,7 +208,6 @@ class MainActivity : ComponentActivity() {
                             route = "${Route.RECIPE_EDIT}/{recipeID}",
                             arguments = listOf(navArgument("recipeID") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 val recipeID = backStackEntry.arguments?.getString("recipeID")
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel(recipeID) }
@@ -214,7 +216,6 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                         composable(Route.DRAFTS) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 Drafts(offDataVM, navigationActions)
                                 Timber.tag("Compose").d( "Successfully composed screen Drafts")
@@ -224,7 +225,6 @@ class MainActivity : ComponentActivity() {
                             route = "${Route.EDIT_DRAFT}/{draftID}",
                             arguments = listOf(navArgument("draftID") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 val draftID = backStackEntry.arguments?.getString("draftID")
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel() }
@@ -238,7 +238,6 @@ class MainActivity : ComponentActivity() {
                             route = "${Route.SHOP_RECIPE}/{recipeID}",
                             arguments = listOf(navArgument("recipeID") { type = NavType.StringType })
                         ) { backStackEntry ->
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 val recipeID = backStackEntry.arguments?.getString("recipeID")
                                 val recipeVM: RecipeViewModel = viewModel { RecipeViewModel(recipeID) }
@@ -249,7 +248,6 @@ class MainActivity : ComponentActivity() {
 
                         // Composables for groceries-related routes
                         composable(Route.GROCERIES) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 GroceriesHome(userVM, navigationActions)
                                 Timber.tag("Compose").d( "Successfully composed screen Groceries Home")
@@ -258,7 +256,6 @@ class MainActivity : ComponentActivity() {
 
                         // Composables for fridge-related routes
                         composable(Route.FRIDGE) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 FridgeHome(userVM, navigationActions)
                                 Timber.tag("Compose").d( "Successfully composed screen Groceries Home")
@@ -268,7 +265,6 @@ class MainActivity : ComponentActivity() {
 
                         // Composables for settings and system
                         composable(Route.SETTINGS) {
-                            val currentUser = remember { auth.currentUser }
                             if (currentUser != null) {
                                 Settings(userVM, offDataVM,  navigationActions)
                                 Timber.tag("Compose").d( "Successfully composed screen Settings")
