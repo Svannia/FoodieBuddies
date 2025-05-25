@@ -42,6 +42,7 @@
     <string name="button_save">Save</string>
     <string name="button_saveDraft">Save to drafts</string>
     <string name="button_seeResults">Show results</string>
+    <string name="button_send">Send</string>
     <string name="button_sendBug">Report a bug</string>
     <string name="button_sendToFridge">Send ticked items to Fridge</string>
     <string name="button_shop">Add to Groceries</string>

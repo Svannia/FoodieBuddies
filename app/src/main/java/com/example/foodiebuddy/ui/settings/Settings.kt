@@ -1,5 +1,6 @@
 package com.example.foodiebuddy.ui.settings
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -100,6 +101,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
             if (it) { handleError(context, "Could not fetch user data") }
         }){
             nameState.value = userData.username
+            Log.d("Debug", "username is: ${nameState.value}")
         }
     }
 
@@ -227,13 +229,12 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
             if (reportVisible.value) {
                 InputDialogWindow(
                     visible = reportVisible,
-                    confirmText = stringResource(R.string.button_accept),
+                    confirmText = stringResource(R.string.button_send),
                     confirmColour = ValidGreen,
                     onConfirm = {
                         bugReport.value = bugReport.value.trimEnd()
                         if (bugReport.value.isBlank()) {
-                            Toast.makeText(context,
-                                context.getString(R.string.toast_emptyBugReport), Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, context.getString(R.string.toast_emptyBugReport), Toast.LENGTH_SHORT).show()
                         } else {
                             reportVisible.value = false
                             coroutineScope.launch {
@@ -242,6 +243,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                 withContext(Dispatchers.Main) {
                                     if (success) {
                                         Toast.makeText(context, context.getString(R.string.toast_bugReport), Toast.LENGTH_SHORT).show()
+                                        bugReport.value = ""
                                     } else {
                                         handleError(context, "Failed to send bug report")
                                     }

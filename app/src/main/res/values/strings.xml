@@ -230,4 +230,5 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
+    <string name="button_send">Envoyer</string>
 </resources>

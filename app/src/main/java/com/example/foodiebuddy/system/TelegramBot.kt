@@ -64,7 +64,7 @@ object TelegramBot {
         output.write(
             (twoHyphens + boundary + lineEnd +
                     "Content-Disposition: form-data; name=\"caption\"" + lineEnd +
-                    lineEnd + "From $username:\n$message" + lineEnd).toByteArray()
+                    lineEnd + "From User: $username\nBug description: $message" + lineEnd).toByteArray()
         )
 
         // second part: Telegram bot chatID to be able to send a message
