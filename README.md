@@ -1,5 +1,19 @@
-# FoodieBuddy
-A private Android app for close friends, where we can share everyday food recipes, make shopping lists, ...
+# FoodieBuddies
+A private Android app for close friends, where we can share everyday food recipes, manage ingredients inventory, groceries, and meal prep.
+
+## Features
+- Account creation using a Google account -> user data managed on Firebase Database
+- General settings such as account management, language (EN and FR supported), display mode, ...
+- Viewing all recipes published by other users, with many filters to choose from to narrow down the search (key-words, tags, creator, favourites, ...)
+- Viewing other users' profiles
+- Creating and editing your own recipes
+- Managing your own ingredients inventory, with customizable categories
+- Managing your shopping list: manually add items, batch-add items from a recipe (you can filter out the ones already in your inventory)
+- Transfer bought ingredients from your shopping list to your inventory
+- Meal-prep: set up your week's recipes, plan your groceries accordingly, set-up reminders to shop or cook during the week
+- Add personal, private notes on recipes that aren't yours, if you want to remember to tune something to your preference
+- Convert any recipe into a PDF file for downloading or printing
+
 
 ## Development
 ### Log tags
