@@ -17,7 +17,7 @@ import java.util.Locale
  */
 class FileLoggingTree(
     private val logFile: File,
-    private val maxLines: Int = 2000
+    private val maxLines: Int = 500
 ) : Timber.DebugTree() {
     private val dateFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
 
@@ -32,7 +32,6 @@ class FileLoggingTree(
             Log.e("FileLoggingTree", "Failed to write log", e)
         }
     }
-
 
     private fun truncateIfTooLong() {
         val lines = logFile.readLines()

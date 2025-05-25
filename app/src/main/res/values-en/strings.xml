@@ -171,6 +171,7 @@
     <string name="toast_bugReport">Thank you for reporting the bug!</string>
     <string name="toast_categoryName">This category already exists</string>
     <string name="toast_downloaded">File downloaded! Check your Downloads folder.</string>
+    <string name="toast_emptyBugReport">Please describe the bug to send a report,</string>
     <string name="toast_ingredientExists">This article is already in your groceries list.</string>
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
     <string name="toast_savedDraft">Your draft has been saved.</string>

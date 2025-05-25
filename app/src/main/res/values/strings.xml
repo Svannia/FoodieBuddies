@@ -172,6 +172,7 @@
     <string name="toast_bugReport">Merci d\'avoir signalé ce bug !</string>
     <string name="toast_categoryName">Cette catégorie existe déjà. Sauvegarde d\'abord tes modifications.</string>
     <string name="toast_downloaded">Fichier téléchargé! Check tes Téléchargements.</string>
+    <string name="toast_emptyBugReport">Merci de décrire le bug afin de pouvoir le signaler.</string>
     <string name="toast_ingredientExists">Cet ingrédient existe déjà dans ta liste de courses.</string>
     <string name="toast_internetCo">Une erreur de réseau est survenue. Merci de vérifier ta connexion Internet.</string>
     <string name="toast_savedDraft">Ton brouillon a été enregistré.</string>

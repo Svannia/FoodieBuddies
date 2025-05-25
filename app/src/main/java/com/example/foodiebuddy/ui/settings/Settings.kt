@@ -183,7 +183,8 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(HEIGHT.dp)
-                                .clickable { reportVisible.value = true }
+                                .clickable { reportVisible.value = true },
+                            contentAlignment = Alignment.CenterStart
                         ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_sendBug), style = MyTypography.bodyLarge) }
                     }
                 }
@@ -229,7 +230,12 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                     confirmText = stringResource(R.string.button_accept),
                     confirmColour = ValidGreen,
                     onConfirm = {
-                        if (bugReport.value.isNotEmpty()) {
+                        bugReport.value = bugReport.value.trimEnd()
+                        if (bugReport.value.isBlank()) {
+                            Toast.makeText(context,
+                                context.getString(R.string.toast_emptyBugReport), Toast.LENGTH_SHORT).show()
+                        } else {
+                            reportVisible.value = false
                             coroutineScope.launch {
                                 val success = TelegramBot.sendBugReport(nameState.value, bugReport.value, File(context.filesDir, "log.txt"))
 
@@ -242,8 +248,6 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                 }
                             }
                         }
-                        bugReport.value = bugReport.value.trimEnd()
-                        reportVisible.value = false
                     }
                 ) {
                     // title for Report a bug, input text field and log.txt explanation
