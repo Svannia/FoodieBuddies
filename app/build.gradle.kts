@@ -102,4 +102,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.0")
 
+    // Timber to store logs
+    implementation("com.jakewharton.timber:timber:5.0.1")
+
 }

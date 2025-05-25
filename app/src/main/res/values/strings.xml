@@ -43,6 +43,7 @@
     <string name="button_save">Sauvegarder</string>
     <string name="button_saveDraft">Enregistrer le brouillon</string>
     <string name="button_seeResults">Voir les résulats</string>
+    <string name="button_sendBug">Signaler un bug</string>
     <string name="button_sendToFridge">Envoyer les courses dans le Frigo</string>
     <string name="button_shop">Ajouter aux Courses</string>
     <string name="button_signIn">S\'enregistrer</string>
@@ -91,6 +92,7 @@
     <string name="field_addIngredient">Ajouter un ingrédient</string>
     <string name="field_addItem">Ajouter un article</string>
     <string name="field_bio">Bio</string>
+    <string name="field_bugReport">Merci de décrire le bug et ce qui l\a provoqué.</string>
     <string name="field_ingredientName">Nom de l\'ingrédient</string>
     <string name="field_instructions">Entre tes instructions de cuisine</string>
     <string name="field_keywords">Qu\'est-ce que tu cherches ?</string>
@@ -167,6 +169,7 @@
     <string name="title_tag">Tags</string>
     <string name="title_theme">Thème</string>
 
+    <string name="toast_bugReport">Merci d\'avoir signalé ce bug !</string>
     <string name="toast_categoryName">Cette catégorie existe déjà. Sauvegarde d\'abord tes modifications.</string>
     <string name="toast_downloaded">Fichier téléchargé! Check tes Téléchargements.</string>
     <string name="toast_ingredientExists">Cet ingrédient existe déjà dans ta liste de courses.</string>
@@ -177,11 +180,14 @@
     <string name="txt_addFav">Ajouter aux Favoris</string>
     <string name="txt_allIngredientsOnly">Uniquement si j\'ai les ingrédients</string>
     <string name="txt_category">Catégorie</string>
+    <string name="txt_credits">Créée par %1$s sur %2$s</string>
     <string name="txt_emptyFridge">Ton frigo est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_emptyGroceries">Ta liste de courses est vide.\nAppuie sur le bouton Modification pour ajouter des articles.</string>
     <string name="txt_existingIngredient">\"%1$s\" sous %2$s dans %3$s</string>
     <string name="txt_favouriteOnly">Uniquement recettes préférées</string>
     <string name="txt_for">Pour</string>
+    <string name="txt_includeImage">Inclure l\'image</string>
+    <string name="txt_includeNotes">Inclure les Notes Personnelles</string>
     <string name="txt_me">Moi</string>
     <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>
     <string name="txt_noDrafts">Tu n\'as aucun brouillon sauvegardé pour le moment.</string>
@@ -198,6 +204,7 @@
     <string name="txt_recipeCreator">Créée par %1$s</string>
     <string name="txt_recipeRequirements">Les champs marqués par un astérisque rouge sont obligatoires.</string>
     <string name="txt_removeFav">Dans tes Favoris - Appuie pour la retirer</string>
+    <string name="txt_reportBugNote">Signaler un bug enverra aussi le fichier de logs de cette app, qui est enregistré localement.</string>
     <string name="txt_resetQty">Revenir aux quantités d\'origine</string>
     <string name="txt_systemDark">Sombre</string>
     <string name="txt_systemDefault">Thème par défault du système</string>
@@ -222,7 +229,4 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
-    <string name="txt_credits">Créée par %1$s sur %2$s</string>
-    <string name="txt_includeImage">Inclure l\'image</string>
-    <string name="txt_includeNotes">Inclure les Notes Personnelles</string>
 </resources>

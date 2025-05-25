@@ -1,5 +1,6 @@
 package com.example.foodiebuddy.ui.settings
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -42,7 +43,9 @@ import com.example.foodiebuddy.system.convertTagToName
 import com.example.foodiebuddy.system.getCurrentLocale
 import com.example.foodiebuddy.system.getSupportedLanguages
 import com.example.foodiebuddy.system.setLanguage
+import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.DialogWindow
+import com.example.foodiebuddy.ui.InputDialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.account.deleteAuthentication
@@ -64,6 +67,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
     // visibility of elements that can appear / disappear
     val dialogVisible = remember { mutableStateOf(false) }
     val alertVisible = remember { mutableStateOf(false) }
+    val reportVisible = remember { mutableStateOf(false) }
     val loading = remember { mutableStateOf(false) }
 
     // variables to handle theme settings
@@ -78,6 +82,8 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
     val languageChoice = convertTagToName(getCurrentLocale(context))
     val languageChoiceState = remember { mutableStateOf(languageChoice) }
 
+    // variables for bug reporting
+    val bugReport = remember { mutableStateOf("") }
 
     // display the loading screen if some values are changing
     if (loading.value) {
@@ -146,6 +152,7 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                 // settings category for About information
                 item{
                     SettingCategory(stringResource(R.string.title_about)) {
+                        // Button to view the terms and conditions
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -153,6 +160,13 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                 .clickable { dialogVisible.value = true },
                             contentAlignment = Alignment.CenterStart
                         ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_terms), style = MyTypography.bodyLarge) }
+                        // button to open a dialog for sending bug information
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(HEIGHT.dp)
+                                .clickable { reportVisible.value = true }
+                        ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_sendBug), style = MyTypography.bodyLarge) }
                     }
                 }
             }
@@ -163,32 +177,66 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                     stringResource(R.string.alert_deleteAccount),
                     stringResource(R.string.button_delete),
                     Color.Red
-                )
-                    {
-                        loading.value = true
-                        userViewModel.deleteUser({
-                            if (it) {
-                                handleError(context, "Could not delete user data")
-                                loading.value = false
-                            }
-                        }) {
-                            signOut(context)
-                            deleteAuthentication(context)
-                            alertVisible.value = false
+                ) {
+                    loading.value = true
+                    userViewModel.deleteUser({
+                        if (it) {
+                            handleError(context, "Could not delete user data")
                             loading.value = false
-                            navigationActions.navigateTo(Route.LOGIN, true)
                         }
+                    }) {
+                        signOut(context)
+                        deleteAuthentication(context)
+                        alertVisible.value = false
+                        loading.value = false
+                        navigationActions.navigateTo(Route.LOGIN, true)
                     }
+                }
             }
             // terms and conditions dialog window
             if (dialogVisible.value) {
                 DialogWindow(
                     dialogVisible,
                     stringResource(R.string.alert_termsConditions),
-                    stringResource(R.string.button_accept) ,
+                    stringResource(R.string.button_accept),
                     ValidGreen
                 ) {
                     dialogVisible.value = false
+                }
+            }
+            // report a bug dialog window
+            if (reportVisible.value) {
+                InputDialogWindow(
+                    visible = reportVisible,
+                    confirmText = stringResource(R.string.button_accept),
+                    confirmColour = ValidGreen,
+                    onConfirm = {
+                        bugReport.value = bugReport.value.trimEnd()
+                        reportVisible.value = false
+                        if (bugReport.value.isNotEmpty()) {
+                            // todo: send bug report -> send bug description input by user and log.txt file
+                            Toast.makeText(context, context.getString(R.string.toast_bugReport), Toast.LENGTH_SHORT).show()}
+                    }
+                ) {
+                    // title for Report a bug, input text field and log.txt explanation
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(text = context.getString(R.string.button_sendBug), style = MyTypography.titleSmall)
+                        CustomTextField(
+                            value = bugReport.value,
+                            onValueChange = { bugReport.value = it },
+                            icon = -1,
+                            placeHolder = stringResource(R.string.field_bugReport),
+                            singleLine = false,
+                            maxLength = 700,
+                            showMaxChara = false,
+                            width = 250.dp,
+                            height = 350.dp
+                        )
+                        Text(text = stringResource(R.string.txt_reportBugNote), style = MyTypography.bodyMedium)
+                    }
                 }
             }
         }

@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.foodiebuddy.ui.account.LoginScreen
 import com.example.foodiebuddy.database.DatabaseConnection
+import com.example.foodiebuddy.errors.FileLoggingTree
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
@@ -43,6 +44,8 @@ import com.example.foodiebuddy.viewModels.OfflineDataViewModel
 import com.example.foodiebuddy.viewModels.RecipeViewModel
 import com.example.foodiebuddy.viewModels.UserViewModel
 import com.google.firebase.auth.FirebaseAuth
+import timber.log.Timber
+import java.io.File
 
 class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
@@ -53,6 +56,11 @@ class MainActivity : ComponentActivity() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         auth = FirebaseAuth.getInstance()
         val db = DatabaseConnection()
+
+        val logFile = File(cacheDir, "log.txt")
+        Timber.plant(FileLoggingTree(logFile))
+
+        Timber.i("---------------- App started ----------------")
 
         setContent {
             val offDataVM: OfflineDataViewModel = viewModel()

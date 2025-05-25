@@ -42,6 +42,7 @@
     <string name="button_save">Save</string>
     <string name="button_saveDraft">Save to drafts</string>
     <string name="button_seeResults">Show results</string>
+    <string name="button_sendBug">Report a bug</string>
     <string name="button_sendToFridge">Send ticked items to Fridge</string>
     <string name="button_shop">Add to Groceries</string>
     <string name="button_signIn">Log in</string>
@@ -90,6 +91,7 @@
     <string name="field_addIngredient">Add an ingredient</string>
     <string name="field_addItem">Add an item</string>
     <string name="field_bio">Bio</string>
+    <string name="field_bugReport">Please describe what the bug is and what led to it.</string>
     <string name="field_ingredientName">Ingredient name</string>
     <string name="field_instructions">Enter your cooking instructions</string>
     <string name="field_keywords">What are you searching for?</string>
@@ -166,6 +168,7 @@
     <string name="title_tag">Tags</string>
     <string name="title_theme">Theme</string>
 
+    <string name="toast_bugReport">Thank you for reporting the bug!</string>
     <string name="toast_categoryName">This category already exists</string>
     <string name="toast_downloaded">File downloaded! Check your Downloads folder.</string>
     <string name="toast_ingredientExists">This article is already in your groceries list.</string>
@@ -176,11 +179,14 @@
     <string name="txt_addFav">Add to Favourites</string>
     <string name="txt_allIngredientsOnly">Only if I have the ingredients</string>
     <string name="txt_category">Category</string>
+    <string name="txt_credits">Created by %1$s on %2$s</string>
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
     <string name="txt_favouriteOnly">Only favourite recipes</string>
     <string name="txt_for">For</string>
+    <string name="txt_includeImage">Include the image</string>
+    <string name="txt_includeNotes">Include the Personal Notes</string>
     <string name="txt_me">Me</string>
     <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
     <string name="txt_noDrafts">You don\'t have any saved draft for now.</string>
@@ -192,10 +198,12 @@
     <string name="txt_person">person</string>
     <string name="txt_piece">piece</string>
     <string name="txt_pieces">pieces</string>
+    <string name="txt_quantitiesFor">Quantities for %1$s %2$s</string>
     <string name="txt_quantity">Quantity</string>
     <string name="txt_recipeCreator">Created by %1$s</string>
     <string name="txt_recipeRequirements">Fields marked with a red asterisk are mandatory.</string>
     <string name="txt_removeFav">In Favourites - Tap to remove</string>
+    <string name="txt_reportBugNote">Reporting a bug will also send this app\'s log files that it locally saved on your phone.</string>
     <string name="txt_resetQty">Reset the original quantities</string>
     <string name="txt_systemDark">Dark</string>
     <string name="txt_systemDefault">System default</string>
@@ -220,8 +228,4 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="txt_quantitiesFor">Quantities for %1$s %2$s</string>
-    <string name="txt_credits">Created by %1$s on %2$s</string>
-    <string name="txt_includeImage">Include the image</string>
-    <string name="txt_includeNotes">Include the Personal Notes</string>
 </resources>
