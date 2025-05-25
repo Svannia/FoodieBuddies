@@ -1,6 +1,7 @@
 package com.example.foodiebuddy.database
 
 import android.net.Uri
+import android.util.Log
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Measure
 import com.example.foodiebuddy.data.Origin
@@ -37,6 +38,7 @@ private const val CATEGORY = "category"
 private const val IS_TICKED = "isTicked"
 
 private const val NAME = "name"
+private const val PICTURES = "pictures"
 private const val INSTRUCTIONS = "instructions"
 private const val INGREDIENTS = "ingredients"
 private const val QUANTITY = "quantity"
@@ -1380,7 +1382,7 @@ class DatabaseConnection {
      *
      * @param userID UID of the user who created the recipe
      * @param name title of the recipe
-     * @param picture picture of the recipe (empty URI if there is no picture)
+     * @param pictures pictures of the recipe (can be an empty list
      * @param instructions list of strings where each element represents a step of the cooking instructions
      * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
      * @param portion number that indicates for how many servings this recipe is designed
@@ -1394,7 +1396,7 @@ class DatabaseConnection {
     fun createRecipe(
         userID: String,
         name: String,
-        picture: Uri,
+        pictures: List<Uri>,
         instructions: List<String>,
         ingredients: List<RecipeIngredient>,
         portion: Int,
@@ -1408,7 +1410,7 @@ class DatabaseConnection {
         val recipe = hashMapOf(
             OWNER to userID,
             NAME to name,
-            PICTURE to "",
+            PICTURES to emptyList<String>(),
             INSTRUCTIONS to instructions,
             INGREDIENTS to ingredients.map { ingredient ->
                 mapOf(
@@ -1436,9 +1438,9 @@ class DatabaseConnection {
                     .update(NUMBER_RECIPES, FieldValue.increment(1))
                     .addOnSuccessListener {
                         Timber.tag("MyDB").d( "Successfully incremented recipes counter")
-                        // add recipe picture to storage if not Uri.EMPTY
-                        if (picture != Uri.EMPTY) {
-                            updateRecipePicture(userID, document.id, picture, { isError(it) }) {
+                        // add recipe picture to storage if pictures list is not empty
+                        if (pictures.isNotEmpty()) {
+                            updateRecipePictures(userID, document.id, pictures, { isError(it) }) {
                                 isError(false)
                                 callBack(document.id)
                                 Timber.tag("MyDB").d( "Successfully finished recipe creation process")
@@ -1477,8 +1479,7 @@ class DatabaseConnection {
         return if (document.exists()) {
             val owner = document.getString(OWNER) ?: ""
             val name = document.getString(NAME) ?: ""
-            val rawPicture = document.getString(PICTURE) ?: ""
-            val picture = if (rawPicture.isBlank()) Uri.EMPTY else Uri.parse(rawPicture)
+            val pictures = (document.get(PICTURES) as? List<String>)?.map { Uri.parse(it) } ?: emptyList()
             val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
             val formattedInstructions = mutableListOf<String>()
             instructions.forEach {
@@ -1501,7 +1502,7 @@ class DatabaseConnection {
             val tags = tagsList.map { Tag.valueOf(it) }
             val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
             isError(false)
-            Recipe(document.id, owner, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
+            Recipe(document.id, owner, name, pictures, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
         } else {
             isError(true)
             Timber.tag("MyDB").d( "Failed to fetch recipe data")
@@ -1522,8 +1523,7 @@ class DatabaseConnection {
                 .map { document ->
                     val owner = document.getString(OWNER) ?: ""
                     val name = document.getString(NAME) ?: ""
-                    val rawPicture = document.getString(PICTURE) ?: ""
-                    val picture = if (rawPicture.isBlank()) Uri.EMPTY else Uri.parse(rawPicture)
+                    val pictures = (document.get(PICTURES) as? List<String>)?.map { Uri.parse(it) } ?: emptyList()
                     val instructions = document.get(INSTRUCTIONS) as? List<String> ?: emptyList()
                     val formattedInstructions = mutableListOf<String>()
                     instructions.forEach {
@@ -1546,7 +1546,7 @@ class DatabaseConnection {
                     val tags = tagsList.map { Tag.valueOf(it) }
                     val favouriteOf = document.get(FAVOURITE) as? List<String> ?: emptyList()
                     isError(false)
-                    Recipe(document.id, owner, name, picture, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
+                    Recipe(document.id, owner, name, pictures, formattedInstructions, ingredients, portion, perPerson, origin, diet, tags, favouriteOf)
                 }
         } catch (e: Exception) {
             isError(true)
@@ -1561,7 +1561,7 @@ class DatabaseConnection {
      * @param userID ID of the owner of the recipe
      * @param recipeID ID of the recipe to update
      * @param name title of the recipe
-     * @param picture picture of the recipe (empty URI if there is no picture)
+     * @param pictures pictures of the recipe (can be empty)
      * @param updatePicture whether or not the Storage picture should be updated
      * @param removePicture whether or not the Storage picture should be deleted
      * @param instructions list of strings where each element represents a step of the cooking instructions
@@ -1578,7 +1578,7 @@ class DatabaseConnection {
         userID: String,
         recipeID: String,
         name: String,
-        picture: Uri,
+        pictures: List<Uri>,
         updatePicture: Boolean,
         removePicture: Boolean,
         instructions: List<String>,
@@ -1620,7 +1620,7 @@ class DatabaseConnection {
                         Timber.tag("MyDB").d( "Successfully updated recipe with removed picture")
                     }
                 } else if (updatePicture) {
-                    updateRecipePicture(userID, recipeID, picture, { isError(it) }) {
+                    updateRecipePictures(userID, recipeID, pictures, { isError(it) }) {
                         callBack()
                         Timber.tag("MyDB").d( "Successfully updated recipe with new picture")
                     }
@@ -2026,7 +2026,7 @@ class DatabaseConnection {
      * @param recipeID ID of the recipe to access
      * @return path in Storage
      */
-    private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID/recipePicture.jpg"
+    private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID"
 
     /**
      * Retrieves the data path in Storage to access a recipe's data.
@@ -2041,43 +2041,64 @@ class DatabaseConnection {
      *
      * @param userID ID of the user who is allowed to modify this recipe's picture (its creator)
      * @param recipeID ID of the recipe to access
-     * @param picture URI of the new picture
+     * @param pictures list of URIs of the new pictures
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after DB was updated
      */
-    private fun updateRecipePicture(userID: String, recipeID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        val pictureRef = storage.child(recipePicturePath(userID, recipeID))
-        // update or add new picture to storage
-        pictureRef
-            .putFile(picture)
-            .addOnSuccessListener {
-                // fetch picture URL
-                pictureRef.downloadUrl
-                    .addOnSuccessListener { uri ->
-                        // add new Uri to recipes collection
-                        recipesCollection.document(recipeID).update(PICTURE, uri.toString())
-                            .addOnSuccessListener {
-                                isError(false)
-                                callBack()
-                                Timber.tag("MyDB").d( "Successfully updated recipe picture")
+    private fun updateRecipePictures(userID: String, recipeID: String, pictures: List<Uri>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+        val recipePicsFolder = storage.child(recipePicturePath(userID, recipeID))
+
+        Log.d("Debug", "updating ${pictures.size} recipe pictures")
+        val uploadedUrls = MutableList(pictures.size) {Uri.EMPTY}
+        var remaining = pictures.size
+        var errorOccurred = false
+
+        pictures.forEachIndexed { index, pictureUri ->
+            val pictureRef = recipePicsFolder.child("image_$index")
+
+            // update or add new picture to storage
+            pictureRef
+                .putFile(pictureUri)
+                .addOnSuccessListener {
+                    // fetch picture URL
+                    pictureRef.downloadUrl
+                        .addOnSuccessListener { uri ->
+                            uploadedUrls[index] = uri
+                            remaining--
+                            Log.d("Debug", "${uploadedUrls.size} pictures uploaded, $remaining left")
+                            if (remaining <= 0 && !errorOccurred) {
+                                recipesCollection
+                                    .document(recipeID)
+                                    .update(PICTURES, uploadedUrls)
+                                    .addOnSuccessListener {
+                                        isError(false)
+                                        callBack()
+                                        Timber.tag("MyDB").d("Successfully updated all recipe pictures to storage")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        isError(true)
+                                        Timber.tag("MyDB").d("Failed to update recipe pictures with error $e")
+                                    }
                             }
-                            .addOnFailureListener { e ->
+                        }
+                        .addOnFailureListener { e ->
+                            if (!errorOccurred) {
+                                errorOccurred = true
                                 isError(true)
-                                Timber.tag("MyDB").d( "Failed to update recipe picture with error $e")
+                                Timber.tag("MyDB").d("Failed to download some recipe picture URI with error $e")
                             }
-                    }
-                    .addOnFailureListener { e ->
-                        isError(true)
-                        Timber.tag("MyDB").d( "Failed to download picture URI with error $e")
-                    }
-            }
-            .addOnFailureListener { e ->
-                val errorCode = (e as? StorageException)?.errorCode
-                val httpErrorCode = (e as? StorageException)?.httpResultCode
-                isError(true)
-                Timber.tag("MyDB").d("Failed to update user profile picture with error \n %s errorCode is %d \nand http status is %d",
-                    e.toString(), errorCode, httpErrorCode)
-            }
+                            remaining--
+                        }
+                }
+                .addOnFailureListener { e ->
+                    val errorCode = (e as? StorageException)?.errorCode
+                    val httpErrorCode = (e as? StorageException)?.httpResultCode
+                    isError(true)
+                    Timber.tag("MyDB").d("Failed to update user profile picture with error \n %s errorCode is %d \nand http status is %d",
+                        e.toString(), errorCode, httpErrorCode)
+                }
+        }
+
     }
 
     /**

@@ -36,7 +36,6 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     val context = LocalContext.current
     val editingPicture = remember { mutableStateOf(false) }
     val dataEdited = remember { mutableStateOf(false) }
-    val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
 
     val userID = userVM.getCurrentUserID()
@@ -46,8 +45,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     }
 
     val nameState = remember { mutableStateOf("") }
-    val currentPicture = remember { mutableStateOf(Uri.EMPTY) }
-    val pictureState = remember { mutableStateOf(Uri.EMPTY) }
+    val currentPictures = remember { mutableStateListOf(Uri.EMPTY) }
+    val picturesState = remember { mutableStateListOf(Uri.EMPTY) }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
     val portionState = remember { mutableIntStateOf(1) }
@@ -59,9 +58,11 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     LaunchedEffect(Unit) {
         draft.value = drafts.find { it.id == draftID } ?: RecipeDraft.empty()
         nameState.value = draft.value.name
-        val picture = if (draft.value.picture.isEmpty()) Uri.EMPTY else draft.value.picture.toUri()
-        currentPicture.value = picture
-        pictureState.value = picture
+        val pictures = if (draft.value.pictures.isEmpty()) emptyList() else draft.value.pictures.map { it.toUri() }
+        currentPictures.clear()
+        currentPictures.addAll(pictures)
+        picturesState.clear()
+        picturesState.addAll(pictures)
         instructionsState.clear()
         instructionsState.addAll(draft.value.instructions)
         ingredientsState.clear()
@@ -83,20 +84,23 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
 
     if (editingPicture.value) {
         SetRecipePicture(
-            picture = pictureState.value,
+            picture = picturesState[picturesState.size-1],
             onCancel = {
                 editingPicture.value = false
-                pictureState.value = currentPicture.value
+                picturesState.clear()
+                picturesState.addAll(currentPictures)
             },
             onSave = { uri ->
-                pictureState.value = uri
-                currentPicture.value = uri
+                picturesState[picturesState.size-1] = uri
+                currentPictures.clear()
+                currentPictures.addAll(picturesState)
                 editingPicture.value = false
                 dataEdited.value = true
             })
         BackHandler {
             editingPicture.value = false
-            pictureState.value = currentPicture.value
+            picturesState.clear()
+            picturesState.addAll(currentPictures)
         }
     } else {
         EditRecipe(
@@ -107,7 +111,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             },
             title = stringResource(R.string.title_editDraft),
             name = nameState,
-            picture = pictureState,
+            pictures = picturesState,
             instructions = instructionsState,
             ingredients = ingredientsState,
             portion = portionState,
@@ -115,19 +119,18 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             origin = originState,
             diet = dietState,
             tags = tagsState,
-            showPictureOptions = showPictureOptions,
             dataEdited = dataEdited,
             onEditPicture = { editingPicture.value = true },
-            onRemovePicture = {
-                pictureState.value = Uri.EMPTY
-                currentPicture.value = Uri.EMPTY
+            onRemovePicture = { index ->
+                picturesState.removeAt(index)
+                currentPictures.removeAt(index)
                 dataEdited.value = true
             },
             onDraftSave = {
                 val newDraft = RecipeDraft(
                     id = draftID,
                     name = nameState.value,
-                    picture = if (pictureState == Uri.EMPTY) "" else pictureState.value.toString(),
+                    pictures = if (picturesState.isEmpty()) emptyList() else picturesState.map { it.toString() },
                     instructions = instructionsState.toList(),
                     ingredients = ingredientsState.map { ingredient ->
                         mapOf(
@@ -151,7 +154,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             },
             onSave = {
                 recipeVM.createRecipe(
-                    userID, nameState.value, pictureState.value,
+                    userID, nameState.value, picturesState,
                     instructionsState, ingredientsState,
                     portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,

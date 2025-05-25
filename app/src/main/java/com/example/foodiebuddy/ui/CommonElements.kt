@@ -12,6 +12,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -353,6 +354,33 @@ fun SquareImage(size: Dp, picture: Uri, contentDescription: String) {
             painter = rememberAsyncImagePainter(picture),
             contentDescription = contentDescription,
             contentScale = ContentScale.FillBounds
+        )
+    }
+}
+
+@Composable
+fun IconSquareImage(icon: Int, iconSize: Dp, iconColor: Color, pictureSize: Dp, picture: Uri, contentDescription: String, onIconClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .size(pictureSize)
+            .clip(RectangleShape)
+            .background(Color.Transparent)
+    ) {
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = rememberAsyncImagePainter(picture),
+            contentDescription = contentDescription,
+            contentScale = ContentScale.FillBounds
+        )
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = stringResource(R.string.desc_imageIcon),
+            modifier = Modifier
+                .size(iconSize)
+                .align(Alignment.TopEnd)
+                .clickable { onIconClick() }
+                .padding(4.dp),
+            tint = iconColor
         )
     }
 }

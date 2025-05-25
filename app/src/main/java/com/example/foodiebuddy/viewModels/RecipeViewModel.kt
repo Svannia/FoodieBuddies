@@ -54,7 +54,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
     fun createRecipe(
         userID: String,
         name: String,
-        picture: Uri,
+        pictures: List<Uri>,
         instructions: List<String>,
         ingredients: List<RecipeIngredient>,
         portion: Int,
@@ -67,7 +67,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
     ) {
         val filteredInstructions = instructions.toMutableList()
         processListData(ingredients, filteredInstructions)
-        db.createRecipe(userID, name, picture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
+        db.createRecipe(userID, name, pictures, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
             callBack(it)
         }
     }
@@ -129,7 +129,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
      */
     fun updateRecipe(
         name: String,
-        picture: Uri,
+        pictures: List<Uri>,
         updatePicture: Boolean,
         removePicture: Boolean,
         instructions: List<String>,
@@ -145,7 +145,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         if (recipeID != null) {
             val filteredInstructions = instructions.toMutableList()
             processListData(ingredients, filteredInstructions)
-            db.updateRecipe(recipeData.value.owner, recipeID, name, picture, updatePicture, removePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
+            db.updateRecipe(recipeData.value.owner, recipeID, name, pictures, updatePicture, removePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
             {
                 fetchRecipeData({ isError(it) }) { callBack() }
             }

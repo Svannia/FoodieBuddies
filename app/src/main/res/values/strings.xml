@@ -150,7 +150,7 @@
     <string name="title_editDraft">Modifie ton Brouillon</string>
     <string name="title_editRecipe">Modifie ta recette</string>
     <string name="title_filters">Filtres</string>
-    <string name="title_foodPic">Photo du plat</string>
+    <string name="title_foodPic">Photos de la recette</string>
     <string name="title_fridge">Mon Frigo</string>
     <string name="title_groceries">Liste de courses</string>
     <string name="title_ingredients">Ingrédients</string>
@@ -231,4 +231,5 @@
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
     <string name="button_send">Envoyer</string>
+    <string name="desc_imageIcon">icone du bouton sur image</string>
 </resources>

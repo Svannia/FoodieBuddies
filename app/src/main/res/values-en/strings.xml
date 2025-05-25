@@ -65,6 +65,7 @@
     <string name="desc_goBack">go back</string>
     <string name="desc_googleLogo">google logo</string>
     <string name="desc_help">help button</string>
+    <string name="desc_imageIcon">image button icon</string>
     <string name="desc_loading">loading</string>
     <string name="desc_profilePic">profile picture</string>
     <string name="desc_recipePicture">recipe picture</string>
@@ -150,7 +151,7 @@
     <string name="title_editDraft">Edit your Draft</string>
     <string name="title_editRecipe">Edit your recipe</string>
     <string name="title_filters">Filters</string>
-    <string name="title_foodPic">Picture of the food</string>
+    <string name="title_foodPic">Pictures of the food</string>
     <string name="title_fridge">My Fridge</string>
     <string name="title_groceries">Groceries list</string>
     <string name="title_ingredients">Ingredients</string>

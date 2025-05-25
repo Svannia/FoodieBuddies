@@ -104,6 +104,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val downloadNotes = remember { mutableStateOf(false) }
     val showDownload = remember { mutableStateOf(false) }
 
+    // todo: view all images
+
     LaunchedEffect(Unit) {
         loadingData.value = true
         recipeVM.fetchRecipeData({
@@ -116,7 +118,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             if (recipe != Recipe.empty()) {
                 ownerID.value = recipe.owner
                 name.value = recipe.name
-                picture.value = recipe.picture
+                picture.value = if (recipeData.pictures.isEmpty()) Uri.EMPTY else recipeData.pictures[0]
                 instructions.clear()
                 instructions.addAll(recipe.instructions)
                 ingredients.clear()
@@ -159,7 +161,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
         if (recipeData != Recipe.empty()) {
             ownerID.value = recipeData.owner
             name.value = recipeData.name
-            picture.value = recipeData.picture
+            picture.value = if (recipeData.pictures.isEmpty()) Uri.EMPTY else recipeData.pictures[0]
             instructions.clear()
             instructions.addAll(recipeData.instructions)
             ingredients.clear()

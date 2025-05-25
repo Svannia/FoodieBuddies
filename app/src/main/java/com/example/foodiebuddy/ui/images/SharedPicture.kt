@@ -303,7 +303,7 @@ private fun cropImage(context: Context, picture: Uri, imageWidth: Float, imageHe
  * @return Uri of the new picture
  */
 private fun saveBitmapToFile(context: Context, bitmap: Bitmap): Uri? {
-    val file = File(context.cacheDir, "cropped_profile_picture.jpg")
+    val file = File(context.cacheDir, "cropped_image_${System.currentTimeMillis()}.jpg")
     return try {
         val outputStream = FileOutputStream(file)
         bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)

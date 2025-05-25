@@ -34,15 +34,14 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
     val dataEdited = remember { mutableStateOf(false) }
     val pictureEdited = remember { mutableStateOf(false) }
     val pictureRemoved = remember { mutableStateOf(false) }
-    val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
     val showDeleteAlert = remember { mutableStateOf(false) }
 
     val recipeData by recipeVM.recipeData.collectAsState()
 
     val nameState = remember { mutableStateOf("") }
-    val currentPicture = remember { mutableStateOf(Uri.EMPTY) }
-    val pictureState = remember { mutableStateOf(Uri.EMPTY) }
+    val currentPictures = remember { mutableStateListOf<Uri>() }
+    val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
     val portionState = remember { mutableIntStateOf(1) }
@@ -61,8 +60,10 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
         }) {
             if (recipeData != Recipe.empty()) {
                 nameState.value = recipeData.name
-                currentPicture.value = recipeData.picture
-                pictureState.value = recipeData.picture
+                currentPictures.clear()
+                currentPictures.addAll(recipeData.pictures)
+                picturesState.clear()
+                picturesState.addAll(recipeData.pictures)
                 instructionsState.clear()
                 instructionsState.addAll(recipeData.instructions)
                 ingredientsState.clear()
@@ -80,8 +81,10 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
     LaunchedEffect(recipeData) {
         if (recipeData != Recipe.empty()) {
             nameState.value = recipeData.name
-            currentPicture.value = recipeData.picture
-            pictureState.value = recipeData.picture
+            currentPictures.clear()
+            currentPictures.addAll(recipeData.pictures)
+            picturesState.clear()
+            picturesState.addAll(recipeData.pictures)
             instructionsState.clear()
             instructionsState.addAll(recipeData.instructions)
             ingredientsState.clear()
@@ -100,21 +103,24 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
         if (editingPicture.value) {
             // screen to edit a picture for the recipe
             SetRecipePicture(
-                picture = pictureState.value,
+                picture = picturesState[picturesState.lastIndex],
                 onCancel = {
                     editingPicture.value = false
-                    pictureState.value = currentPicture.value
+                    picturesState.clear()
+                    picturesState.addAll(currentPictures)
                 },
                 onSave = { uri ->
-                    pictureState.value = uri
-                    currentPicture.value = uri
+                    picturesState[picturesState.size-1] = uri
+                    currentPictures.clear()
+                    currentPictures.addAll(picturesState)
                     editingPicture.value = false
                     dataEdited.value = true
                     pictureEdited.value = true
                 })
             BackHandler {
                 editingPicture.value = false
-                pictureState.value = currentPicture.value
+                picturesState.clear()
+                picturesState.addAll(currentPictures)
             }
         } else {
             EditRecipe(
@@ -125,7 +131,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 },
                 title = stringResource(R.string.title_editRecipe),
                 name = nameState,
-                picture = pictureState,
+                pictures = picturesState,
                 instructions = instructionsState,
                 ingredients = ingredientsState,
                 portion = portionState,
@@ -133,13 +139,13 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 origin = originState,
                 diet = dietState,
                 tags = tagsState,
-                showPictureOptions = showPictureOptions,
                 dataEdited = dataEdited,
                 editingExistingRecipe = true,
                 onEditPicture = { editingPicture.value = true },
-                onRemovePicture = {
-                    pictureState.value = Uri.EMPTY
-                    currentPicture.value = Uri.EMPTY
+                onRemovePicture = { index ->
+                    picturesState.removeAt(index)
+                    currentPictures.removeAt(index)
+                    dataEdited.value = true
                     pictureEdited.value = false
                     pictureRemoved.value = true
                 },
@@ -149,7 +155,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                     loadingData.value = true
                     recipeVM.updateRecipe(
                         nameState.value,
-                        pictureState.value,
+                        picturesState,
                         pictureEdited.value,
                         pictureRemoved.value,
                         instructionsState,

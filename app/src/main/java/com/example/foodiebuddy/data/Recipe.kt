@@ -22,7 +22,7 @@ data class Recipe(
     val uid: String,
     val owner: String,
     val name: String,
-    val picture: Uri,
+    val pictures: List<Uri>,
     val instructions: List<String>,
     val ingredients: List<RecipeIngredient>,
     val portion: Int,
@@ -40,7 +40,7 @@ data class Recipe(
          * @return empty Recipe data object.
          */
         fun empty(): Recipe {
-            return Recipe("", "", "", Uri.EMPTY, listOf(""), emptyList(), 1, true,  Origin.NONE, Diet.NONE, emptyList(), emptyList())
+            return Recipe("", "", "", emptyList(), listOf(""), emptyList(), 1, true,  Origin.NONE, Diet.NONE, emptyList(), emptyList())
         }
     }
     /**
@@ -58,7 +58,7 @@ data class Recipe(
  *
  * @property id uid of the draft
  * @property name title of the recipe
- * @property picture optional picture of the recipe
+ * @property pictures optional list of pictures of the recipe
  * @property instructions list of strings where each element represents a step of the cooking instructions
  * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
  * @property origin origin tag from Origin enum
@@ -68,7 +68,7 @@ data class Recipe(
 data class RecipeDraft(
     val id: String,
     val name: String,
-    val picture: String,
+    val pictures: List<String>,
     val instructions: List<String>,
     val ingredients: List<Map<String, String>>,
     val portion: Int,
@@ -84,7 +84,7 @@ data class RecipeDraft(
          * @return empty RecipeDraft data object.
          */
         fun empty(): RecipeDraft {
-            return RecipeDraft("", "", "", listOf(""), emptyList(), 1, true, Origin.NONE, Diet.NONE, emptyList())
+            return RecipeDraft("", "", emptyList(), listOf(""), emptyList(), 1, true, Origin.NONE, Diet.NONE, emptyList())
         }
     }
 }

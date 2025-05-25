@@ -84,9 +84,8 @@ import com.example.foodiebuddy.system.checkPermission
 import com.example.foodiebuddy.system.imagePermissionVersion
 import com.example.foodiebuddy.ui.CustomNumberField
 import com.example.foodiebuddy.ui.CustomTextField
+import com.example.foodiebuddy.ui.IconSquareImage
 import com.example.foodiebuddy.ui.OptionsMenu
-import com.example.foodiebuddy.ui.SquareImage
-import com.example.foodiebuddy.ui.account.PictureOptions
 import com.example.foodiebuddy.ui.images.SetPicture
 import com.example.foodiebuddy.ui.theme.MyTypography
 
@@ -97,7 +96,7 @@ import com.example.foodiebuddy.ui.theme.MyTypography
  * @param onGoBack block that runs when pressing the Back button
  * @param title tile at the top of the screen
  * @param name editable name of the recipe
- * @param picture editable recipe picture
+ * @param pictures editable list of recipe pictures
  * @param instructions editable list of instruction steps
  * @param ingredients editable list of RecipeIngredient objects
  * @param portion editable number of portions this recipe serves
@@ -105,7 +104,6 @@ import com.example.foodiebuddy.ui.theme.MyTypography
  * @param origin editable Origin tag
  * @param diet editable Diet tag
  * @param tags editable list of miscellaneous Tag objects
- * @param showPictureOptions whether or not to show the various picture options
  * @param dataEdited optional, stores whether or not any data was edited
  * @param editingExistingRecipe if true, the Save button will stay disabled if no recipe data was edited and there will be a Delete button
  * @param onEditPicture block that runs when pressing the prompt to edit a new picture
@@ -120,7 +118,7 @@ fun EditRecipe(
     onGoBack: () -> Unit,
     title: String,
     name: MutableState<String>,
-    picture: MutableState<Uri>,
+    pictures: SnapshotStateList<Uri>,
     instructions: SnapshotStateList<String>,
     ingredients: SnapshotStateList<RecipeIngredient>,
     portion: MutableIntState,
@@ -128,11 +126,10 @@ fun EditRecipe(
     origin: MutableState<Origin>,
     diet: MutableState<Diet>,
     tags: SnapshotStateList<Tag>,
-    showPictureOptions: MutableState<Boolean>,
     dataEdited: MutableState<Boolean>?= null,
     editingExistingRecipe: Boolean = false,
     onEditPicture: () -> Unit,
-    onRemovePicture: () -> Unit,
+    onRemovePicture: (Int) -> Unit,
     onDraftSave: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit = {}
@@ -141,7 +138,7 @@ fun EditRecipe(
     val imageInput = "image/*"
     val getPicture = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { pictureUri ->
-            picture.value = pictureUri
+            pictures.add(pictureUri)
             onEditPicture()
         }
     }
@@ -222,7 +219,41 @@ fun EditRecipe(
             item {
                 Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text(text = stringResource(R.string.title_foodPic), style = MyTypography.titleSmall)
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    LazyRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp),
+                        horizontalArrangement =  Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        itemsIndexed(pictures, key = {_, uri -> uri.toString()}) { index, picture ->
+                            IconSquareImage(
+                                icon = R.drawable.bin,
+                                iconSize = 16.dp,
+                                iconColor = Color.Red,
+                                pictureSize = 120.dp,
+                                picture = picture,
+                                contentDescription = stringResource(R.string.desc_recipePicture)
+                            ) {
+                                onRemovePicture(index)
+                            }
+                        }
+                        item {
+                            Icon(
+                                painter = painterResource(R.drawable.plus),
+                                contentDescription = stringResource(R.string.desc_add),
+                                modifier = Modifier
+                                    .size(32.dp)
+                                    .clickable {
+                                        checkPermission(context, imagePermission, requestMediaPermissionLauncher)
+                                        { getPicture.launch(imageInput) }
+                                    }
+                            )
+                        }
+                    }
+
+
+                   /* Row(verticalAlignment = Alignment.CenterVertically) {
                         if (picture.value != Uri.EMPTY) {
                             SquareImage(
                                 size = 68.dp,
@@ -233,7 +264,7 @@ fun EditRecipe(
                         }
                         Text(
                             modifier = Modifier.clickable {
-                                if (picture.value != Uri.EMPTY) {
+                                if (pictures.isNotEmpty()) {
                                     showPictureOptions.value = true
                                 }
                                 else {
@@ -249,7 +280,7 @@ fun EditRecipe(
                             else stringResource(R.string.button_addRecipePicture),
                             style = MyTypography.labelMedium
                         )
-                    }
+                    }*/
                     Spacer(modifier = Modifier.size(8.dp))
                     Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                     Spacer(modifier = Modifier.size(8.dp))
@@ -489,7 +520,7 @@ fun EditRecipe(
                     ))
             }
         }
-        if (showPictureOptions.value) {
+        /*if (showPictureOptions.value) {
             PictureOptions(
                 onDismiss = { showPictureOptions.value = false },
                 onChange = {
@@ -501,7 +532,7 @@ fun EditRecipe(
                     if (dataEdited != null) dataEdited.value = true
                 }
             )
-        }
+        }*/
     }
 }
 

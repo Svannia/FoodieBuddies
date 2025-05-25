@@ -101,7 +101,6 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
             if (it) { handleError(context, "Could not fetch user data") }
         }){
             nameState.value = userData.username
-            Log.d("Debug", "username is: ${nameState.value}")
         }
     }
 

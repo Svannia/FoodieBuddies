@@ -53,11 +53,11 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
     val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(2f, 3f))).useAllAvailableWidth()
 
     // add image
-    if (addImage && recipe.picture != Uri.EMPTY) {
+    if (addImage && recipe.pictures.isNotEmpty()) {
         // counter for parallel thread
         val latch = CountDownLatch(1)
         Thread {
-            val image = uriToPdfImage(context, recipe.picture)
+            val image = uriToPdfImage(context, recipe.pictures[0])
             if (image != null) {
                 val width = 200f
                 val height = width / (image.imageWidth / image.imageHeight)

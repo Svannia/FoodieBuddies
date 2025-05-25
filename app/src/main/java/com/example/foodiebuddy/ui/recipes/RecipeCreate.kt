@@ -31,14 +31,13 @@ import java.util.UUID
 fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: OfflineDataViewModel, navigationActions: NavigationActions) {
     val context = LocalContext.current
     val editingPicture = remember { mutableStateOf(false) }
-    val showPictureOptions = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
 
     val userID = userVM.getCurrentUserID()
 
     val nameState = remember { mutableStateOf("") }
-    val currentPicture = remember { mutableStateOf(Uri.EMPTY) }
-    val pictureState = remember { mutableStateOf(Uri.EMPTY) }
+    val currentPictures = remember { mutableStateListOf(Uri.EMPTY) }
+    val picturesState = remember { mutableStateListOf(Uri.EMPTY) }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
     val portionState = remember { mutableIntStateOf(1) }
@@ -50,19 +49,22 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
 
     if (editingPicture.value) {
         SetRecipePicture(
-            picture = pictureState.value,
+            picture = picturesState[picturesState.size-1],
             onCancel = {
                 editingPicture.value = false
-                pictureState.value = currentPicture.value
+                picturesState.clear()
+                picturesState.addAll(currentPictures)
             },
             onSave = { uri ->
-                pictureState.value = uri
-                currentPicture.value = uri
+                picturesState[picturesState.size-1] = uri
+                currentPictures.clear()
+                currentPictures.addAll(picturesState)
                 editingPicture.value = false
             })
         BackHandler {
             editingPicture.value = false
-            pictureState.value = currentPicture.value
+            picturesState.clear()
+            picturesState.addAll(currentPictures)
         }
     } else {
         EditRecipe(
@@ -70,7 +72,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
             onGoBack = { showAlert.value = true },
             title = stringResource(R.string.title_createRecipe),
             name = nameState,
-            picture = pictureState,
+            pictures = picturesState,
             instructions = instructionsState,
             ingredients = ingredientsState,
             portion = portionState,
@@ -78,18 +80,17 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
             origin = originState,
             diet = dietState,
             tags = tagsState,
-            showPictureOptions = showPictureOptions,
             onEditPicture = { editingPicture.value = true },
-            onRemovePicture = {
-                pictureState.value = Uri.EMPTY
-                currentPicture.value = Uri.EMPTY
+            onRemovePicture = { index ->
+                picturesState.removeAt(index)
+                currentPictures.removeAt(index)
             },
             onDraftSave = {
                 val draftId = UUID.randomUUID().toString()
                 val newDraft = RecipeDraft(
                     id = draftId,
                     name = nameState.value,
-                    picture = if (pictureState == Uri.EMPTY) "" else pictureState.value.toString(),
+                    pictures = if (picturesState.isEmpty()) emptyList() else picturesState.map { it.toString() },
                     instructions = instructionsState.toList(),
                     ingredients = ingredientsState.map { ingredient ->
                         mapOf(
@@ -113,7 +114,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
             },
             onSave = {
                 recipeVM.createRecipe(
-                    userID, nameState.value, pictureState.value,
+                    userID, nameState.value, picturesState,
                     instructionsState, ingredientsState,
                     portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,

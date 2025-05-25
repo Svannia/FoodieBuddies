@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.ui.recipes
 
 import android.content.Context
-import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -219,10 +218,10 @@ fun RecipesHome(userViewModel: UserViewModel, navigationActions: NavigationActio
                                                 horizontalArrangement = Arrangement.spacedBy(16.dp),
                                                 verticalAlignment = Alignment.CenterVertically
                                             ) {
-                                                if (recipe.picture != Uri.EMPTY) {
+                                                if (recipe.pictures.isNotEmpty()) {
                                                     SquareImage(
                                                         size = 68.dp,
-                                                        picture = recipe.picture,
+                                                        picture = recipe.pictures[0],
                                                         contentDescription = stringResource(R.string.desc_recipePicture)
                                                     )
                                                 }
