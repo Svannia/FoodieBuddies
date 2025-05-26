@@ -32,8 +32,8 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
     val editingPicture = remember { mutableStateOf(false) }
     val loadingData = remember { mutableStateOf(false) }
     val dataEdited = remember { mutableStateOf(false) }
+    val picturesToRemove = remember { mutableStateListOf<Uri>() }
     val pictureEdited = remember { mutableStateOf(false) }
-    val pictureRemoved = remember { mutableStateOf(false) }
     val showAlert = remember { mutableStateOf(false) }
     val showDeleteAlert = remember { mutableStateOf(false) }
 
@@ -146,8 +146,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                     picturesState.removeAt(index)
                     currentPictures.removeAt(index)
                     dataEdited.value = true
-                    pictureEdited.value = false
-                    pictureRemoved.value = true
+                    picturesToRemove.add(picturesState[index])
                 },
                 // no draft option when editing an existing recipe
                 onDraftSave = {},
@@ -155,9 +154,9 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                     loadingData.value = true
                     recipeVM.updateRecipe(
                         nameState.value,
+                        picturesToRemove,
                         picturesState,
                         pictureEdited.value,
-                        pictureRemoved.value,
                         instructionsState,
                         ingredientsState,
                         portionState.intValue,

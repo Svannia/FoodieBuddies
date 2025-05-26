@@ -1,6 +1,8 @@
 package com.example.foodiebuddy.viewModels
 
 import android.net.Uri
+import android.util.Log
+import androidx.compose.ui.platform.debugInspectorInfo
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.foodiebuddy.data.Diet
@@ -114,9 +116,8 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
      * Updates an existing Recipe document.
      *
      * @param name title of the recipe
-     * @param picture picture of the recipe (empty URI if there is no picture)
+     * @param pictures pictures of the recipe (empty list if there is no picture)
      * @param updatePicture whether or not the Storage picture should be updated
-     * @param removePicture whether or not the Storage picture should be deleted
      * @param instructions list of strings where each element represents a step of the cooking instructions
      * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
      * @param portion number that indicates for how many servings this recipe is designed
@@ -129,9 +130,9 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
      */
     fun updateRecipe(
         name: String,
+        picturesToRemove: List<Uri>,
         pictures: List<Uri>,
         updatePicture: Boolean,
-        removePicture: Boolean,
         instructions: List<String>,
         ingredients: List<RecipeIngredient>,
         portion: Int,
@@ -145,7 +146,8 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         if (recipeID != null) {
             val filteredInstructions = instructions.toMutableList()
             processListData(ingredients, filteredInstructions)
-            db.updateRecipe(recipeData.value.owner, recipeID, name, pictures, updatePicture, removePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
+            Log.d("Debug", "updating recipe with update picture? $updatePicture for pictures $pictures[0]")
+            db.updateRecipe(recipeData.value.owner, recipeID, name, picturesToRemove, pictures, updatePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
             {
                 fetchRecipeData({ isError(it) }) { callBack() }
             }
