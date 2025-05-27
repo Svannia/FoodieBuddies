@@ -89,6 +89,7 @@ import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.images.SetPicture
 import com.example.foodiebuddy.ui.theme.MyTypography
 
+private const val MAX_PICTURES = 3
 /**
  * The content of a screen that can edit the data of a recipe.
  *
@@ -229,7 +230,6 @@ fun EditRecipe(
                         itemsIndexed(pictures, key = {_, uri -> uri.toString()}) { index, picture ->
                             IconSquareImage(
                                 icon = R.drawable.bin,
-                                iconSize = 16.dp,
                                 iconColor = Color.Red,
                                 pictureSize = 120.dp,
                                 picture = picture,
@@ -238,17 +238,19 @@ fun EditRecipe(
                                 onRemovePicture(index)
                             }
                         }
-                        item {
-                            Icon(
-                                painter = painterResource(R.drawable.plus),
-                                contentDescription = stringResource(R.string.desc_add),
-                                modifier = Modifier
-                                    .size(32.dp)
-                                    .clickable {
-                                        checkPermission(context, imagePermission, requestMediaPermissionLauncher)
-                                        { getPicture.launch(imageInput) }
-                                    }
-                            )
+                        if (pictures.size < MAX_PICTURES) {
+                            item {
+                                Icon(
+                                    painter = painterResource(R.drawable.plus),
+                                    contentDescription = stringResource(R.string.desc_add),
+                                    modifier = Modifier
+                                        .size(32.dp)
+                                        .clickable {
+                                            checkPermission(context, imagePermission, requestMediaPermissionLauncher)
+                                            { getPicture.launch(imageInput) }
+                                        }
+                                )
+                            }
                         }
                     }
 

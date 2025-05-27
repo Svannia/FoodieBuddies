@@ -1,7 +1,10 @@
 package com.example.foodiebuddy.ui.recipes
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -57,12 +62,13 @@ import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.system.createRecipePdf
-import com.example.foodiebuddy.system.getFilePath
+import com.example.foodiebuddy.system.getFileName
 import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.InputDialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.SecondaryScreen
+import com.example.foodiebuddy.ui.SelectableSquareImage
 import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.ValidGreen
@@ -83,7 +89,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val ownerID = remember { mutableStateOf("") }
     val ownerName = remember { mutableStateOf("") }
     val name = remember { mutableStateOf("") }
-    val picture = remember { mutableStateOf(Uri.EMPTY) }
+    val pictures = remember { mutableStateListOf<Uri>() }
     val instructions = remember { mutableStateListOf("") }
     val ingredients = remember { mutableStateListOf<RecipeIngredient>() }
     val portion = remember { mutableIntStateOf(1) }
@@ -101,8 +107,31 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val showNotesInput = remember { mutableStateOf(false) }
 
     val downloadImage = remember { mutableStateOf(false) }
+    val downloadImagesIndexes = remember { mutableStateListOf<Int>() }
     val downloadNotes = remember { mutableStateOf(false) }
     val showDownload = remember { mutableStateOf(false) }
+
+    val createPdfLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        if (uri != null) {
+            loadingData.value = true
+            context.contentResolver.openOutputStream(uri)?.use { outputStream ->
+                createRecipePdf(
+                    context,
+                    outputStream,
+                    recipeData,
+                    ownerName.value,
+                    downloadImagesIndexes,
+                    downloadNotes.value,
+                    note.value
+                )
+            }
+            loadingData.value = false
+            downloadImagesIndexes.clear()
+            Toast.makeText(context, context.getString(R.string.toast_downloaded), Toast.LENGTH_LONG).show()
+        }
+    }
 
     // todo: view all images
 
@@ -118,7 +147,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             if (recipe != Recipe.empty()) {
                 ownerID.value = recipe.owner
                 name.value = recipe.name
-                picture.value = if (recipeData.pictures.isEmpty()) Uri.EMPTY else recipeData.pictures[0]
+                pictures.clear()
+                pictures.addAll(recipeData.pictures)
                 instructions.clear()
                 instructions.addAll(recipe.instructions)
                 ingredients.clear()
@@ -161,7 +191,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
         if (recipeData != Recipe.empty()) {
             ownerID.value = recipeData.owner
             name.value = recipeData.name
-            picture.value = if (recipeData.pictures.isEmpty()) Uri.EMPTY else recipeData.pictures[0]
+            pictures.clear()
+            pictures.addAll(recipeData.pictures)
             instructions.clear()
             instructions.addAll(recipeData.instructions)
             ingredients.clear()
@@ -216,10 +247,10 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             ) {
                 // big picture (if there is one)
                 item {
-                    if (picture.value != Uri.EMPTY) {
+                    if (pictures.isNotEmpty()) {
                         SquareImage(
                             size = LocalConfiguration.current.screenWidthDp.dp,
-                            picture = picture.value,
+                            picture = pictures[0],
                             contentDescription = stringResource(R.string.desc_recipePicture)
                         )
                     }
@@ -585,19 +616,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     confirmColour = ValidGreen,
                     onConfirm = {
                         showDownload.value = false
-                        loadingData.value = true
-                        val filePath = getFilePath(name.value, downloadImage.value, downloadNotes.value)
-                        createRecipePdf(
-                            context,
-                            filePath,
-                            recipeData,
-                            ownerName.value,
-                            downloadImage.value,
-                            downloadNotes.value,
-                            note.value
-                        )
-                        loadingData.value = false
-                        Toast.makeText(context, context.getString(R.string.toast_downloaded), Toast.LENGTH_LONG).show()
+                        val filename = getFileName(name.value, downloadImage.value, downloadNotes.value)
+                        createPdfLauncher.launch(filename)
                     }
                 ) {
                     // title for Download and options checkboxes
@@ -605,8 +625,35 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                         modifier = Modifier.fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        // Download window title
                         Text(text = stringResource(R.string.title_download), style = MyTypography.titleSmall)
-                        if (picture.value != Uri.EMPTY) DownloadOption(downloadImage, stringResource(R.string.txt_includeImage))
+                        // checkbox to include pictures if any
+                        if (pictures.isNotEmpty()) DownloadOption(downloadImage, stringResource(R.string.txt_includeImage))
+                        // row of pictures to choose from
+                        if (downloadImage.value) {
+                            LazyRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(start = 16.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                itemsIndexed(pictures) { index, pictureUri ->
+                                    SelectableSquareImage(
+                                        isSelected = downloadImagesIndexes.contains(index),
+                                        pictureSize = 100.dp,
+                                        picture = pictureUri,
+                                        contentDescription = stringResource(R.string.desc_recipePicture),
+                                    ) { isSelected ->
+                                        if (isSelected) downloadImagesIndexes.add(index)
+                                        else downloadImagesIndexes.remove(index)
+                                        for(idx in downloadImagesIndexes) {
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        // checkbox to include personal notes if any
                         if (note.value.isNotBlank()) DownloadOption(downloadNotes, stringResource(R.string.txt_includeNotes))
                     }
                 }

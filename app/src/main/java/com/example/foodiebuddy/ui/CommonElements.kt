@@ -358,8 +358,18 @@ fun SquareImage(size: Dp, picture: Uri, contentDescription: String) {
     }
 }
 
+/**
+ * Crops an image square and adds an icon over-layered on the top right corner.
+ *
+ * @param icon identifier for the icon to be used as the IconButton
+ * @param iconColor colour of the icon
+ * @param pictureSize length of the square image
+ * @param picture URI of the picture to be cropped
+ * @param contentDescription image description
+ * @param onIconClick block that runs when the icon is pressed
+ */
 @Composable
-fun IconSquareImage(icon: Int, iconSize: Dp, iconColor: Color, pictureSize: Dp, picture: Uri, contentDescription: String, onIconClick: () -> Unit) {
+fun IconSquareImage(icon: Int, iconColor: Color, pictureSize: Dp, picture: Uri, contentDescription: String, onIconClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(pictureSize)
@@ -376,12 +386,84 @@ fun IconSquareImage(icon: Int, iconSize: Dp, iconColor: Color, pictureSize: Dp, 
             painter = painterResource(id = icon),
             contentDescription = stringResource(R.string.desc_imageIcon),
             modifier = Modifier
-                .size(iconSize)
+                .size(pictureSize / 3.5f)
                 .align(Alignment.TopEnd)
                 .clickable { onIconClick() }
                 .padding(4.dp),
             tint = iconColor
         )
+    }
+}
+
+/**
+ * Creates a square image that can be selected with visual effects similar as usual Gallery apps.
+ *
+ * @param
+ * @param
+ * @param
+ * @return
+ */
+@Composable
+fun SelectableSquareImage(isSelected: Boolean, pictureSize: Dp, picture: Uri, contentDescription: String, onClick: (Boolean) -> Unit) {
+    val selected = remember { mutableStateOf(isSelected) }
+
+    Box(
+        modifier = Modifier
+            .size(pictureSize)
+            .clip(RectangleShape)
+            .background(Color.Transparent)
+            .clickable {
+                selected.value = !selected.value
+                onClick(selected.value)
+            }
+    ) {
+        // image itself
+        Image(
+            modifier = Modifier.fillMaxSize(),
+            painter = rememberAsyncImagePainter(picture),
+            contentDescription = contentDescription,
+            contentScale = ContentScale.FillBounds
+        )
+        // white cast when it is selected
+        if (selected.value) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.White.copy(alpha = 0.4f))
+            )
+        }
+        // round checkbox
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .align(Alignment.TopEnd)
+                .padding(4.dp)
+                .clip(CircleShape)
+                .background(
+                    if (selected.value) MaterialTheme.colorScheme.primary else Color.Black.copy(
+                        alpha = 0.4f
+                    )
+                )
+                .border(
+                    width = if (selected.value) 0.dp else 2.dp,
+                    color = Color.White,
+                    shape = CircleShape
+                )
+                .clickable {
+                    selected.value = !selected.value
+                    onClick(selected.value)
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            if (selected.value) {
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    painter = painterResource(R.drawable.tick),
+                    contentDescription = stringResource(R.string.desc_add),
+                    tint = Color.Black
+                )
+            }
+        }
     }
 }
 
@@ -653,7 +735,7 @@ fun InputDialogWindow(
                         color = Color.Transparent,
                         shape = RoundedCornerShape(50)
                     ),
-                onClick = onConfirm,
+                onClick = { onConfirm() },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Transparent
                 ),

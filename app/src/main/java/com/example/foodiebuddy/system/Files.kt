@@ -4,6 +4,7 @@ import com.itextpdf.kernel.pdf.PdfWriter
 import android.content.Context
 import android.net.Uri
 import android.os.Environment
+import android.util.Log
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.formatQuantity
@@ -25,23 +26,26 @@ import java.io.IOException
 import java.io.InputStream
 import com.itextpdf.kernel.font.PdfFontFactory
 import com.itextpdf.layout.borders.Border
+import com.itextpdf.layout.properties.HorizontalAlignment
 import timber.log.Timber
+import java.io.OutputStream
 import java.util.concurrent.CountDownLatch
 
 /**
  * Creates and download a PDF file of the given recipe at the given path.
  *
  * @param context to access string resources
- * @param filePath path where the
+ * @param outputStream to write the PDF file
  * @param recipe Recipe object with information to put in the PDF
  * @param username of the user who created the recipe
- * @param addImage whether or not to add the image on the PDF
+ * @param pictureIndexes which pictures to add to the PDF (can be empty)
  * @param addNotes whether or not to add the user's personal notes on the PDF
  * @param notes eventual notes to write on the PDF
  */
-fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username: String, addImage: Boolean, addNotes: Boolean, notes: String = "") {
+fun createRecipePdf(context: Context, outputStream: OutputStream, recipe: Recipe, username: String, pictureIndexes: List<Int>, addNotes: Boolean, notes: String = "") {
+    Log.d("Debug", "received ${pictureIndexes.size}")
     // set up document
-    val writer = PdfWriter(filePath)
+    val writer = PdfWriter(outputStream)
     val pdfDoc = PdfDocument(writer)
     val document = Document(pdfDoc)
 
@@ -52,29 +56,7 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
     // row for image, title and credits
     val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(2f, 3f))).useAllAvailableWidth()
 
-    // add image
-    if (addImage && recipe.pictures.isNotEmpty()) {
-        // counter for parallel thread
-        val latch = CountDownLatch(1)
-        Thread {
-            val image = uriToPdfImage(context, recipe.pictures[0])
-            if (image != null) {
-                val width = 200f
-                val height = width / (image.imageWidth / image.imageHeight)
-                image.setWidth(width)
-                image.setHeight(height)
-                synchronized(document) { headerTable.addCell(Cell().add(image).setBorder(Border.NO_BORDER)) }
-            } else {
-                synchronized(document) {
-                    document.add(Paragraph(context.getString(R.string.txt_pdfImageError)).setFontSize(18f).setItalic())
-                }
-            }
-            latch.countDown()
-        }.start()
-        latch.await()
-    }
-
-    // title
+    // title and credits
     val title = Paragraph(recipe.name)
         .setFontSize(32f)
         .setFixedLeading(36f)
@@ -90,15 +72,57 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
         .setFontSize(18f)
         .setItalic()
 
-    if (addImage) {
-        val headerRightCell = Cell().add(title).add(credits).setBorder(Border.NO_BORDER)
-        headerTable.addCell(headerRightCell)
-        document.add(headerTable)
-    } else {
-        title.setTextAlignment(TextAlignment.CENTER)
-        credits.setTextAlignment(TextAlignment.CENTER)
-        document.add(title).add(credits)
+    title.setTextAlignment(TextAlignment.CENTER)
+    credits.setTextAlignment(TextAlignment.CENTER)
+    document.add(title).add(credits)
+
+
+    // add image
+    if (pictureIndexes.isNotEmpty() && recipe.pictures.isNotEmpty()) {
+        val imagesCount = pictureIndexes.size.coerceAtMost(3)
+        val images = mutableListOf<Image?>()
+        val latch = CountDownLatch(imagesCount)
+
+        for (index in pictureIndexes.take(3)) {
+            Thread {
+                val img = uriToPdfImage(context, recipe.pictures[index])
+                synchronized(images) { images.add(img) }
+                latch.countDown()
+            }.start()
+        }
+        latch.await()
+
+        val maxImageWidth = 160f
+        val totalTableWidth = imagesCount * maxImageWidth
+
+        // Define table with as many columns as images
+        val columnWidths = FloatArray(imagesCount) { 1f }
+        val imageTable = Table(UnitValue.createPercentArray(columnWidths))
+            .setWidth(UnitValue.createPointValue(totalTableWidth))
+            .setHorizontalAlignment(HorizontalAlignment.CENTER)
+
+        for (img in images) {
+            if (img != null) {
+                val ratio = img.imageHeight / img.imageWidth
+                img.setWidth(maxImageWidth)
+                img.setHeight(maxImageWidth * ratio)
+                imageTable.addCell(
+                    Cell().add(img)
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.CENTER)
+                )
+            } else {
+                imageTable.addCell(
+                    Cell().add(Paragraph(context.getString(R.string.txt_pdfImageError)))
+                        .setBorder(Border.NO_BORDER)
+                        .setTextAlignment(TextAlignment.CENTER)
+                )
+            }
+        }
+
+        document.add(imageTable)
     }
+
 
     document.add(Paragraph(" ").setFontSize(12f))
 
@@ -152,20 +176,19 @@ fun createRecipePdf(context: Context, filePath: String, recipe: Recipe, username
 }
 
 /**
- * Creates a filePath with a name that contains information about the recipe's title and the download options chosen.
+ * Creates a file name for the recipe PDF file.
  *
  * @param title of the recipe
  * @param image whether or not to add option "image" in the file name
  * @param notes whether or not to add option "notes" in the file name
- * @return directory and name of the new filePath
+ * @return new file object at the given path in the Downloads folder
  */
-fun getFilePath(title: String, image: Boolean, notes: Boolean): String {
-    val directory = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+fun getFileName(title: String, image: Boolean, notes: Boolean): String {
     var fileName = title
     if (image) fileName += "_image"
     if (notes) fileName += "_notes"
     fileName += ".pdf"
-    return File(directory, fileName).absolutePath
+    return fileName
 }
 
 /**

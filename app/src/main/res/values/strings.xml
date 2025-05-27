@@ -15,7 +15,7 @@
         \nEn acceptant ces conditions, tu offres ton âme au diable (Alice).
     </string>
 
-    <string name="app_name">Foodie Buddies</string>
+    <string name="app_name">FoodieBuddies</string>
 
     <string name="button_accept">Accepter</string>
     <string name="button_addProfilePicture">Ajouter une photo de profil</string>
@@ -150,7 +150,7 @@
     <string name="title_editDraft">Modifie ton Brouillon</string>
     <string name="title_editRecipe">Modifie ta recette</string>
     <string name="title_filters">Filtres</string>
-    <string name="title_foodPic">Photos de la recette</string>
+    <string name="title_foodPic">Photos de la recette (max. 3)</string>
     <string name="title_fridge">Mon Frigo</string>
     <string name="title_groceries">Liste de courses</string>
     <string name="title_ingredients">Ingrédients</string>
@@ -187,7 +187,7 @@
     <string name="txt_existingIngredient">\"%1$s\" sous %2$s dans %3$s</string>
     <string name="txt_favouriteOnly">Uniquement recettes préférées</string>
     <string name="txt_for">Pour</string>
-    <string name="txt_includeImage">Inclure l\'image</string>
+    <string name="txt_includeImage">Inclure des images</string>
     <string name="txt_includeNotes">Inclure les Notes Personnelles</string>
     <string name="txt_me">Moi</string>
     <string name="txt_noBuddies">Il n\'y a pas encore d\'autres Buddies sur l\'app pour le moment!</string>

@@ -14,7 +14,7 @@
         \nDo not write bullshit. Alice can see all app data and will delete anything she considers inappropriate or off-topic.\n
         \nBy accepting these conditions, you agree to offer your soul to the devil (Alice).</string>
 
-    <string name="app_name">Foodie Buddies</string>
+    <string name="app_name">FoodieBuddies</string>
 
     <string name="button_accept">Accept</string>
     <string name="button_addProfilePicture">Add a profile picture</string>
@@ -151,7 +151,7 @@
     <string name="title_editDraft">Edit your Draft</string>
     <string name="title_editRecipe">Edit your recipe</string>
     <string name="title_filters">Filters</string>
-    <string name="title_foodPic">Pictures of the food</string>
+    <string name="title_foodPic">Pictures of the food (max. 3)</string>
     <string name="title_fridge">My Fridge</string>
     <string name="title_groceries">Groceries list</string>
     <string name="title_ingredients">Ingredients</string>
@@ -188,7 +188,7 @@
     <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
     <string name="txt_favouriteOnly">Only favourite recipes</string>
     <string name="txt_for">For</string>
-    <string name="txt_includeImage">Include the image</string>
+    <string name="txt_includeImage">Include images</string>
     <string name="txt_includeNotes">Include the Personal Notes</string>
     <string name="txt_me">Me</string>
     <string name="txt_noBuddies">There are no other Buddies on the app for now!</string>
