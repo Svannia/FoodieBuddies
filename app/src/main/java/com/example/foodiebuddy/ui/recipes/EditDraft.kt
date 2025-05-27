@@ -45,8 +45,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     }
 
     val nameState = remember { mutableStateOf("") }
-    val currentPictures = remember { mutableStateListOf(Uri.EMPTY) }
-    val picturesState = remember { mutableStateListOf(Uri.EMPTY) }
+    val currentPictures = remember { mutableStateListOf<Uri>() }
+    val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
     val portionState = remember { mutableIntStateOf(1) }

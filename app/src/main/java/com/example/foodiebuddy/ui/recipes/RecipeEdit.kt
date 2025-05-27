@@ -143,10 +143,10 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 editingExistingRecipe = true,
                 onEditPicture = { editingPicture.value = true },
                 onRemovePicture = { index ->
+                    picturesToRemove.add(picturesState[index])
                     picturesState.removeAt(index)
                     currentPictures.removeAt(index)
                     dataEdited.value = true
-                    picturesToRemove.add(picturesState[index])
                 },
                 // no draft option when editing an existing recipe
                 onDraftSave = {},

@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.database
 
 import android.net.Uri
-import android.util.Log
 import com.example.foodiebuddy.data.Diet
 import com.example.foodiebuddy.data.Measure
 import com.example.foodiebuddy.data.Origin
@@ -21,7 +20,6 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.tasks.await
 import timber.log.Timber
-import java.io.File
 
 private const val USERNAME = "username"
 private const val PICTURE = "picture"
@@ -1383,7 +1381,7 @@ class DatabaseConnection {
      *
      * @param userID UID of the user who created the recipe
      * @param name title of the recipe
-     * @param pictures pictures of the recipe (can be an empty list
+     * @param pictures pictures of the recipe (can be an empty list)
      * @param instructions list of strings where each element represents a step of the cooking instructions
      * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
      * @param portion number that indicates for how many servings this recipe is designed
@@ -1446,6 +1444,7 @@ class DatabaseConnection {
                                 callBack(document.id)
                                 Timber.tag("MyDB").d( "Successfully finished recipe creation process")
                             }
+                        // finish here if there are no pictures
                         } else {
                             isError(false)
                             callBack(document.id)
@@ -1614,34 +1613,49 @@ class DatabaseConnection {
             .document(recipeID)
             .update(recipe as Map<String, Any>)
             .addOnSuccessListener {
+                // if there are pictures to remove -> delete them one by one
                 if (picturesToRemove.isNotEmpty()) {
                     var remainingToRemove = picturesToRemove.size
                     picturesToRemove.forEach { pictureUri ->
                         deleteSingleRecipePicture(pictureUri.toString(), { isError(it) }) {
-                            Timber.tag("MyDB").d( "Successfully deleted picture $pictureUri from recipe")
-                            remainingToRemove--
-                            if (remainingToRemove <= 0) {
-                                isError(false)
-                                Timber.tag("MyDB").d( "Successfully deleted all pictures from recipe")
+                            // if deleting the picture from the Storage was successful -> delete the reference
+                            recipesCollection
+                                .document(recipeID)
+                                .update(PICTURES, FieldValue.arrayRemove(pictureUri.toString()))
+                                .addOnSuccessListener {
+                                    remainingToRemove--
+                                    if (remainingToRemove <= 0) {
+                                        isError(false)
+                                        Timber.tag("MyDB").d( "Successfully deleted all pictures from recipe")
 
-                                if (updatePictures) {
-                                    updateRecipePictures(userID, recipeID, pictures, { isError(it) }) {
-                                        Timber.tag("MyDB").d( "Successfully updated recipe with new pictures")
-                                        callBack()
+                                        // once all old pictures have been deleted -> update the new pictures
+                                        if (updatePictures) {
+                                            updateRecipePictures(userID, recipeID, pictures, { isError(it) }) {
+                                                Timber.tag("MyDB").d( "Successfully updated recipe with new pictures")
+                                                callBack()
+                                            }
+                                        } else {
+                                            isError(false)
+                                            Timber.tag("MyDB").d( "Successfully updated recipe data without picture change")
+                                            callBack()
+                                        }
                                     }
-                                } else {
-                                    isError(false)
-                                    Timber.tag("MyDB").d( "Successfully updated recipe data without picture change")
-                                    callBack()
                                 }
-                            }
+                                .addOnFailureListener { e ->
+                                    isError(true)
+                                    Timber.tag("MyDB").d("Failed to remove picture reference with error $e")
+                                }
                         }
                     }
+
+                // directly update new pictures if there are no pictures to delete
                 } else if (updatePictures) {
                     updateRecipePictures(userID, recipeID, pictures, { isError(it) }) {
                         Timber.tag("MyDB").d( "Successfully updated recipe with new pictures")
                         callBack()
                     }
+
+                // finish here if there are no pictures to delete or update
                 } else {
                     isError(false)
                     Timber.tag("MyDB").d( "Successfully updated recipe data without picture change")
@@ -1654,6 +1668,16 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Updates the list of pictures of a recipe with the new list.
+     * The new list might contain new pictures (those are uploaded) and pictures that were already uploaded (those just check for ordering)
+     *
+     * @param userID ID of the user who owns the recipe
+     * @param recipeID ID of the recipe to update
+     * @param pictures list of URIs of pictures to be added (or re-ordered) to the recipe
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun updateRecipePictures(userID: String, recipeID: String, pictures: List<Uri>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val recipeDocRef = recipesCollection.document(recipeID)
         recipeDocRef.get()
@@ -1721,6 +1745,15 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Takes the new list of picture references for a recipe (old pictures removed, staying pictures re-ordered and new pictures uploaded)
+     * and finalizes by placing the new list of references in the recipe document.
+     *
+     * @param recipeDocRef reference to the recipe document
+     * @param newList new list containing exactly the new state of recipe pictures
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun finalizePicturesUpdate(recipeDocRef: DocumentReference, newList: List<String?>, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val cleanedList = newList.filterNotNull()
         recipeDocRef
@@ -1851,8 +1884,9 @@ class DatabaseConnection {
         recipesCollection.document(recipeID).get()
             .addOnSuccessListener { document ->
                 if (document != null && document.exists()) {
-                    if ( (document.getString(PICTURE) ?: "").isBlank() ) {
-                        // no picture -> only delete recipe document
+                    val picturesList = (document.get(PICTURES) as? List<String>)?.map { Uri.parse(it) } ?: emptyList()
+                    if ( picturesList.isEmpty() ) {
+                        // no pictures -> only delete recipe document
                         recipesCollection.document(recipeID).delete()
                             .addOnSuccessListener {
                                 // once picture deletion is successful -> decrease creator's recipes counter
@@ -1873,12 +1907,12 @@ class DatabaseConnection {
                                 Timber.tag("MyDB").d( "Failed to delete recipe with error $e")
                             }
                     } else {
-                        // there is a picture -> delete recipe document and its picture
+                        // there are pictures -> delete recipe document and its pictures
                         recipesCollection
                             .document(recipeID)
                             .delete()
                             .addOnSuccessListener {
-                                // if document was safely deleted -> delete picture
+                                // if document was safely deleted -> delete pictures
                                 deleteRecipePictures(userID, recipeID, { isError(it) } ) {
                                     // once picture deletion is successful -> decrease creator's recipes counter
                                     userDataCollection.document(userID)
@@ -1957,6 +1991,8 @@ class DatabaseConnection {
 
 
     // storage pictures
+
+    // user profile pictures
 
     /**
      * Retrieves the default (empty) profile picture from the storage.
@@ -2119,14 +2155,8 @@ class DatabaseConnection {
             }
     }
 
-    /**
-     * Retrieves the data path in Storage to access a recipe's data.
-     *
-     * @param userID ID of the user who is allowed to modify this recipe's picture (its creator)
-     * @param recipeID ID of the recipe to access
-     * @return path in Storage
-     */
-    private fun recipePicturePath(userID: String, recipeID: String) = "userData/$userID/recipePictures/$recipeID"
+
+    // recipe pictures
 
     /**
      * Retrieves the data path in Storage to access a recipe's data.
@@ -2146,10 +2176,10 @@ class DatabaseConnection {
      * @param callBack block that runs after DB was updated
      */
     private fun uploadRecipePicture(userID: String, recipeID: String, picture: Uri, isError: (Boolean) -> Unit, callBack: (Uri) -> Unit) {
-        val recipePicsFolder = storage.child(recipePicturePath(userID, recipeID))
+        val recipePicsFolder = storage.child(recipePath(userID, recipeID))
         val imageName = picture.toString().substringAfterLast('/')
         val pictureRef = recipePicsFolder.child(imageName)
-        // upload add new picture to storage
+        // upload new picture to storage
         pictureRef
             .putFile(picture)
             .addOnSuccessListener {
@@ -2174,10 +2204,16 @@ class DatabaseConnection {
             }
     }
 
+    /**
+     * Deletes a single picture from a recipe.
+     *
+     * @param downloadUrl URL that references the path to the stored image
+     * @param isError block that runs if there is an error executing the function
+     * @param callBack block that runs after DB was updated
+     */
     private fun deleteSingleRecipePicture(downloadUrl: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
-        val pathEncoded = downloadUrl.substringAfter("/o/").substringBefore("?")
-        val path = Uri.decode(pathEncoded)
-        val fileRef = FirebaseStorage.getInstance().getReference(path)
+        // get file reference from Firestore URL
+        val fileRef = FirebaseStorage.getInstance().getReferenceFromUrl(downloadUrl)
 
         fileRef.delete()
             .addOnSuccessListener {
@@ -2201,6 +2237,8 @@ class DatabaseConnection {
      */
     private fun deleteRecipePictures(userID: String, recipeID: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         val folderRef = storage.child(recipePath(userID, recipeID))
+
+        // loop over files uploaded at the recipe's Storage path
         folderRef.listAll()
             .addOnSuccessListener { result ->
                 var remaining = result.items.size
