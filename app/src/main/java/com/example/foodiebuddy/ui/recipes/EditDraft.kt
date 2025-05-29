@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -48,7 +49,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     val currentPictures = remember { mutableStateListOf<Uri>() }
     val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
-    val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
+    val ingredientsState = remember { mutableStateMapOf<String, List<RecipeIngredient>>() }
     val portionState = remember { mutableIntStateOf(1) }
     val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
@@ -66,13 +67,15 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
         instructionsState.clear()
         instructionsState.addAll(draft.value.instructions)
         ingredientsState.clear()
-        ingredientsState.addAll(draft.value.ingredients.map { map ->
-            RecipeIngredient(
-                displayedName = map["displayedName"] ?: "",
-                standName = "",
-                quantity = map["quantity"]?.toFloat() ?: 0f,
-                unit = map["unit"]?.let { Measure.valueOf(it) } ?: Measure.NONE
-            )
+        ingredientsState.putAll(draft.value.ingredients.mapValues { (_, ingredientMaps) ->
+            ingredientMaps.map { map ->
+                RecipeIngredient(
+                    displayedName = map["displayedName"] ?: "",
+                    standName = "",
+                    quantity = map["quantity"]?.toFloat() ?: 0f,
+                    unit = map["unit"]?.let { Measure.valueOf(it) } ?: Measure.NONE,
+                )
+            }
         })
         portionState.intValue = draft.value.portion
         perPersonState.value = draft.value.perPerson
@@ -132,14 +135,16 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                     name = nameState.value,
                     pictures = if (picturesState.isEmpty()) emptyList() else picturesState.map { it.toString() },
                     instructions = instructionsState.toList(),
-                    ingredients = ingredientsState.map { ingredient ->
-                        mapOf(
-                            "displayedName" to ingredient.displayedName,
-                            "standName" to ingredient.standName,
-                            "quantity" to ingredient.quantity.toString(),
-                            "unit" to ingredient.unit.getString(context),
-                            "id" to ingredient.id
-                        )
+                    ingredients = ingredientsState.mapValues { (_, ingredientMaps) ->
+                        ingredientMaps.map { ingredient ->
+                            mapOf(
+                                "displayedName" to ingredient.displayedName,
+                                "standName" to ingredient.standName,
+                                "quantity" to ingredient.quantity.toString(),
+                                "unit" to ingredient.unit.getString(context),
+                                "id" to ingredient.id
+                            )
+                        }
                     },
                     portion = portionState.intValue,
                     perPerson = perPersonState.value,

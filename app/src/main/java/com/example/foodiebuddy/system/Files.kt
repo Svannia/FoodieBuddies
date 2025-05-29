@@ -43,7 +43,6 @@ import java.util.concurrent.CountDownLatch
  * @param notes eventual notes to write on the PDF
  */
 fun createRecipePdf(context: Context, outputStream: OutputStream, recipe: Recipe, username: String, pictureIndexes: List<Int>, addNotes: Boolean, notes: String = "") {
-    Log.d("Debug", "received ${pictureIndexes.size}")
     // set up document
     val writer = PdfWriter(outputStream)
     val pdfDoc = PdfDocument(writer)
@@ -143,19 +142,37 @@ fun createRecipePdf(context: Context, outputStream: OutputStream, recipe: Recipe
             portionUnit
         )).setFontSize(18f))
     // list of ingredients
-    val ingredientTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 3f))).useAllAvailableWidth()
-    for (ingredient in recipe.ingredients) {
-        val quantity = formatQuantity(ingredient.quantity)
-        val unit = formatUnit(ingredient.unit, ingredient.quantity, context)
-        ingredientTable.addCell(
-            Cell().add(Paragraph("$quantity $unit").setFontSize(18f).setBold().setFixedLeading(22f)).setBorder(Border.NO_BORDER)
-        )
-        ingredientTable.addCell(
-            Cell().add(Paragraph(ingredient.displayedName).setFontSize(18f).setFixedLeading(22f)).setBorder(Border.NO_BORDER)
-        )
+    if (recipe.ingredients.keys.contains("-")) {
+        val ingredientTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 3f))).useAllAvailableWidth()
+        for (ingredient in recipe.ingredients["-"]!!) {
+            val quantity = formatQuantity(ingredient.quantity)
+            val unit = formatUnit(ingredient.unit, ingredient.quantity, context)
+            ingredientTable.addCell(
+                Cell().add(Paragraph("$quantity $unit").setFontSize(18f).setBold().setFixedLeading(22f)).setBorder(Border.NO_BORDER)
+            )
+            ingredientTable.addCell(
+                Cell().add(Paragraph(ingredient.displayedName).setFontSize(18f).setFixedLeading(22f)).setBorder(Border.NO_BORDER)
+            )
+        }
+        document.add(ingredientTable)
+        document.add(Paragraph(" ").setFontSize(22f))
     }
-    document.add(ingredientTable)
-    document.add(Paragraph(" ").setFontSize(22f))
+    recipe.ingredients.filterKeys { it != "" }.keys.toList().forEach { sectionName ->
+        document.add(Paragraph(sectionName).setFontSize(18f).setBold())
+        val ingredientTable = Table(UnitValue.createPercentArray(floatArrayOf(1f, 3f))).useAllAvailableWidth()
+        for (ingredient in recipe.ingredients[sectionName]!!) {
+            val quantity = formatQuantity(ingredient.quantity)
+            val unit = formatUnit(ingredient.unit, ingredient.quantity, context)
+            ingredientTable.addCell(
+                Cell().add(Paragraph("$quantity $unit").setFontSize(18f).setBold().setFixedLeading(22f)).setBorder(Border.NO_BORDER)
+            )
+            ingredientTable.addCell(
+                Cell().add(Paragraph(ingredient.displayedName).setFontSize(18f).setFixedLeading(22f)).setBorder(Border.NO_BORDER)
+            )
+        }
+        document.add(ingredientTable)
+        document.add(Paragraph(" ").setFontSize(22f))
+    }
 
 
     // instructions

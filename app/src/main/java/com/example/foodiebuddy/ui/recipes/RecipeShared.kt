@@ -2,6 +2,7 @@ package com.example.foodiebuddy.ui.recipes
 
 import android.content.Context
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -35,6 +36,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -65,11 +68,14 @@ import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
@@ -87,6 +93,8 @@ import com.example.foodiebuddy.ui.CustomTextField
 import com.example.foodiebuddy.ui.IconSquareImage
 import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.images.SetPicture
+import com.example.foodiebuddy.ui.ingredients.INLINE_ICON
+import com.example.foodiebuddy.ui.ingredients.MAX_CHARA
 import com.example.foodiebuddy.ui.theme.MyTypography
 
 private const val MAX_PICTURES = 3
@@ -99,7 +107,7 @@ private const val MAX_PICTURES = 3
  * @param name editable name of the recipe
  * @param pictures editable list of recipe pictures
  * @param instructions editable list of instruction steps
- * @param ingredients editable list of RecipeIngredient objects
+ * @param ingredients editable mapping of sections names to lists of RecipeIngredient objects
  * @param portion editable number of portions this recipe serves
  * @param perPerson editable boolean; if true, the portion is per person, if false per piece
  * @param origin editable Origin tag
@@ -121,7 +129,7 @@ fun EditRecipe(
     name: MutableState<String>,
     pictures: SnapshotStateList<Uri>,
     instructions: SnapshotStateList<String>,
-    ingredients: SnapshotStateList<RecipeIngredient>,
+    ingredients: MutableMap<String, List<RecipeIngredient>>,
     portion: MutableIntState,
     perPerson: MutableState<Boolean>,
     origin: MutableState<Origin>,
@@ -150,6 +158,13 @@ fun EditRecipe(
 
         }
 
+    // to ensure that the ordering of the ingredients section stay consistent
+    val sectionOrder = remember { ingredients.keys.filter { it != "-" }.toMutableList() }
+    LaunchedEffect(ingredients) {
+        sectionOrder.clear()
+        sectionOrder.addAll(ingredients.keys.filter { it != "-" })
+    }
+
     // to recompose screen when modifying ingredient name
     var ingredientTrigger by remember { mutableIntStateOf(0) }
     LaunchedEffect(ingredientTrigger) {}
@@ -167,7 +182,7 @@ fun EditRecipe(
                 portion.intValue >= 1 &&
                 origin.value != Origin.NONE &&
                 diet.value != Diet.NONE &&
-                ingredients.toList().all { ingredient -> ingredient.displayedName.isNotBlank() && !ingredient.displayedName.all { it == ' ' } }
+                ingredients.values.flatten().toList().all { ingredient -> ingredient.displayedName.isNotBlank() && !ingredient.displayedName.all { it == ' ' } }
             BottomSaveBar(stringResource(R.string.button_publish), requiredFields && newData) {
                 onSave()
             }
@@ -246,43 +261,17 @@ fun EditRecipe(
                                     modifier = Modifier
                                         .size(32.dp)
                                         .clickable {
-                                            checkPermission(context, imagePermission, requestMediaPermissionLauncher)
+                                            checkPermission(
+                                                context,
+                                                imagePermission,
+                                                requestMediaPermissionLauncher
+                                            )
                                             { getPicture.launch(imageInput) }
                                         }
                                 )
                             }
                         }
                     }
-
-
-                   /* Row(verticalAlignment = Alignment.CenterVertically) {
-                        if (picture.value != Uri.EMPTY) {
-                            SquareImage(
-                                size = 68.dp,
-                                picture = picture.value,
-                                contentDescription = stringResource(R.string.desc_recipePicture)
-                            )
-                            Spacer(modifier = Modifier.size(16.dp))
-                        }
-                        Text(
-                            modifier = Modifier.clickable {
-                                if (pictures.isNotEmpty()) {
-                                    showPictureOptions.value = true
-                                }
-                                else {
-                                    checkPermission(context, imagePermission, requestMediaPermissionLauncher)
-                                    { getPicture.launch(imageInput) }
-                                }
-
-                            },
-                            text =
-                            if (picture.value != Uri.EMPTY) {
-                                stringResource(R.string.button_modifyRecipePicture)
-                            }
-                            else stringResource(R.string.button_addRecipePicture),
-                            style = MyTypography.labelMedium
-                        )
-                    }*/
                     Spacer(modifier = Modifier.size(8.dp))
                     Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                     Spacer(modifier = Modifier.size(8.dp))
@@ -441,26 +430,83 @@ fun EditRecipe(
                     }
                 }
             }
-            // list of ingredients
-            items(ingredients.toList(), key = {it.id}) { ingredient ->
-                IngredientItem(
-                    context = context,
-                    ingredient = ingredient,
-                    onValueChange = {
-                        ingredientTrigger++
-                        if (dataEdited != null) dataEdited.value = true
-                    },
-                    onDelete = {
-                        ingredients.remove(ingredient)
-                        if (dataEdited != null) dataEdited.value = true
-                    }
-                )
+            // if the recipe has ingredients under no section, show those first
+            if (ingredients.keys.toList().contains("-")) {
+                items(ingredients["-"] ?: emptyList(), key = {it.id}) { ingredient ->
+                    IngredientItem(
+                        context = context,
+                        ingredient = ingredient,
+                        onValueChange = {
+                            ingredientTrigger++
+                            if (dataEdited != null) dataEdited.value = true
+                        },
+                        onDelete = {
+                            val sectionIngredients = ingredients["-"]?.toMutableList() ?: mutableListOf()
+                            sectionIngredients.remove(ingredient)
+                            ingredients["-"] = sectionIngredients
+                            if (dataEdited != null) dataEdited.value = true
+                        }
+                    )
+                }
             }
             // "Plus" button to add an ingredient
             item {
                 AddButton {
-                    ingredients.add(RecipeIngredient.empty())
+                    val sectionIngredients = ingredients["-"]?.toMutableList() ?: mutableListOf()
+                    sectionIngredients.add(RecipeIngredient.empty())
+                    ingredients["-"] = sectionIngredients
+                    ingredientTrigger++
                 }
+            }
+            items(sectionOrder, key = {it}) { sectionName ->
+                SectionIngredients(
+                    context = context,
+                    name = sectionName,
+                    ingredients = ingredients[sectionName] ?: emptyList(),
+                    onAddNewIngredient = {
+                        val sectionIngredients = ingredients[sectionName]?.toMutableList() ?: mutableListOf()
+                        sectionIngredients.add(RecipeIngredient.empty())
+                        ingredients[sectionName] = sectionIngredients
+                        ingredientTrigger++
+                    },
+                    onEditIngredient = {
+                        ingredientTrigger++
+                        if (dataEdited != null) dataEdited.value = true
+                    },
+                    onRemoveIngredient = { ingredient ->
+                        val sectionIngredients = ingredients[sectionName]?.toMutableList() ?: mutableListOf()
+                        sectionIngredients.remove(ingredient)
+                        ingredients[sectionName] = sectionIngredients
+                        if (dataEdited != null) dataEdited.value = true
+                    },
+                    onEditSectionName = { oldName, newName ->
+                        val idx = sectionOrder.indexOf(oldName)
+                        if (idx != -1) {
+                            val sectionIngredients = ingredients[oldName] ?: emptyList()
+                            ingredients[newName] = sectionIngredients
+                            ingredients.remove(oldName)
+                            sectionOrder[idx] = newName
+                        }
+                        if (dataEdited != null) dataEdited.value = true
+                    },
+                    onRemoveSection = {
+                        val idx = sectionOrder.indexOf(sectionName)
+                        if (idx != -1) {
+                            ingredients.remove(sectionName)
+                            sectionOrder.removeAt(idx)
+                        }
+                        if (dataEdited != null) dataEdited.value = true
+                    }
+                )
+            }
+            // Field to add a new ingredients section
+            item {
+                AddSection(context, ingredients.keys.toList()) { sectionName ->
+                    ingredients[sectionName] = emptyList()
+                    sectionOrder.add(sectionName)
+                }
+                Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
+                Spacer(modifier = Modifier.size(16.dp))
             }
             // recipe instructions title
             item {
@@ -487,6 +533,8 @@ fun EditRecipe(
                 AddButton {
                     instructions.add("")
                 }
+                Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
+                Spacer(modifier = Modifier.size(16.dp))
             }
             // eventual Delete button
             if (editingExistingRecipe) {
@@ -522,19 +570,6 @@ fun EditRecipe(
                     ))
             }
         }
-        /*if (showPictureOptions.value) {
-            PictureOptions(
-                onDismiss = { showPictureOptions.value = false },
-                onChange = {
-                    checkPermission(context, imagePermission, requestMediaPermissionLauncher)
-                    { getPicture.launch(imageInput) }
-                },
-                onRemove = {
-                    onRemovePicture()
-                    if (dataEdited != null) dataEdited.value = true
-                }
-            )
-        }*/
     }
 }
 
@@ -637,8 +672,6 @@ fun AddButton(
             )
         }
     }
-    Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
-    Spacer(modifier = Modifier.size(16.dp))
 }
 
 /**
@@ -1052,5 +1085,217 @@ private fun TagButton(
             color = if (enabled) MaterialTheme.colorScheme.background else MaterialTheme.colorScheme.inversePrimary,
             modifier = Modifier.padding(vertical = 6.dp, horizontal = 12.dp)
         )
+    }
+}
+
+/**
+ * Element that allows the user to enter a new ingredients section name.
+ *
+ * @param context used to display Toast
+ * @param sectionNames list of section names that already exist
+ * @param onAddSection block that runs when pressing the Add button, returning the new section name
+ */
+@Composable
+private fun AddSection(
+    context: Context,
+    sectionNames: List<String>,
+    onAddSection: (String) -> Unit
+) {
+    val focusRequester = remember { FocusRequester() }
+    val isFocused = remember { mutableStateOf(false) }
+    val newSection = remember { mutableStateOf("") }
+
+    Column (
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // add button next to the new section text field
+            IconButton(
+                onClick = {
+                    if (isFocused.value) {
+                        newSection.value = newSection.value.trimEnd()
+                        if (newSection.value.isNotBlank()) {
+                            if (sectionNames.contains(newSection.value)) {
+                                Toast.makeText(context, context.getString(R.string.toast_sectionName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                onAddSection(newSection.value)
+                                focusRequester.freeFocus()
+                                isFocused.value = false
+                            }
+                        }
+                        newSection.value = ""
+
+                    } else {
+                        focusRequester.requestFocus()
+                    }
+                }
+            ) {
+                Icon(
+                    painterResource(R.drawable.add),
+                    modifier = Modifier.size((INLINE_ICON + 6).dp),
+                    contentDescription = stringResource(R.string.desc_add)
+                )
+            }
+            CustomTextField(
+                value = newSection.value,
+                onValueChange = {
+                    newSection.value = it
+                    isFocused.value = true
+                },
+                icon = -1,
+                placeHolder = stringResource(R.string.field_addSection),
+                singleLine = true,
+                maxLength = MAX_CHARA,
+                showMaxChara = false,
+                width = 300.dp,
+                focusRequester = focusRequester,
+                onFocusedChanged = { isFocused.value = it.isFocused },
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        newSection.value = newSection.value.trimEnd()
+                        if (newSection.value.isNotBlank()) {
+                            if (sectionNames.contains(newSection.value)) {
+                                Toast.makeText(context, context.getString(R.string.toast_sectionName), Toast.LENGTH_SHORT).show()
+                            } else {
+                                onAddSection(newSection.value)
+                                focusRequester.freeFocus()
+                                isFocused.value = false
+                            }
+                        }
+                        newSection.value = ""
+                    }
+                ),
+                keyboardOptions = KeyboardOptions.Default.copy(
+                    imeAction = ImeAction.Done
+                )
+            )
+        }
+    }
+}
+
+/**
+ * How a section name is displayed and can be edited.
+ *
+ * @param context used to access string resources
+ * @param name of the section
+ * @param ingredients list of RecipeIngredient objects under this section
+ * @param onAddNewIngredient block that runs after adding a new ingredient
+ * @param onEditIngredient block that runs after modifying an ingredient
+ * @param onRemoveIngredient block that runs after removing an ingredient, returning the ingredient to be removed
+ * @param onEditSectionName block that runs after modifying the name of a section, returning the old and new names
+ * @param onRemoveSection block that runs after removing a section
+ */
+@Composable
+fun SectionIngredients(
+    context: Context,
+    name: String,
+    ingredients: List<RecipeIngredient>,
+    onAddNewIngredient: () -> Unit,
+    onEditIngredient: () -> Unit,
+    onRemoveIngredient: (RecipeIngredient) -> Unit,
+    onEditSectionName: (String, String) -> Unit,
+    onRemoveSection: () -> Unit
+) {
+    val isEditingName = remember { mutableStateOf(false) }
+    val editedName = remember { mutableStateOf(name) }
+
+    Column (
+        horizontalAlignment = Alignment.Start,
+        verticalArrangement = Arrangement.spacedBy(0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ){
+            // if the user is editing the section's name -> show a text field
+            if (isEditingName.value) {
+                Spacer(modifier = Modifier.size(16.dp))
+                CustomTextField(
+                    value = editedName.value,
+                    onValueChange = { editedName.value = it },
+                    icon = -1,
+                    placeHolder = stringResource(R.string.field_addSection),
+                    singleLine = true,
+                    maxLength = MAX_CHARA,
+                    showMaxChara = false,
+                    width = 200.dp,
+                    keyboardActions = KeyboardActions(
+                        onDone = {
+                            if (editedName.value.isNotBlank()) {
+                                if (editedName.value != name) {
+                                    onEditSectionName(name, editedName.value)
+                                }
+                                isEditingName.value = false
+                            }
+                        }
+                    ),
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Done
+                    ))
+            // if the user isn't editing the section's name, simply display it
+            } else {
+                Text(text = editedName.value, style = MyTypography.bodyLarge.copy(fontWeight = FontWeight.Bold), modifier = Modifier.padding(start = 16.dp))
+            }
+            // icons next to the section's name
+            Row(
+                horizontalArrangement = Arrangement.End
+            ) {
+                // edit button (can be used to bring the text field in and out of focus)
+                IconButton(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(40.dp)
+                        .padding(end = 16.dp),
+                    onClick = {
+                        if (editedName.value.isNotBlank()) {
+                            if (editedName.value != name) {
+                                onEditSectionName(name, editedName.value)
+                            }
+                            isEditingName.value = !isEditingName.value
+                        }
+                    }
+                ){
+                    Icon(painterResource(R.drawable.pencil), contentDescription = stringResource(R.string.desc_edit))
+                }
+                // delete button next to the category's name to delete it
+                IconButton(
+                    modifier = Modifier
+                        .height(24.dp)
+                        .width(40.dp)
+                        .padding(end = 16.dp),
+                    onClick = { onRemoveSection() }
+                ){
+                    Icon(painterResource(R.drawable.bin), contentDescription = stringResource(R.string.desc_delete))
+                }
+            }
+        }
+        // list of ingredients under this section
+        ingredients.forEach { ingredient ->
+            IngredientItem(
+                context = context,
+                ingredient = ingredient,
+                onValueChange = {
+                    onEditIngredient()
+                },
+                onDelete = {
+                    onRemoveIngredient(ingredient)
+                }
+            )
+            Spacer(modifier = Modifier.size(8.dp))
+        }
+        // "Plus" button to add an ingredient
+        AddButton {
+            onAddNewIngredient()
+        }
     }
 }

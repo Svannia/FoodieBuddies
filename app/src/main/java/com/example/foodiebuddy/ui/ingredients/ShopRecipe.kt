@@ -82,10 +82,10 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             val recipe = recipeVM.recipeData.value
             if (recipe != Recipe.empty()) {
                 ingredients.clear()
-                ingredients.addAll(recipe.ingredients)
+                ingredients.addAll(recipe.ingredients.values.flatten())
                 newNames.clear()
                 newNames.addAll(ingredients.map { it.displayedName })
-                ingredientsToAdd.addAll(recipe.ingredients.map { it.toOwned(PLACEHOLDER) })
+                ingredientsToAdd.addAll(recipe.ingredients.values.flatten().map { it.toOwned(PLACEHOLDER) })
                 userVM.fetchUserPersonal({
                     if (it) {
                         handleError(context, "Could not fetch user personal")
@@ -116,7 +116,7 @@ fun ShopRecipe(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     LaunchedEffect(recipeData) {
         if (recipeData != Recipe.empty()) {
             ingredients.clear()
-            ingredients.addAll(recipeData.ingredients)
+            ingredients.addAll(recipeData.ingredients.values.flatten())
             newNames.clear()
             newNames.addAll(ingredients.map { it.displayedName })
         }

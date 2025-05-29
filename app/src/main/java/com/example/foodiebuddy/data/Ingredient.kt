@@ -64,7 +64,7 @@ data class RecipeIngredient(
          * @return empty Recipe Ingredient object.
          */
         fun empty(): RecipeIngredient {
-            return RecipeIngredient("", "", 0f, Measure.NONE)
+            return RecipeIngredient("", "", 0f, Measure.NONE, "")
         }
     }
     /**
@@ -79,10 +79,8 @@ data class RecipeIngredient(
     /**
      * Converts a RecipeIngredient into an OwnedIngredient
      *
-     * @param
-     * @param
-     * @param
-     * @return
+     * @param category the owned ingredient category this ingredient should be transferred to
+     * @return OwnedIngredient object
      */
     fun toOwned(category: String): OwnedIngredient {
         return OwnedIngredient("", this.displayedName, this.standName, category, false)

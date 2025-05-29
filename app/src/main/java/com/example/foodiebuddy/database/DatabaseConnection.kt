@@ -986,7 +986,7 @@ class DatabaseConnection {
                                     if (remainingIngredients <= 0) {
                                         // once the list of ingredients is created -> loop over recipes
                                         val filteredRecipes = allRecipes.filter { recipe ->
-                                            recipe.ingredients.all { ingredient ->
+                                            recipe.ingredients.values.flatten().all { ingredient ->
                                                 ingredient.standName in ownedIngredients
                                             }
                                         }
@@ -1383,7 +1383,7 @@ class DatabaseConnection {
      * @param name title of the recipe
      * @param pictures pictures of the recipe (can be an empty list)
      * @param instructions list of strings where each element represents a step of the cooking instructions
-     * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @param ingredients maps section names to lists of RecipeIngredient objects
      * @param portion number that indicates for how many servings this recipe is designed
      * @param perPerson if true, the portion is per person, if false it is per piece
      * @param origin origin tag from Origin enum
@@ -1397,7 +1397,7 @@ class DatabaseConnection {
         name: String,
         pictures: List<Uri>,
         instructions: List<String>,
-        ingredients: List<RecipeIngredient>,
+        ingredients: Map<String, List<RecipeIngredient>>,
         portion: Int,
         perPerson: Boolean,
         origin: Origin,
@@ -1411,13 +1411,15 @@ class DatabaseConnection {
             NAME to name,
             PICTURES to emptyList<String>(),
             INSTRUCTIONS to instructions,
-            INGREDIENTS to ingredients.map { ingredient ->
-                mapOf(
-                    DISPLAY_NAME to ingredient.displayedName,
-                    STAND_NAME to ingredient.standName,
-                    QUANTITY to ingredient.quantity,
-                    UNIT to ingredient.unit
-                )
+            INGREDIENTS to ingredients.mapValues {(_, ingredientMaps) ->
+                ingredientMaps.map { ingredient ->
+                    mapOf(
+                        DISPLAY_NAME to ingredient.displayedName,
+                        STAND_NAME to ingredient.standName,
+                        QUANTITY to ingredient.quantity,
+                        UNIT to ingredient.unit
+                    )
+                }
             },
             PORTION to portion,
             PER_PERSON to perPerson,
@@ -1486,14 +1488,16 @@ class DatabaseConnection {
                 val formattedStep = it.replace("\\n", "\n")
                 formattedInstructions.add(formattedStep)
             }
-            val ingredients = (document.get(INGREDIENTS) as? List<Map<String, Any>>)?.map { map ->
-                RecipeIngredient(
-                    displayedName = (map[DISPLAY_NAME] ?: "").toString(),
-                    standName = map[STAND_NAME].toString(),
-                    quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
-                    unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
-                )
-            } ?: emptyList()
+            val ingredients = (document.get(INGREDIENTS) as? Map<String, List<Map<String, Any>>>)?.mapValues { (_, ingredientMaps) ->
+                ingredientMaps.map { map ->
+                    RecipeIngredient(
+                        displayedName = (map[DISPLAY_NAME] ?: "").toString(),
+                        standName = map[STAND_NAME].toString(),
+                        quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                        unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE,
+                    )
+                }
+            } ?: emptyMap()
             val portion = document.getLong(PORTION)?.toInt() ?: 1
             val perPerson = document.getBoolean(PER_PERSON) ?: true
             val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
@@ -1530,14 +1534,16 @@ class DatabaseConnection {
                         val formattedStep: String = it.replace("\\n", "\n")
                         formattedInstructions.add(formattedStep)
                     }
-                    val ingredients = (document.get(INGREDIENTS) as? List<Map<String, Any>>)?.map { map ->
-                        RecipeIngredient(
-                            displayedName = (map[DISPLAY_NAME] ?: "").toString(),
-                            standName = map[STAND_NAME].toString(),
-                            quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
-                            unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
-                        )
-                    } ?: emptyList()
+                    val ingredients = (document.get(INGREDIENTS) as? Map<String, List<Map<String, Any>>>)?.mapValues { (_, ingredientMaps) ->
+                        ingredientMaps.map { map ->
+                            RecipeIngredient(
+                                displayedName = (map[DISPLAY_NAME] ?: "").toString(),
+                                standName = map[STAND_NAME].toString(),
+                                quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                                unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE,
+                            )
+                        }
+                    } ?: emptyMap()
                     val portion = document.getLong(PORTION)?.toInt() ?: 1
                     val perPerson = document.getBoolean(PER_PERSON) ?: true
                     val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
@@ -1582,7 +1588,7 @@ class DatabaseConnection {
         pictures: List<Uri>,
         updatePictures: Boolean,
         instructions: List<String>,
-        ingredients: List<RecipeIngredient>,
+        ingredients: Map<String, List<RecipeIngredient>>,
         portion: Int,
         perPerson: Boolean,
         origin: Origin,
@@ -1594,13 +1600,15 @@ class DatabaseConnection {
         val recipe = hashMapOf(
             NAME to name,
             INSTRUCTIONS to instructions,
-            INGREDIENTS to ingredients.map { ingredient ->
-                mapOf(
-                    DISPLAY_NAME to ingredient.displayedName,
-                    STAND_NAME to ingredient.standName,
-                    QUANTITY to ingredient.quantity,
-                    UNIT to ingredient.unit
-                )
+            INGREDIENTS to ingredients.mapValues {(_, ingredientMaps) ->
+                ingredientMaps.map { ingredient ->
+                    mapOf(
+                        DISPLAY_NAME to ingredient.displayedName,
+                        STAND_NAME to ingredient.standName,
+                        QUANTITY to ingredient.quantity,
+                        UNIT to ingredient.unit
+                    )
+                }
             },
             PORTION to portion,
             PER_PERSON to perPerson,

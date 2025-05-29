@@ -35,6 +35,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -89,7 +90,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val name = remember { mutableStateOf("") }
     val pictures = remember { mutableStateListOf<Uri>() }
     val instructions = remember { mutableStateListOf("") }
-    val ingredients = remember { mutableStateListOf<RecipeIngredient>() }
+    val ingredients = remember { mutableStateMapOf<String, List<RecipeIngredient>>() }
     val portion = remember { mutableIntStateOf(1) }
     val perPerson = remember { mutableStateOf(true) }
     val origin = remember { mutableStateOf(Origin.NONE) }
@@ -131,8 +132,6 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
         }
     }
 
-    // todo: view all images
-
     LaunchedEffect(Unit) {
         loadingData.value = true
         recipeVM.fetchRecipeData({
@@ -150,9 +149,9 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 instructions.clear()
                 instructions.addAll(recipe.instructions)
                 ingredients.clear()
-                ingredients.addAll(recipe.ingredients)
+                ingredients.putAll(recipe.ingredients)
                 customQuantities.clear()
-                customQuantities.addAll(recipe.ingredients.map { it.quantity })
+                customQuantities.addAll(recipe.ingredients.values.flatten().map { it.quantity })
                 portion.intValue = recipe.portion
                 customPortion.intValue = recipe.portion
                 perPerson.value = recipe.perPerson
@@ -194,9 +193,9 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             instructions.clear()
             instructions.addAll(recipeData.instructions)
             ingredients.clear()
-            ingredients.addAll(recipeData.ingredients)
+            ingredients.putAll(recipeData.ingredients)
             customQuantities.clear()
-            customQuantities.addAll(recipeData.ingredients.map { it.quantity })
+            customQuantities.addAll(recipeData.ingredients.values.flatten().map { it.quantity })
             portion.intValue = recipeData.portion
             customPortion.intValue = recipeData.portion
             perPerson.value = recipeData.perPerson
@@ -369,7 +368,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 onClick = {
                                     if (customPortion.intValue > 1) {
                                         customPortion.intValue--
-                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients)
+                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients.values.flatten())
                                     }
                                 }
                             ) {
@@ -409,7 +408,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 onClick = {
                                     if (customPortion.intValue < 20) {
                                         customPortion.intValue++
-                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients)
+                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients.values.flatten())
                                     }
                                 }
                             ) {
@@ -425,7 +424,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 modifier = Modifier.clickable {
                                     customPortion.intValue = portion.intValue
                                     customQuantities.clear()
-                                    customQuantities.addAll(ingredients.map { it.quantity })
+                                    customQuantities.addAll(ingredients.values.flatten().map { it.quantity })
                                 },
                                 text = stringResource(R.string.txt_resetQty),
                                 style = MyTypography.bodySmall.copy(textDecoration = TextDecoration.Underline)
@@ -435,65 +434,111 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     }
                 }
                 // list of ingredients
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        ingredients.forEachIndexed { index, ingredient ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text =
-                                    formatQuantity(customQuantities[index]) + "  "
-                                            + formatUnit(ingredient.unit, customQuantities[index], context),
-                                    style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                    modifier = Modifier.weight(1.5f)
-                                )
-                                Spacer(modifier = Modifier.size(8.dp))
-                                Text(
-                                    text = ingredient.displayedName,
-                                    style = MyTypography.bodyMedium,
-                                    modifier = Modifier.weight(3f)
-                                )
+                if (ingredients.keys.contains("-")) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            ingredients["-"]?.forEachIndexed { index, ingredient ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text =
+                                        formatQuantity(customQuantities[index]) + "  "
+                                                + formatUnit(ingredient.unit, customQuantities[index], context),
+                                        style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.weight(1.5f)
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(
+                                        text = ingredient.displayedName,
+                                        style = MyTypography.bodyMedium,
+                                        modifier = Modifier.weight(3f)
+                                    )
+                                }
                             }
                         }
                     }
                 }
+                ingredients.filterKeys { it != "-" }.forEach { (sectionName, sectionIngredients) ->
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = sectionName,
+                                style = MyTypography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                            )
+                            sectionIngredients.forEachIndexed { index, ingredient ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text =
+                                        formatQuantity(customQuantities[index]) + "  "
+                                                + formatUnit(ingredient.unit, customQuantities[index], context),
+                                        style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        modifier = Modifier.weight(1.5f)
+                                    )
+                                    Spacer(modifier = Modifier.size(8.dp))
+                                    Text(
+                                        text = ingredient.displayedName,
+                                        style = MyTypography.bodyMedium,
+                                        modifier = Modifier.weight(3f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+                item { Spacer(modifier = Modifier.size(16.dp)) }
                 // add ingredients to groceries
                 item {
-                    Button(
-                        onClick = { navigationActions.navigateTo("${Route.SHOP_RECIPE}/$recipeID") },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Transparent
-                        ),
+                    Row(
                         modifier = Modifier
-                            .border(
-                                width = 2.dp,
-                                color = MaterialTheme.colorScheme.outline,
-                                shape = RoundedCornerShape(20)
-                            )
-                            .background(
-                                color = Color.Transparent,
-                                shape = RoundedCornerShape(20)
-                            ),
-                        shape = RoundedCornerShape(20)
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
                     ) {
-                        Icon(
-                            painter = painterResource(R.drawable.cart_add),
-                            contentDescription = stringResource(R.string.desc_shop),
-                            tint = MaterialTheme.colorScheme.inversePrimary
-                        )
-                        Spacer(modifier = Modifier.size(16.dp))
-                        Text(
-                            text = stringResource(R.string.button_addToGroceries),
-                            style = MyTypography.bodyMedium,
-                            color = MaterialTheme.colorScheme.inversePrimary
-                        )
+                        Button(
+                            onClick = { navigationActions.navigateTo("${Route.SHOP_RECIPE}/$recipeID") },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent
+                            ),
+                            modifier = Modifier
+                                .border(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.outline,
+                                    shape = RoundedCornerShape(20)
+                                )
+                                .background(
+                                    color = Color.Transparent,
+                                    shape = RoundedCornerShape(20)
+                                ),
+                            shape = RoundedCornerShape(20)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.cart_add),
+                                contentDescription = stringResource(R.string.desc_shop),
+                                tint = MaterialTheme.colorScheme.inversePrimary
+                            )
+                            Spacer(modifier = Modifier.size(16.dp))
+                            Text(
+                                text = stringResource(R.string.button_addToGroceries),
+                                style = MyTypography.bodyMedium,
+                                color = MaterialTheme.colorScheme.inversePrimary
+                            )
+                        }
                     }
                 }
                 item { Spacer(modifier = Modifier.size(16.dp)) }

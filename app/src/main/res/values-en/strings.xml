@@ -90,6 +90,7 @@
     <string name="dst_settings">Settings</string>
 
     <string name="field_addCategory">Add a category</string>
+    <string name="field_addSection">Add a section (e.g. For the filling)</string>
     <string name="field_addIngredient">Add an ingredient</string>
     <string name="field_addItem">Add an item</string>
     <string name="field_bio">Bio</string>
@@ -171,8 +172,9 @@
     <string name="title_theme">Theme</string>
 
     <string name="toast_bugReport">Thank you for reporting the bug!</string>
-    <string name="toast_categoryName">This category already exists</string>
-    <string name="toast_downloaded">File downloaded! Check your Downloads folder.</string>
+    <string name="toast_categoryName">This category already exists.</string>
+    <string name="toast_sectionName">This section already exists.</string>
+    <string name="toast_downloaded">File downloaded! Check your Files.</string>
     <string name="toast_emptyBugReport">Please describe the bug to send a report,</string>
     <string name="toast_ingredientExists">This article is already in your groceries list.</string>
     <string name="toast_internetCo">Network error. Please check your network connection.</string>

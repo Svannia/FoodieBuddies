@@ -8,9 +8,9 @@ import android.net.Uri
  * @property uid of the recipe
  * @property owner UID of the user who created the recipe
  * @property name title of the recipe
- * @property picture picture of the recipe (empty URI if there is no picture)
+ * @property pictures list of pictures for the recipe (can be an empty list)
  * @property instructions list of strings where each element represents a step of the cooking instructions
- * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+ * @property ingredients maps sections names to lists of RecipeIngredient objects
  * @property portion number that indicates for how many servings this recipe is designed
  * @property perPerson if true, the portion is per person, if false it is per piece
  * @property origin origin tag from Origin enum
@@ -24,7 +24,7 @@ data class Recipe(
     val name: String,
     val pictures: List<Uri>,
     val instructions: List<String>,
-    val ingredients: List<RecipeIngredient>,
+    val ingredients: Map<String,List<RecipeIngredient>>,
     val portion: Int,
     val perPerson: Boolean,
     val origin: Origin,
@@ -40,7 +40,7 @@ data class Recipe(
          * @return empty Recipe data object.
          */
         fun empty(): Recipe {
-            return Recipe("", "", "", emptyList(), listOf(""), emptyList(), 1, true,  Origin.NONE, Diet.NONE, emptyList(), emptyList())
+            return Recipe("", "", "", emptyList(), listOf(""), emptyMap(), 1, true,  Origin.NONE, Diet.NONE, emptyList(), emptyList())
         }
     }
     /**
@@ -60,7 +60,9 @@ data class Recipe(
  * @property name title of the recipe
  * @property pictures optional list of pictures of the recipe
  * @property instructions list of strings where each element represents a step of the cooking instructions
- * @property ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+ * @property ingredients maps section names to lists of mappings that represent the various ingredients attributes
+ * @property portion number that indicates for how many servings this recipe is designed for
+ * @property perPerson if true, the portion is per person, if false it is per piece
  * @property origin origin tag from Origin enum
  * @property diet diet tag from Diet enum
  * @property tags list of tags from Tag enum
@@ -70,7 +72,7 @@ data class RecipeDraft(
     val name: String,
     val pictures: List<String>,
     val instructions: List<String>,
-    val ingredients: List<Map<String, String>>,
+    val ingredients: Map<String, List<Map<String, String>>>,
     val portion: Int,
     val perPerson: Boolean,
     val origin: Origin,
@@ -84,7 +86,7 @@ data class RecipeDraft(
          * @return empty RecipeDraft data object.
          */
         fun empty(): RecipeDraft {
-            return RecipeDraft("", "", emptyList(), listOf(""), emptyList(), 1, true, Origin.NONE, Diet.NONE, emptyList())
+            return RecipeDraft("", "", emptyList(), listOf(""), emptyMap(), 1, true, Origin.NONE, Diet.NONE, emptyList())
         }
     }
 }

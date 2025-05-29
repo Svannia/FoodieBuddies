@@ -6,6 +6,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -39,7 +40,7 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
     val currentPictures = remember { mutableStateListOf<Uri>() }
     val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
-    val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
+    val ingredientsState = remember { mutableStateMapOf<String, List<RecipeIngredient>>() }
     val portionState = remember { mutableIntStateOf(1) }
     val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
@@ -92,14 +93,17 @@ fun RecipeCreate(userVM: UserViewModel, recipeVM: RecipeViewModel, offDataVM: Of
                     name = nameState.value,
                     pictures = if (picturesState.isEmpty()) emptyList() else picturesState.map { it.toString() },
                     instructions = instructionsState.toList(),
-                    ingredients = ingredientsState.map { ingredient ->
-                        mapOf(
-                            "displayedName" to ingredient.displayedName,
-                            "standName" to ingredient.standName,
-                            "quantity" to ingredient.quantity.toString(),
-                            "unit" to ingredient.unit.getString(context),
-                            "id" to ingredient.id
-                        )
+                    ingredients = ingredientsState.mapValues { (_, ingredientMaps) ->
+                        ingredientMaps.map { ingredient ->
+                            mapOf(
+                                "displayedName" to ingredient.displayedName,
+                                "standName" to ingredient.standName,
+                                "quantity" to ingredient.quantity.toString(),
+                                "unit" to ingredient.unit.getString(context),
+                                "id" to ingredient.id
+                            )
+                        }
+
                     },
                     portion = portionState.intValue,
                     perPerson = perPersonState.value,

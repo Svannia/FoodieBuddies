@@ -8,6 +8,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
@@ -43,7 +44,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
     val currentPictures = remember { mutableStateListOf<Uri>() }
     val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
-    val ingredientsState = remember { mutableStateListOf<RecipeIngredient>() }
+    val ingredientsState = remember { mutableStateMapOf<String, List<RecipeIngredient>>() }
     val portionState = remember { mutableIntStateOf(1) }
     val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
@@ -67,7 +68,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 instructionsState.clear()
                 instructionsState.addAll(recipeData.instructions)
                 ingredientsState.clear()
-                ingredientsState.addAll(recipeData.ingredients)
+                ingredientsState.putAll(recipeData.ingredients)
                 portionState.intValue = recipeData.portion
                 perPersonState.value = recipeData.perPerson
                 originState.value = recipeData.origin
@@ -88,7 +89,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
             instructionsState.clear()
             instructionsState.addAll(recipeData.instructions)
             ingredientsState.clear()
-            ingredientsState.addAll(recipeData.ingredients)
+            ingredientsState.putAll(recipeData.ingredients)
             portionState.intValue = recipeData.portion
             perPersonState.value = recipeData.perPerson
             originState.value = recipeData.origin

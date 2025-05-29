@@ -50,8 +50,8 @@ import com.example.foodiebuddy.viewModels.UserViewModel
 
 private const val HEIGHT = 42
 private const val OFFSET = 45
-private const val INLINE_ICON = 20
-private const val MAX_CHARA = 21
+const val INLINE_ICON = 20
+const val MAX_CHARA = 21
 
 enum class ScreenState { LOADING, VIEWING, EDITING }
 
@@ -293,7 +293,7 @@ fun IngredientCategoryEdit(
                     value = editedName.value,
                     onValueChange = { editedName.value = it },
                     icon = -1,
-                    placeHolder = stringResource(R.string.field_addItem),
+                    placeHolder = stringResource(R.string.field_addCategory),
                     singleLine = true,
                     maxLength = MAX_CHARA,
                     showMaxChara = false,
@@ -324,11 +324,11 @@ fun IngredientCategoryEdit(
                         .width(40.dp)
                         .padding(end = 16.dp),
                     onClick = {
-                        isEditingName.value = !isEditingName.value
                         if (editedName.value.isNotBlank()) {
                             if (editedName.value != name) {
                                 editedCategories[name] = editedName.value
                             }
+                            isEditingName.value = !isEditingName.value
                         }
                     }
                 ){

@@ -42,7 +42,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
     * @param name title of the recipe
     * @param pictures list of pictures URI (or empty list for no pictures)
     * @param instructions list of strings where each element represents a step of the cooking instructions
-    * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+    * @param ingredients maps section names to lists of RecipeIngredient objects
     * @param portion number that indicates for how many servings this recipe is designed
     * @param perPerson if true, the portion is per person, if false it is per piece
     * @param origin origin tag from Origin enum
@@ -56,7 +56,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         name: String,
         pictures: List<Uri>,
         instructions: List<String>,
-        ingredients: List<RecipeIngredient>,
+        ingredients: Map<String, List<RecipeIngredient>>,
         portion: Int,
         perPerson: Boolean,
         origin: Origin,
@@ -65,9 +65,10 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         isError: (Boolean) -> Unit,
         callBack: (String) -> Unit
     ) {
+        val filteredIngredients = ingredients.filterValues { it.isNotEmpty() }
         val filteredInstructions = instructions.toMutableList()
-        processListData(ingredients, filteredInstructions)
-        db.createRecipe(userID, name, pictures, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
+        processListData(filteredIngredients.values.flatten(), filteredInstructions)
+        db.createRecipe(userID, name, pictures, filteredInstructions, filteredIngredients, portion, perPerson, origin, diet, tags, { isError(it) }) {
             callBack(it)
         }
     }
@@ -118,7 +119,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
      * @param pictures pictures of the recipe (empty list if there is no picture)
      * @param updatePicture whether or not the Storage picture should be updated
      * @param instructions list of strings where each element represents a step of the cooking instructions
-     * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @param ingredients maps section names to lists of RecipeIngredient objects
      * @param portion number that indicates for how many servings this recipe is designed
      * @param perPerson if true, the portion is per person, if false it is per piece
      * @param origin origin tag from Origin enum
@@ -133,7 +134,7 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         pictures: List<Uri>,
         updatePicture: Boolean,
         instructions: List<String>,
-        ingredients: List<RecipeIngredient>,
+        ingredients: Map<String, List<RecipeIngredient>>,
         portion: Int,
         perPerson: Boolean,
         origin: Origin,
@@ -143,9 +144,10 @@ constructor(private val recipeID: String ?= null) : ViewModel() {
         callBack: () -> Unit
     ) {
         if (recipeID != null) {
+            val filteredIngredients = ingredients.filterValues { it.isNotEmpty() }
             val filteredInstructions = instructions.toMutableList()
-            processListData(ingredients, filteredInstructions)
-            db.updateRecipe(recipeData.value.owner, recipeID, name, picturesToRemove, pictures, updatePicture, filteredInstructions, ingredients, portion, perPerson, origin, diet, tags, { isError(it) })
+            processListData(filteredIngredients.values.flatten(), filteredInstructions)
+            db.updateRecipe(recipeData.value.owner, recipeID, name, picturesToRemove, pictures, updatePicture, filteredInstructions, filteredIngredients, portion, perPerson, origin, diet, tags, { isError(it) })
             {
                 fetchRecipeData({ isError(it) }) { callBack() }
             }
