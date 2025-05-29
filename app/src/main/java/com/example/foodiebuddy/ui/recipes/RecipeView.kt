@@ -1,7 +1,6 @@
 package com.example.foodiebuddy.ui.recipes
 
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -41,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -64,12 +62,12 @@ import com.example.foodiebuddy.navigation.Route
 import com.example.foodiebuddy.system.createRecipePdf
 import com.example.foodiebuddy.system.getFileName
 import com.example.foodiebuddy.ui.CustomTextField
+import com.example.foodiebuddy.ui.ImagePager
 import com.example.foodiebuddy.ui.InputDialogWindow
 import com.example.foodiebuddy.ui.LoadingPage
 import com.example.foodiebuddy.ui.OptionsMenu
 import com.example.foodiebuddy.ui.SecondaryScreen
 import com.example.foodiebuddy.ui.SelectableSquareImage
-import com.example.foodiebuddy.ui.SquareImage
 import com.example.foodiebuddy.ui.theme.MyTypography
 import com.example.foodiebuddy.ui.theme.ValidGreen
 import com.example.foodiebuddy.viewModels.RecipeViewModel
@@ -245,14 +243,10 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                     .padding(paddingValues),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // big picture (if there is one)
+                // big picture.s (if there is at least one)
                 item {
                     if (pictures.isNotEmpty()) {
-                        SquareImage(
-                            size = LocalConfiguration.current.screenWidthDp.dp,
-                            picture = pictures[0],
-                            contentDescription = stringResource(R.string.desc_recipePicture)
-                        )
+                        ImagePager(pictures)
                     }
                 }
                 // title, creator and tags
@@ -647,8 +641,6 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                     ) { isSelected ->
                                         if (isSelected) downloadImagesIndexes.add(index)
                                         else downloadImagesIndexes.remove(index)
-                                        for(idx in downloadImagesIndexes) {
-                                        }
                                     }
                                 }
                             }

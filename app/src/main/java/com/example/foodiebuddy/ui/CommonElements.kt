@@ -9,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +32,8 @@ import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -82,6 +86,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -398,10 +403,11 @@ fun IconSquareImage(icon: Int, iconColor: Color, pictureSize: Dp, picture: Uri, 
 /**
  * Creates a square image that can be selected with visual effects similar as usual Gallery apps.
  *
- * @param
- * @param
- * @param
- * @return
+ * @param isSelected is the image initially selected or not
+ * @param pictureSize length of the square image
+ * @param picture URI of the picture to be cropped
+ * @param contentDescription image description
+ * @param onClick block that runs when (un)selecting the image
  */
 @Composable
 fun SelectableSquareImage(isSelected: Boolean, pictureSize: Dp, picture: Uri, contentDescription: String, onClick: (Boolean) -> Unit) {
@@ -462,6 +468,58 @@ fun SelectableSquareImage(isSelected: Boolean, pictureSize: Dp, picture: Uri, co
                     contentDescription = stringResource(R.string.desc_add),
                     tint = Color.Black
                 )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+/**
+ * Creates a pager to swipe horizontally swipe between multiple pictures. Also features a pager indicator at the bottom.
+ *
+ * @param pictures list of the pictures that can be swiped through
+ */
+fun ImagePager(pictures: List<Uri>) {
+    val pagerState = rememberPagerState(pageCount = { pictures.size })
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RectangleShape)
+            .background(Color.Transparent),
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .aspectRatio(1f)
+        ) { page ->
+            SquareImage(
+                    size = LocalConfiguration.current.screenWidthDp.dp,
+                    picture = pictures[page],
+                    contentDescription = stringResource(R.string.desc_recipePicture)
+                )
+            }
+        // pager indicator
+        if (pictures.size > 1) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(pictures.size) { index ->
+                    val colour = if (index == pagerState.currentPage) MaterialTheme.colorScheme.primary else Color.White.copy(alpha = 0.5f)
+                    Box(
+                        modifier = Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(12.dp)
+                            .clip(CircleShape)
+                            .background(colour)
+                    )
+                }
             }
         }
     }

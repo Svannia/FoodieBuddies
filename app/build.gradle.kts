@@ -98,13 +98,14 @@ dependencies {
     implementation("com.google.firebase:firebase-database:20.3.1")
 
     //image manipulation
-    implementation("androidx.compose.ui:ui:1.3.2")
-    implementation("androidx.compose.material3:material3:1.0.0-alpha01")
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.material3:material3")
     implementation("io.coil-kt:coil-compose:2.1.0")
     implementation("androidx.navigation:navigation-compose:2.4.0-alpha10")
     implementation("androidx.activity:activity-compose:1.3.1")
     implementation("androidx.exifinterface:exifinterface:1.3.7")
     implementation("com.drewnoakes:metadata-extractor:2.18.0")
+    implementation("androidx.compose.foundation:foundation")
 
     // DataStore dependencies
     implementation("androidx.datastore:datastore-preferences:1.0.0")
