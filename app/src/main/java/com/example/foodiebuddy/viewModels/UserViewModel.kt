@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.time.LocalDate
 import javax.inject.Inject
 
 /**
@@ -71,7 +72,7 @@ constructor(private val userID: String ?= null) : ViewModel() {
     fun createUser(username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         viewModelScope.launch {
             if (userID != null) {
-                db.createUser(userID, username, picture, bio, { isError(it) }) { callBack() }
+                db.createUser(userID, username, picture, bio, LocalDate.now().toString(), { isError(it) }) { callBack() }
             } else {
                 isError(true)
                 Timber.tag("UserVM").d( "Failed to create user: ID is null")

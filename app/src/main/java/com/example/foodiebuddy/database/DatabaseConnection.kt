@@ -25,6 +25,7 @@ private const val USERNAME = "username"
 private const val PICTURE = "picture"
 private const val BIO = "bio"
 private const val NUMBER_RECIPES = "numberRecipes"
+private const val DATE_JOINED = "dateJoined"
 
 private const val GROCERIES = "groceryList"
 private const val FRIDGE = "fridge"
@@ -119,15 +120,16 @@ class DatabaseConnection {
      * @param username of the new user
      * @param picture Uri of the new user's picture or default picture
      * @param bio of the new user
+     * @param dateJoined date when the user has created their account
      * @param isError block that runs if there is an error executing the function
      * @param callBack block that runs after the DB was updated
      */
-    suspend fun createUser(userID: String, username: String, picture: Uri, bio: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
+    suspend fun createUser(userID: String, username: String, picture: Uri, bio: String, dateJoined: String, isError: (Boolean) -> Unit, callBack: () -> Unit) {
         // fetch default user picture
         val defaultPicture = getDefaultPicture()
         // process the input data to create a document
         val formattedBio = bio.replace("\n", "\\n")
-        val user = hashMapOf(USERNAME to username.trimEnd(), BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString())
+        val user = hashMapOf(USERNAME to username.trimEnd(), BIO to formattedBio, NUMBER_RECIPES to 0, PICTURE to picture.toString(), DATE_JOINED to dateJoined)
         // create the new userData document
         userDataCollection
             .document(userID)
@@ -182,9 +184,10 @@ class DatabaseConnection {
             val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
             val bio = document.getString(BIO) ?: ""
             val formattedBio = bio.replace("\\n", "\n")
+            val dateJoined = document.getString(DATE_JOINED) ?: ""
             isError(false)
             Timber.tag("MyDB").d( "Successfully fetched user data")
-            User(userID, username, picture, numberRecipes, formattedBio)
+            User(userID, username, picture, numberRecipes, formattedBio, dateJoined)
         } else {
             isError(true)
             Timber.tag("MyDB").d( "Failed to fetch user data for userID $userID")
@@ -312,9 +315,10 @@ class DatabaseConnection {
                     val numberRecipes = document.getLong(NUMBER_RECIPES)?.toInt() ?: 0
                     val bio = document.getString(BIO) ?: ""
                     val formattedBio = bio.replace("\\n", "\n")
+                    val dateJoined = document.getString(DATE_JOINED) ?: ""
                     isError(false)
                     Timber.tag("MyDB").d( "Successfully fetched all user data")
-                    User(document.id, username, picture, numberRecipes, formattedBio)
+                    User(document.id, username, picture, numberRecipes, formattedBio, dateJoined)
                 }
         } catch (e: Exception) {
             isError(true)

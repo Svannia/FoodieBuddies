@@ -90,9 +90,9 @@
     <string name="dst_settings">Settings</string>
 
     <string name="field_addCategory">Add a category</string>
-    <string name="field_addSection">Add a section (e.g. For the filling)</string>
     <string name="field_addIngredient">Add an ingredient</string>
     <string name="field_addItem">Add an item</string>
+    <string name="field_addSection">Add a section (e.g. For the filling)</string>
     <string name="field_bio">Bio</string>
     <string name="field_bugReport">Please describe what the bug is and what led to it.</string>
     <string name="field_ingredientName">Ingredient name</string>
@@ -173,18 +173,19 @@
 
     <string name="toast_bugReport">Thank you for reporting the bug!</string>
     <string name="toast_categoryName">This category already exists.</string>
-    <string name="toast_sectionName">This section already exists.</string>
     <string name="toast_downloaded">File downloaded! Check your Files.</string>
     <string name="toast_emptyBugReport">Please describe the bug to send a report,</string>
     <string name="toast_ingredientExists">This article is already in your groceries list.</string>
     <string name="toast_internetCo">Network error. Please check your network connection.</string>
     <string name="toast_savedDraft">Your draft has been saved.</string>
+    <string name="toast_sectionName">This section already exists.</string>
     <string name="toast_unknownError">There was an error, please retry. If it keeps failing, please contact Alice!</string>
 
     <string name="txt_addFav">Add to Favourites</string>
     <string name="txt_allIngredientsOnly">Only if I have the ingredients</string>
     <string name="txt_category">Category</string>
     <string name="txt_credits">Created by %1$s on %2$s</string>
+    <string name="txt_dateJoined">Joined on the %1$s</string>
     <string name="txt_emptyFridge">Your fridge is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_emptyGroceries">Your shopping list is empty.\nTap the Edit button to add new items.</string>
     <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
@@ -197,7 +198,7 @@
     <string name="txt_noDrafts">You don\'t have any saved draft for now.</string>
     <string name="txt_noRecipes">There are no recipes on the app for now!</string>
     <string name="txt_noResults">There are no recipes corresponding to those filters.</string>
-    <string name="txt_numberRecipes">Total number of added recipes: %1$s</string>
+    <string name="txt_numberRecipes">Recipes created</string>
     <string name="txt_pdfImageError">Image could not be loaded</string>
     <string name="txt_people">people</string>
     <string name="txt_person">person</string>
@@ -233,4 +234,5 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
+    <string name="txt_bio">Bio</string>
 </resources>

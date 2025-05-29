@@ -10,13 +10,15 @@ import android.net.Uri
  * @property picture either one chosen by the user, or the default profile picture
  * @property numberRecipes added by this user. This field cannot be edited directly by the user
  * @property bio optional description text that the user can add on their profile
+ * @property dateJoined that the user has joined the app in YYYY-MM-DD format
  */
 data class User(
     val uid: String,
     val username: String,
     val picture: Uri,
     val numberRecipes: Int,
-    val bio: String
+    val bio: String,
+    val dateJoined: String
 ) {
     companion object {
         /**
@@ -25,7 +27,7 @@ data class User(
          * @return empty User data object.
          */
         fun empty(): User {
-            return User("", "", Uri.EMPTY, 0, "")
+            return User("", "", Uri.EMPTY, 0, "", "")
         }
     }
     /**
