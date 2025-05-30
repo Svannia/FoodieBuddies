@@ -1,5 +1,7 @@
 package com.example.foodiebuddy.ui.settings
 
+import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -36,6 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.database.ThemeChoice
@@ -187,6 +194,33 @@ fun Settings(userViewModel: UserViewModel, offDataVM: OfflineDataViewModel, navi
                                 .clickable { reportVisible.value = true },
                             contentAlignment = Alignment.CenterStart
                         ) { Text(modifier = Modifier.padding(start = OFFSET.dp), text = stringResource(R.string.button_sendBug), style = MyTypography.bodyLarge) }
+                        // Credits for icons
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(HEIGHT.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            val annotatedString = buildAnnotatedString {
+                                append(stringResource(R.string.txt_iconsBy))
+                                pushStringAnnotation(tag = "URL", annotation = "https://icons8.com")
+                                withStyle(style = SpanStyle(color = MaterialTheme.colorScheme.outline, textDecoration = TextDecoration.Underline)) {
+                                    append("Icons8")
+                                }
+                                pop()
+                            }
+                            ClickableText(
+                                modifier = Modifier.padding(start = OFFSET.dp),
+                                text = annotatedString,
+                                style = MyTypography.bodyMedium.copy(color = MaterialTheme.colorScheme.outline),
+                            ) { offset ->
+                                annotatedString.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(it.item))
+                                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                                    context.startActivity(intent)
+                                }
+                            }
+                        }
                     }
                 }
             }

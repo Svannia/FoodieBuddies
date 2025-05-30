@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.errors.handleError
@@ -173,7 +174,7 @@ fun Profile(userViewModel: UserViewModel, navigationActions: NavigationActions) 
                         if (bioState.value.isNotBlank()) {
                             Spacer(modifier = Modifier.size(8.dp))
                             Text(text = stringResource(R.string.txt_bio), style = MyTypography.titleMedium, color = MaterialTheme.colorScheme.primary)
-                            Text(text = bioState.value, style = MyTypography.bodyLarge)
+                            Text(text = bioState.value, style = MyTypography.bodyLarge.copy(textAlign = TextAlign.Center))
                         }
 
                         // recipes added

@@ -93,7 +93,7 @@
     <string name="field_addCategory">Ajouter une catégorie</string>
     <string name="field_addIngredient">Ajouter un ingrédient</string>
     <string name="field_addItem">Ajouter un article</string>
-    <string name="field_addSection">Ajouter une section (ex: Pour la farce)</string>
+    <string name="field_addSection">Section (ex: Pour la farce)</string>
     <string name="field_bio">Bio</string>
     <string name="field_bugReport">Merci de décrire le bug et ce qui l\a provoqué.</string>
     <string name="field_ingredientName">Nom de l\'ingrédient</string>
@@ -184,6 +184,7 @@
 
     <string name="txt_addFav">Ajouter aux Favoris</string>
     <string name="txt_allIngredientsOnly">Uniquement si j\'ai les ingrédients</string>
+    <string name="txt_bio">Bio</string>
     <string name="txt_category">Catégorie</string>
     <string name="txt_credits">Créée par %1$s sur %2$s</string>
     <string name="txt_dateJoined">A rejoint le %1$s</string>
@@ -192,6 +193,7 @@
     <string name="txt_existingIngredient">\"%1$s\" sous %2$s dans %3$s</string>
     <string name="txt_favouriteOnly">Uniquement recettes préférées</string>
     <string name="txt_for">Pour</string>
+    <string name="txt_iconsBy">"Icônes de "</string>
     <string name="txt_includeImage">Inclure des images</string>
     <string name="txt_includeNotes">Inclure les Notes Personnelles</string>
     <string name="txt_me">Moi</string>
@@ -235,5 +237,4 @@
     <string name="unit_pin">pincée</string>
     <string name="unit_sachet">sachet</string>
     <string name="unit_tasse">tasse</string>
-    <string name="txt_bio">Bio</string>
 </resources>

@@ -92,7 +92,7 @@
     <string name="field_addCategory">Add a category</string>
     <string name="field_addIngredient">Add an ingredient</string>
     <string name="field_addItem">Add an item</string>
-    <string name="field_addSection">Add a section (e.g. For the filling)</string>
+    <string name="field_addSection">Section (e.g. For the filling)</string>
     <string name="field_bio">Bio</string>
     <string name="field_bugReport">Please describe what the bug is and what led to it.</string>
     <string name="field_ingredientName">Ingredient name</string>
@@ -183,6 +183,7 @@
 
     <string name="txt_addFav">Add to Favourites</string>
     <string name="txt_allIngredientsOnly">Only if I have the ingredients</string>
+    <string name="txt_bio">Bio</string>
     <string name="txt_category">Category</string>
     <string name="txt_credits">Created by %1$s on %2$s</string>
     <string name="txt_dateJoined">Joined on the %1$s</string>
@@ -191,6 +192,7 @@
     <string name="txt_existingIngredient">\"%1$s\" under %2$s in %3$s</string>
     <string name="txt_favouriteOnly">Only favourite recipes</string>
     <string name="txt_for">For</string>
+    <string name="txt_iconsBy">"Icons by "</string>
     <string name="txt_includeImage">Include images</string>
     <string name="txt_includeNotes">Include the Personal Notes</string>
     <string name="txt_me">Me</string>
@@ -234,5 +236,4 @@
     <string name="unit_pin">pinch</string>
     <string name="unit_sachet">packet</string>
     <string name="unit_tasse">cup</string>
-    <string name="txt_bio">Bio</string>
 </resources>
