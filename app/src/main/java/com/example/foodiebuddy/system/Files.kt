@@ -3,13 +3,12 @@ package com.example.foodiebuddy.system
 import com.itextpdf.kernel.pdf.PdfWriter
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
-import android.util.Log
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.data.Recipe
 import com.example.foodiebuddy.data.formatQuantity
 import com.example.foodiebuddy.data.formatUnit
 import com.example.foodiebuddy.errors.handleError
+import com.itextpdf.io.font.PdfEncodings
 import com.itextpdf.io.image.ImageDataFactory
 import com.itextpdf.kernel.pdf.PdfDocument
 import com.itextpdf.layout.Document
@@ -48,12 +47,12 @@ fun createRecipePdf(context: Context, outputStream: OutputStream, recipe: Recipe
     val pdfDoc = PdfDocument(writer)
     val document = Document(pdfDoc)
 
-    val font = "res/font/sf_pro_display.ttf"
-    val iTextFont = PdfFontFactory.createFont(font)
+    val assetsManager = context.assets
+    val fontStream = assetsManager.open("font/sf_pro_display.ttf")
+    val fontBytes = fontStream.readBytes()
+    fontStream.close()
+    val iTextFont = PdfFontFactory.createFont(fontBytes, PdfEncodings.IDENTITY_H, PdfFontFactory.EmbeddingStrategy.PREFER_EMBEDDED)
     document.setFont(iTextFont)
-
-    // row for image, title and credits
-    val headerTable = Table(UnitValue.createPercentArray(floatArrayOf(2f, 3f))).useAllAvailableWidth()
 
     // title and credits
     val title = Paragraph(recipe.name)
