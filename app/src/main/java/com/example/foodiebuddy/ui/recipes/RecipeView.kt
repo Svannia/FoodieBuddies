@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -99,7 +100,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
     val favouriteOf = remember { mutableStateListOf<String>() }
 
     val customPortion = remember { mutableIntStateOf(1) }
-    val customQuantities = remember { mutableStateListOf<Float>() }
+    val customQuantities = remember { mutableStateMapOf<String, MutableList<Float>>() }
 
     val notes = remember { mutableStateOf(userPersonalData.notes) }
     val note = remember { mutableStateOf("") }
@@ -132,6 +133,9 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
         }
     }
 
+    // to ensure that the ordering of the ingredients section stay consistent
+    val sectionOrder = remember { ingredients.keys.filter { it != "-" }.toMutableList() }
+
     LaunchedEffect(Unit) {
         loadingData.value = true
         recipeVM.fetchRecipeData({
@@ -150,8 +154,12 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                 instructions.addAll(recipe.instructions)
                 ingredients.clear()
                 ingredients.putAll(recipe.ingredients)
+                sectionOrder.clear()
+                sectionOrder.addAll(recipeData.ingredients.keys.filter { it != "-" })
                 customQuantities.clear()
-                customQuantities.addAll(recipe.ingredients.values.flatten().map { it.quantity })
+                customQuantities.putAll(recipe.ingredients.mapValues { (_, ingredientsList) ->
+                    ingredientsList.map { it.quantity }.toMutableList()
+                })
                 portion.intValue = recipe.portion
                 customPortion.intValue = recipe.portion
                 perPerson.value = recipe.perPerson
@@ -194,8 +202,12 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
             instructions.addAll(recipeData.instructions)
             ingredients.clear()
             ingredients.putAll(recipeData.ingredients)
+            sectionOrder.clear()
+            sectionOrder.addAll(recipeData.ingredients.keys.filter { it != "-" })
             customQuantities.clear()
-            customQuantities.addAll(recipeData.ingredients.values.flatten().map { it.quantity })
+            customQuantities.putAll(recipeData.ingredients.mapValues { (_, ingredientsList) ->
+                ingredientsList.map { it.quantity }.toMutableList()
+            })
             portion.intValue = recipeData.portion
             customPortion.intValue = recipeData.portion
             perPerson.value = recipeData.perPerson
@@ -368,7 +380,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 onClick = {
                                     if (customPortion.intValue > 1) {
                                         customPortion.intValue--
-                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients.values.flatten())
+                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients)
                                     }
                                 }
                             ) {
@@ -408,7 +420,7 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 onClick = {
                                     if (customPortion.intValue < 20) {
                                         customPortion.intValue++
-                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients.values.flatten())
+                                        adjustIngredients(customPortion.intValue, portion.intValue, customQuantities, ingredients)
                                     }
                                 }
                             ) {
@@ -424,7 +436,9 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 modifier = Modifier.clickable {
                                     customPortion.intValue = portion.intValue
                                     customQuantities.clear()
-                                    customQuantities.addAll(ingredients.values.flatten().map { it.quantity })
+                                    customQuantities.putAll(ingredients.mapValues { (_, ingredientsList) ->
+                                        ingredientsList.map { it.quantity }.toMutableList()
+                                    })
                                 },
                                 text = stringResource(R.string.txt_resetQty),
                                 style = MyTypography.bodySmall.copy(textDecoration = TextDecoration.Underline)
@@ -449,8 +463,8 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                                 ) {
                                     Text(
                                         text =
-                                        formatQuantity(customQuantities[index]) + "  "
-                                                + formatUnit(ingredient.unit, customQuantities[index], context),
+                                        formatQuantity(customQuantities["-"]?.get(index) ?: 1f) + "  "
+                                                + formatUnit(ingredient.unit, customQuantities["-"]?.get(index) ?: 1f, context),
                                         style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                                         modifier = Modifier.weight(1.5f)
                                     )
@@ -465,37 +479,36 @@ fun RecipeView(userVM: UserViewModel, recipeVM: RecipeViewModel, navigationActio
                         }
                     }
                 }
-                ingredients.filterKeys { it != "-" }.forEach { (sectionName, sectionIngredients) ->
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            Text(
-                                text = sectionName,
-                                style = MyTypography.bodyLarge.copy(fontWeight = FontWeight.Bold)
-                            )
-                            sectionIngredients.forEachIndexed { index, ingredient ->
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text =
-                                        formatQuantity(customQuantities[index]) + "  "
-                                                + formatUnit(ingredient.unit, customQuantities[index], context),
-                                        style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
-                                        modifier = Modifier.weight(1.5f)
-                                    )
-                                    Spacer(modifier = Modifier.size(8.dp))
-                                    Text(
-                                        text = ingredient.displayedName,
-                                        style = MyTypography.bodyMedium,
-                                        modifier = Modifier.weight(3f)
-                                    )
-                                }
+                items(sectionOrder, key = {it}) {sectionName ->
+                    val sectionIngredients = ingredients[sectionName] ?: emptyList()
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = sectionName,
+                            style = MyTypography.bodyLarge.copy(fontWeight = FontWeight.Bold)
+                        )
+                        sectionIngredients.forEachIndexed { index, ingredient ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text =
+                                    formatQuantity(customQuantities[sectionName]?.get(index) ?: 1f) + "  "
+                                            + formatUnit(ingredient.unit, customQuantities[sectionName]?.get(index) ?: 1f, context),
+                                    style = MyTypography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                    modifier = Modifier.weight(1.5f)
+                                )
+                                Spacer(modifier = Modifier.size(8.dp))
+                                Text(
+                                    text = ingredient.displayedName,
+                                    style = MyTypography.bodyMedium,
+                                    modifier = Modifier.weight(3f)
+                                )
                             }
                         }
                     }
@@ -728,8 +741,11 @@ private fun DownloadOption(option: MutableState<Boolean>, text: String) {
  * @param customQuantities mutable list containing only the quantities of all ingredients
  * @param ingredients original list of ingredients
  */
-private fun adjustIngredients(customPortion: Int, originalPortion: Int, customQuantities: MutableList<Float>, ingredients: List<RecipeIngredient>) {
-    customQuantities.forEachIndexed { index, _ ->
-        customQuantities[index] = ingredients[index].quantity * customPortion / originalPortion
+private fun adjustIngredients(customPortion: Int, originalPortion: Int, customQuantities: MutableMap<String, MutableList<Float>>, ingredients: MutableMap<String, List<RecipeIngredient>>) {
+    for ((section, originalIngredients) in ingredients) {
+        val updatedQuantities = originalIngredients.map {
+            it.quantity * customPortion / originalPortion
+        }.toMutableList()
+        customQuantities[section] = updatedQuantities
     }
 }

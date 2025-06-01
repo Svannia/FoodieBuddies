@@ -61,6 +61,7 @@ data class Recipe(
  * @property pictures optional list of pictures of the recipe
  * @property instructions list of strings where each element represents a step of the cooking instructions
  * @property ingredients maps section names to lists of mappings that represent the various ingredients attributes
+ * @property sectionsOrder list of section names in the order they should be displayed
  * @property portion number that indicates for how many servings this recipe is designed for
  * @property perPerson if true, the portion is per person, if false it is per piece
  * @property origin origin tag from Origin enum
@@ -73,6 +74,7 @@ data class RecipeDraft(
     val pictures: List<String>,
     val instructions: List<String>,
     val ingredients: Map<String, List<Map<String, String>>>,
+    val sectionsOrder: List<String>,
     val portion: Int,
     val perPerson: Boolean,
     val origin: Origin,
@@ -86,7 +88,8 @@ data class RecipeDraft(
          * @return empty RecipeDraft data object.
          */
         fun empty(): RecipeDraft {
-            return RecipeDraft("", "", emptyList(), listOf(""), emptyMap(), 1, true, Origin.NONE, Diet.NONE, emptyList())
+            return RecipeDraft("", "", emptyList(), listOf(""), emptyMap(), emptyList(),
+                1, true, Origin.NONE, Diet.NONE, emptyList())
         }
     }
 }

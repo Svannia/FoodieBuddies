@@ -11,10 +11,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -37,10 +40,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import com.example.foodiebuddy.R
 import com.example.foodiebuddy.errors.handleError
@@ -221,6 +223,18 @@ fun EditAccount(
                     val isEnabled = dataEdited?.value ?: true
                     val termsNeedAccepting = if (dataEdited == null) termsAccepted.value else true
                     SaveButton(name.value.isNotEmpty() && validUsername.value && isEnabled && termsNeedAccepting) { onSave() }
+                }
+                // spacing for the keyboard (cuz doing things properly with ime paddings fucks things up)
+                item {
+                    Spacer(modifier = Modifier
+                        .fillMaxWidth()
+                        .height(
+                            (WindowInsets.ime
+                                .asPaddingValues()
+                                .calculateBottomPadding()
+                                    - paddingValue.calculateBottomPadding())
+                                .coerceAtLeast(0.dp)
+                        ))
                 }
             }
             // terms and conditions dialog window

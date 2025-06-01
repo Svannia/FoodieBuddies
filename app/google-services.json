@@ -14,6 +14,30 @@
       },
       "oauth_client": [
         {
+          "client_id": "394532951073-9m5p02kgt0v4ie2t82ho6bpbid5qc1po.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.foodiebuddy",
+            "certificate_hash": "028e5ce67f2cec6f7b8dec74514c985405f8ed47"
+          }
+        },
+        {
+          "client_id": "394532951073-eo9h98m8b2ero14fi7g0vus040n41cjc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.foodiebuddy",
+            "certificate_hash": "0f325b8415e935b488f25d151ef38fc37ef41e6e"
+          }
+        },
+        {
+          "client_id": "394532951073-jc53oeng1shdu7natlgrjs4aqj41lsru.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.foodiebuddy",
+            "certificate_hash": "3ff3a443779bddf0977ec5bcd54185a22cc1c625"
+          }
+        },
+        {
           "client_id": "394532951073-qb35uvaj6vkjk3toa1mfhk2kb6nqlsqi.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

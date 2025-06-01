@@ -23,7 +23,6 @@ import com.example.foodiebuddy.data.Origin
 import com.example.foodiebuddy.data.RecipeDraft
 import com.example.foodiebuddy.data.RecipeIngredient
 import com.example.foodiebuddy.data.Tag
-import com.example.foodiebuddy.data.getString
 import com.example.foodiebuddy.errors.handleError
 import com.example.foodiebuddy.navigation.NavigationActions
 import com.example.foodiebuddy.navigation.Route
@@ -50,6 +49,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
     val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateMapOf<String, List<RecipeIngredient>>() }
+    val sectionsOrder = remember { mutableStateListOf<String>() }
     val portionState = remember { mutableIntStateOf(1) }
     val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
@@ -77,6 +77,8 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                 )
             }
         })
+        sectionsOrder.clear()
+        sectionsOrder.addAll(draft.value.sectionsOrder)
         portionState.intValue = draft.value.portion
         perPersonState.value = draft.value.perPerson
         originState.value = draft.value.origin
@@ -117,6 +119,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             pictures = picturesState,
             instructions = instructionsState,
             ingredients = ingredientsState,
+            sectionsOrder = sectionsOrder,
             portion = portionState,
             perPerson = perPersonState,
             origin = originState,
@@ -129,6 +132,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                 currentPictures.removeAt(index)
                 dataEdited.value = true
             },
+            canSaveDraft = true,
             onDraftSave = {
                 val newDraft = RecipeDraft(
                     id = draftID,
@@ -141,11 +145,12 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
                                 "displayedName" to ingredient.displayedName,
                                 "standName" to ingredient.standName,
                                 "quantity" to ingredient.quantity.toString(),
-                                "unit" to ingredient.unit.getString(context),
+                                "unit" to ingredient.unit.name,
                                 "id" to ingredient.id
                             )
                         }
                     },
+                    sectionsOrder = sectionsOrder,
                     portion = portionState.intValue,
                     perPerson = perPersonState.value,
                     origin = originState.value,
@@ -160,7 +165,7 @@ fun EditDraft(draftID: String, userVM: UserViewModel, recipeVM: RecipeViewModel,
             onSave = {
                 recipeVM.createRecipe(
                     userID, nameState.value, picturesState,
-                    instructionsState, ingredientsState,
+                    instructionsState, ingredientsState, sectionsOrder,
                     portionState.intValue, perPersonState.value,
                     originState.value, dietState.value, tagsState,
                     { if (it) handleError(context, "Could not create recipe") }

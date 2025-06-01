@@ -45,6 +45,7 @@ private const val QUANTITY = "quantity"
 private const val UNIT = "unit"
 private const val PORTION = "portion"
 private const val PER_PERSON = "perPerson"
+private const val SECTIONS_ORDER = "sectionsOrder"
 private const val ORIGIN = "origin"
 private const val DIET = "diet"
 private const val TAGS = "tags"
@@ -1388,6 +1389,7 @@ class DatabaseConnection {
      * @param pictures pictures of the recipe (can be an empty list)
      * @param instructions list of strings where each element represents a step of the cooking instructions
      * @param ingredients maps section names to lists of RecipeIngredient objects
+     * @param sectionsOrder list of section names in the correct order
      * @param portion number that indicates for how many servings this recipe is designed
      * @param perPerson if true, the portion is per person, if false it is per piece
      * @param origin origin tag from Origin enum
@@ -1402,6 +1404,7 @@ class DatabaseConnection {
         pictures: List<Uri>,
         instructions: List<String>,
         ingredients: Map<String, List<RecipeIngredient>>,
+        sectionsOrder: List<String>,
         portion: Int,
         perPerson: Boolean,
         origin: Origin,
@@ -1425,6 +1428,7 @@ class DatabaseConnection {
                     )
                 }
             },
+            SECTIONS_ORDER to sectionsOrder,
             PORTION to portion,
             PER_PERSON to perPerson,
             ORIGIN to origin.toString(),
@@ -1492,16 +1496,35 @@ class DatabaseConnection {
                 val formattedStep = it.replace("\\n", "\n")
                 formattedInstructions.add(formattedStep)
             }
-            val ingredients = (document.get(INGREDIENTS) as? Map<String, List<Map<String, Any>>>)?.mapValues { (_, ingredientMaps) ->
-                ingredientMaps.map { map ->
-                    RecipeIngredient(
-                        displayedName = (map[DISPLAY_NAME] ?: "").toString(),
-                        standName = map[STAND_NAME].toString(),
-                        quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
-                        unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE,
-                    )
+
+            // re-construct list of ingredients in the correct sections order
+            val sectionsOrder = document.get(SECTIONS_ORDER) as? List<String> ?: emptyList()
+            val ingredientsRawMap = document.get(INGREDIENTS) as? Map<String, List<Map<String, Any>>> ?: emptyMap()
+            val ingredients = buildMap {
+                if ("-" in ingredientsRawMap) {
+                    val ingredientsMap = ingredientsRawMap["-"] ?: emptyList()
+                    put("-", ingredientsMap.map { ingredient ->
+                        RecipeIngredient(
+                            displayedName = (ingredient[DISPLAY_NAME] ?: "").toString(),
+                            standName = ingredient[STAND_NAME].toString(),
+                            quantity = ingredient[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                            unit = ingredient[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
+                        )
+                    })
                 }
-            } ?: emptyMap()
+                for (section in sectionsOrder) {
+                    val ingredientsMaps = ingredientsRawMap[section] ?: continue
+                    put(section, ingredientsMaps.map { ingredient ->
+                        RecipeIngredient(
+                            displayedName = (ingredient[DISPLAY_NAME] ?: "").toString(),
+                            standName = ingredient[STAND_NAME].toString(),
+                            quantity = ingredient[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                            unit = ingredient[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
+                        )
+                    })
+                }
+            }
+
             val portion = document.getLong(PORTION)?.toInt() ?: 1
             val perPerson = document.getBoolean(PER_PERSON) ?: true
             val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
@@ -1538,16 +1561,35 @@ class DatabaseConnection {
                         val formattedStep: String = it.replace("\\n", "\n")
                         formattedInstructions.add(formattedStep)
                     }
-                    val ingredients = (document.get(INGREDIENTS) as? Map<String, List<Map<String, Any>>>)?.mapValues { (_, ingredientMaps) ->
-                        ingredientMaps.map { map ->
-                            RecipeIngredient(
-                                displayedName = (map[DISPLAY_NAME] ?: "").toString(),
-                                standName = map[STAND_NAME].toString(),
-                                quantity = map[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
-                                unit = map[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE,
-                            )
+
+                    // re-construct list of ingredients in the correct sections order
+                    val sectionsOrder = document.get(SECTIONS_ORDER) as? List<String> ?: emptyList()
+                    val ingredientsRawMap = document.get(INGREDIENTS) as? Map<String, List<Map<String, Any>>> ?: emptyMap()
+                    val ingredients = buildMap {
+                        if ("-" in ingredientsRawMap) {
+                            val ingredientsMap = ingredientsRawMap["-"] ?: emptyList()
+                            put("-", ingredientsMap.map { ingredient ->
+                                RecipeIngredient(
+                                    displayedName = (ingredient[DISPLAY_NAME] ?: "").toString(),
+                                    standName = ingredient[STAND_NAME].toString(),
+                                    quantity = ingredient[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                                    unit = ingredient[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
+                                )
+                            })
                         }
-                    } ?: emptyMap()
+                        for (section in sectionsOrder) {
+                            val ingredientsMaps = ingredientsRawMap[section] ?: continue
+                            put(section, ingredientsMaps.map { ingredient ->
+                                RecipeIngredient(
+                                    displayedName = (ingredient[DISPLAY_NAME] ?: "").toString(),
+                                    standName = ingredient[STAND_NAME].toString(),
+                                    quantity = ingredient[QUANTITY]?.toString()?.toFloatOrNull() ?: 0f,
+                                    unit = ingredient[UNIT]?.toString()?.let { Measure.valueOf(it) } ?: Measure.NONE
+                                )
+                            })
+                        }
+                    }
+
                     val portion = document.getLong(PORTION)?.toInt() ?: 1
                     val perPerson = document.getBoolean(PER_PERSON) ?: true
                     val origin = document.getString(ORIGIN)?.let { Origin.valueOf(it) } ?: Origin.NONE
@@ -1576,6 +1618,7 @@ class DatabaseConnection {
      * @param updatePictures whether or not the Storage pictures should be updated
      * @param instructions list of strings where each element represents a step of the cooking instructions
      * @param ingredients a list of RecipeIngredient objects representing the ingredients for the recipe
+     * @param sectionsOrder list of section names in the correct order
      * @param portion number that indicates for how many servings this recipe is designed
      * @param perPerson if true, the portion is per person, if false it is per piece
      * @param origin origin tag from Origin enum
@@ -1593,6 +1636,7 @@ class DatabaseConnection {
         updatePictures: Boolean,
         instructions: List<String>,
         ingredients: Map<String, List<RecipeIngredient>>,
+        sectionsOrder: List<String>,
         portion: Int,
         perPerson: Boolean,
         origin: Origin,
@@ -1614,6 +1658,7 @@ class DatabaseConnection {
                     )
                 }
             },
+            SECTIONS_ORDER to sectionsOrder,
             PORTION to portion,
             PER_PERSON to perPerson,
             ORIGIN to origin.toString(),

@@ -108,6 +108,7 @@ private const val MAX_PICTURES = 3
  * @param pictures editable list of recipe pictures
  * @param instructions editable list of instruction steps
  * @param ingredients editable mapping of sections names to lists of RecipeIngredient objects
+ * @param sectionsOrder editable list of sections names in the order that they should appear
  * @param portion editable number of portions this recipe serves
  * @param perPerson editable boolean; if true, the portion is per person, if false per piece
  * @param origin editable Origin tag
@@ -117,6 +118,7 @@ private const val MAX_PICTURES = 3
  * @param editingExistingRecipe if true, the Save button will stay disabled if no recipe data was edited and there will be a Delete button
  * @param onEditPicture block that runs when pressing the prompt to edit a new picture
  * @param onRemovePicture block that runs when deleting the recipe picture
+ * @param canSaveDraft whether or not the current recipe data can be saved as a draft
  * @param onDraftSave block that runs when saving the current recipe data into a draft
  * @param onSave block that runs when pressing the Save button
  * @param onDelete optional block to run when pressing the eventual Delete button
@@ -130,6 +132,7 @@ fun EditRecipe(
     pictures: SnapshotStateList<Uri>,
     instructions: SnapshotStateList<String>,
     ingredients: MutableMap<String, List<RecipeIngredient>>,
+    sectionsOrder: MutableList<String>,
     portion: MutableIntState,
     perPerson: MutableState<Boolean>,
     origin: MutableState<Origin>,
@@ -139,6 +142,7 @@ fun EditRecipe(
     editingExistingRecipe: Boolean = false,
     onEditPicture: () -> Unit,
     onRemovePicture: (Int) -> Unit,
+    canSaveDraft: Boolean,
     onDraftSave: () -> Unit,
     onSave: () -> Unit,
     onDelete: () -> Unit = {}
@@ -158,13 +162,6 @@ fun EditRecipe(
 
         }
 
-    // to ensure that the ordering of the ingredients section stay consistent
-    val sectionOrder = remember { ingredients.keys.filter { it != "-" }.toMutableList() }
-    LaunchedEffect(ingredients) {
-        sectionOrder.clear()
-        sectionOrder.addAll(ingredients.keys.filter { it != "-" })
-    }
-
     // to recompose screen when modifying ingredient name
     var ingredientTrigger by remember { mutableIntStateOf(0) }
     LaunchedEffect(ingredientTrigger) {}
@@ -172,7 +169,11 @@ fun EditRecipe(
     RecipeSecondaryScreen(
         title = title,
         onGoBack = { onGoBack() },
-        actions = { OptionsMenu(R.drawable.save, stringResource(R.string.button_saveDraft) to { onDraftSave() }) },
+        actions = {
+            if (canSaveDraft) {
+                OptionsMenu(R.drawable.save, stringResource(R.string.button_saveDraft) to { onDraftSave() })
+            }
+                  },
         bottomBar = {
             val newData = if (editingExistingRecipe) dataEdited?.value ?: true else true
             val requiredFields =
@@ -449,7 +450,7 @@ fun EditRecipe(
                     )
                 }
             }
-            // "Plus" button to add an ingredient
+            // "Plus" button to add an ingredient in the "no section" section
             item {
                 AddButton {
                     val sectionIngredients = ingredients["-"]?.toMutableList() ?: mutableListOf()
@@ -458,7 +459,7 @@ fun EditRecipe(
                     ingredientTrigger++
                 }
             }
-            items(sectionOrder, key = {it}) { sectionName ->
+            items(sectionsOrder, key = {it}) { sectionName ->
                 SectionIngredients(
                     context = context,
                     name = sectionName,
@@ -468,6 +469,7 @@ fun EditRecipe(
                         sectionIngredients.add(RecipeIngredient.empty())
                         ingredients[sectionName] = sectionIngredients
                         ingredientTrigger++
+                        if (dataEdited != null) dataEdited.value = true
                     },
                     onEditIngredient = {
                         ingredientTrigger++
@@ -480,20 +482,20 @@ fun EditRecipe(
                         if (dataEdited != null) dataEdited.value = true
                     },
                     onEditSectionName = { oldName, newName ->
-                        val idx = sectionOrder.indexOf(oldName)
+                        val idx = sectionsOrder.indexOf(oldName)
                         if (idx != -1) {
                             val sectionIngredients = ingredients[oldName] ?: emptyList()
                             ingredients[newName] = sectionIngredients
                             ingredients.remove(oldName)
-                            sectionOrder[idx] = newName
+                            sectionsOrder[idx] = newName
                         }
                         if (dataEdited != null) dataEdited.value = true
                     },
                     onRemoveSection = {
-                        val idx = sectionOrder.indexOf(sectionName)
+                        val idx = sectionsOrder.indexOf(sectionName)
                         if (idx != -1) {
                             ingredients.remove(sectionName)
-                            sectionOrder.removeAt(idx)
+                            sectionsOrder.removeAt(idx)
                         }
                         if (dataEdited != null) dataEdited.value = true
                     }
@@ -503,7 +505,7 @@ fun EditRecipe(
             item {
                 AddSection(context, ingredients.keys.toList()) { sectionName ->
                     ingredients[sectionName] = emptyList()
-                    sectionOrder.add(sectionName)
+                    sectionsOrder.add(sectionName)
                 }
                 Divider(color = MaterialTheme.colorScheme.outline, thickness = 3.dp)
                 Spacer(modifier = Modifier.size(16.dp))

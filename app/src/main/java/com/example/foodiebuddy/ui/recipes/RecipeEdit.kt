@@ -45,6 +45,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
     val picturesState = remember { mutableStateListOf<Uri>() }
     val instructionsState = remember { mutableStateListOf("") }
     val ingredientsState = remember { mutableStateMapOf<String, List<RecipeIngredient>>() }
+    val sectionsOrder = remember { mutableStateListOf<String>() }
     val portionState = remember { mutableIntStateOf(1) }
     val perPersonState = remember { mutableStateOf(true) }
     val originState = remember { mutableStateOf(Origin.NONE) }
@@ -69,6 +70,8 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 instructionsState.addAll(recipeData.instructions)
                 ingredientsState.clear()
                 ingredientsState.putAll(recipeData.ingredients)
+                sectionsOrder.clear()
+                sectionsOrder.addAll(recipeData.ingredients.keys.filter { it != "-" }.toList())
                 portionState.intValue = recipeData.portion
                 perPersonState.value = recipeData.perPerson
                 originState.value = recipeData.origin
@@ -90,6 +93,8 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
             instructionsState.addAll(recipeData.instructions)
             ingredientsState.clear()
             ingredientsState.putAll(recipeData.ingredients)
+            sectionsOrder.clear()
+            sectionsOrder.addAll(recipeData.ingredients.keys.filter { it != "-" }.toList())
             portionState.intValue = recipeData.portion
             perPersonState.value = recipeData.perPerson
             originState.value = recipeData.origin
@@ -135,6 +140,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                 pictures = picturesState,
                 instructions = instructionsState,
                 ingredients = ingredientsState,
+                sectionsOrder = sectionsOrder,
                 portion = portionState,
                 perPerson = perPersonState,
                 origin = originState,
@@ -150,6 +156,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                     dataEdited.value = true
                 },
                 // no draft option when editing an existing recipe
+                canSaveDraft = false,
                 onDraftSave = {},
                 onSave = {
                     loadingData.value = true
@@ -160,6 +167,7 @@ fun RecipeEdit(recipeVM: RecipeViewModel, navigationActions: NavigationActions) 
                         pictureEdited.value,
                         instructionsState,
                         ingredientsState,
+                        sectionsOrder,
                         portionState.intValue,
                         perPersonState.value,
                         originState.value,
