@@ -64,7 +64,7 @@ data class RecipeIngredient(
          * @return empty Recipe Ingredient object.
          */
         fun empty(): RecipeIngredient {
-            return RecipeIngredient("", "", 0f, Measure.NONE, "")
+            return RecipeIngredient("", "", 0f, Measure.NONE)
         }
     }
     /**
