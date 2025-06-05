@@ -5,9 +5,9 @@ import com.example.foodiebuddy.R
 
 // The Origin indicates from which country or region the recipe originates from.
 enum class Origin {
-    NONE, HOMEMADE, SWISS, FRENCH, ITALIAN, SPANISH, PORTUGUESE, GERMAN, ENGLISH, SWEDISH, GREEK, EASTERN_EUROPEAN,
-    INDIAN, THAI, VIETNAMESE, CHINESE, JAPANESE, KOREAN,
-    TURKISH, LEBANESE, MOROCCAN, SOUTH_AFRICAN,
+    NONE, HOMEMADE, SWISS, FRENCH, ITALIAN, SPANISH, PORTUGUESE, GERMAN, BRITISH, NORDIC, GREEK, EASTERN_EUROPEAN,
+    INDIAN, THAI, VIETNAMESE, CHINESE, JAPANESE, KOREAN, ASIAN,
+    TURKISH, LEBANESE, MOROCCAN, AFRICAN,
     AMERICAN, MEXICAN, PERUVIAN
 }
 val originMap = mapOf(
@@ -18,8 +18,8 @@ val originMap = mapOf(
     Origin.SPANISH to R.string.origin_spanish,
     Origin.PORTUGUESE to R.string.origin_portuguese,
     Origin.GERMAN to R.string.origin_german,
-    Origin.ENGLISH to R.string.origin_english,
-    Origin.SWEDISH to R.string.origin_swedish,
+    Origin.BRITISH to R.string.origin_british,
+    Origin.NORDIC to R.string.origin_nordic,
     Origin.GREEK to R.string.origin_greek,
     Origin.EASTERN_EUROPEAN to R.string.origin_eastern_european,
     Origin.INDIAN to R.string.origin_indian,
@@ -28,10 +28,11 @@ val originMap = mapOf(
     Origin.CHINESE to R.string.origin_chinese,
     Origin.JAPANESE to R.string.origin_japanese,
     Origin.KOREAN to R.string.origin_korean,
+    Origin.ASIAN to R.string.origin_asian,
     Origin.TURKISH to R.string.origin_turkish,
     Origin.LEBANESE to R.string.origin_lebanese,
     Origin.MOROCCAN to R.string.origin_moroccan,
-    Origin.SOUTH_AFRICAN to R.string.origin_south_african,
+    Origin.AFRICAN to R.string.origin_african,
     Origin.AMERICAN to R.string.origin_american,
     Origin.MEXICAN to R.string.origin_mexican,
     Origin.PERUVIAN to R.string.origin_peruvian
@@ -71,7 +72,7 @@ fun Diet.getString(context: Context): String {
 
 // The Tag indicates various information about the recipe.
 enum class Tag {
-    NONE, QUICK_MEAL, LONG_PREP_TIME, ONE_POT, MAIN_DISH, SIDE_DISH, SWEET_SNACK, SAVORY_SNACK, APPETIZER, STARTER, DESSERT
+    NONE, QUICK_MEAL, LONG_PREP_TIME, ONE_POT, MAIN_DISH, SIDE_DISH, SWEET_SNACK, SAVORY_SNACK, APPETIZER, STARTER, DESSERT, DRINK, COCKTAIL
 }
 
 val tagMap = mapOf(
@@ -85,7 +86,9 @@ val tagMap = mapOf(
     Tag.SAVORY_SNACK to R.string.tag_savory_snack,
     Tag.APPETIZER to R.string.tag_appetizer,
     Tag.STARTER to R.string.tag_starter,
-    Tag.DESSERT to R.string.tag_dessert
+    Tag.DESSERT to R.string.tag_dessert,
+    Tag.DRINK to R.string.tag_drink,
+    Tag.COCKTAIL to R.string.tag_cocktail
 )
 /**
  * Translates a Tag element into its corresponding string from strings.xml.

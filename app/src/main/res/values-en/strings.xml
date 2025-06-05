@@ -105,10 +105,12 @@
     <string name="field_recipeName">Enter your recipe name</string>
     <string name="field_username">Username</string>
 
+    <string name="origin_african">African</string>
     <string name="origin_american">American</string>
+    <string name="origin_asian">Asian</string>
+    <string name="origin_british">British</string>
     <string name="origin_chinese">Chinese</string>
     <string name="origin_eastern_european">Eastern European</string>
-    <string name="origin_english">English</string>
     <string name="origin_french">French</string>
     <string name="origin_german">German</string>
     <string name="origin_greek">Greek</string>
@@ -121,18 +123,19 @@
     <string name="origin_mexican">Mexican</string>
     <string name="origin_moroccan">Moroccan</string>
     <string name="origin_none">None</string>
+    <string name="origin_nordic">Nordic</string>
     <string name="origin_peruvian">Peruvian</string>
     <string name="origin_portuguese">Portuguese</string>
-    <string name="origin_south_african">South African</string>
     <string name="origin_spanish">Spanish</string>
-    <string name="origin_swedish">Swedish</string>
     <string name="origin_swiss">Swiss</string>
     <string name="origin_thai">Thai</string>
     <string name="origin_turkish">Turkish</string>
     <string name="origin_vietnamese">Vietnamese</string>
 
     <string name="tag_appetizer">Appetizer</string>
+    <string name="tag_cocktail">Cocktail</string>
     <string name="tag_dessert">Dessert</string>
+    <string name="tag_drink">Drink</string>
     <string name="tag_long_prep_time">Long prep time</string>
     <string name="tag_main_dish">Main dish</string>
     <string name="tag_none">None</string>
